@@ -85,12 +85,28 @@
 | Dataset     | Agents           | Features                                                  | Link |
 |-------------|------------------|-----------------------------------------------------------|------|
 | **nuScenes**     | 🚗🚶‍♂️🚲              | HD maps, rich dynamics, 6s prediction, 2s history         | [🔗](https://www.nuscenes.org/prediction) |
-| Argoverse 1/2 | 🚗🚶‍♂️               | Lane topologies, city scenes                             | [🔗](https://www.argoverse.org/) |
+| Argoverse 1/2 | 🚗🚶‍♂️               | Lane topologies, city scenes                             | [Website](https://www.argoverse.org/), [GitHub](https://github.com/argoverse/argoverse-api)|
 | Waymo OMD     | 🚗                 | High-scale highway + urban scenarios                      | [🔗](https://waymo.com/open/data/motion/) |
 | INTERACTION   | 🚗🚶‍♂️               | Focus on nuanced interaction behavior (e.g., merging)     | [🔗](https://interaction-dataset.com/) |
 | JAAD          | 🚶‍♂️+ driver        | Joint attention (driver–pedestrian crossing behavior)     | [🔗](https://paperswithcode.com/dataset/jaad) |
 | SDD / ETH / UCY | 🚶‍♂️            | Drone/campus scenes, pedestrian flow                     | [🔗](https://github.com/StanfordASL/Trajectron-plus-plus) |
 | NGSIM         | 🚗                 | Dense highway scenarios, lane changes                     | [🔗](https://ops.fhwa.dot.gov/trafficanalysistools/ngsim.htm) |
+
+### Considerations
+
+**nuScenes-devkit** is built for Python 3.6..7. I did not easily get it running. **Argoverse** might be a better choice.
+
+#### argoverse-api
+
+- [Argoverse2 User Guide](https://argoverse.github.io/user-guide/)
+- [Argoverse2 API](https://github.com/argoverse/av2-api)
+- [Getting Started (Argoverse2::Docs)](https://argoverse.github.io/user-guide/getting_started.html)
+- [Jupyter Demos](https://github.com/argoverse/argoverse-api/tree/master/demo_usage)
+
+#### nuScenes-devkit
+
+- [nuScenes-devkit Tutorial (html notebook)](https://www.nuscenes.org/tutorials/nuscenes_tutorial.html)
+- [nuScenes-devkit Tutorial (GitHub)](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/tutorials)
 
 ---
 ---
