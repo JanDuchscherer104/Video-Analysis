@@ -80,6 +80,11 @@
 ---
 ---
 
+### 5. Query-Centric Trajectory Prediction
+
+- [Paper](https://openaccess.thecvf.com/content/CVPR2023/papers/Zhou_Query-Centric_Trajectory_Prediction_CVPR_2023_paper.pdf)
+- [GitHub](https://github.com/ZikangZhou/QCNet?tab=readme-ov-file)
+
 ## 🗺️ Datasets
 
 | Dataset     | Agents           | Features                                                  | Link |

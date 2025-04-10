@@ -35,3 +35,9 @@ bash conda/install.sh && conda activate av2
 ```bash
 conda install s5cmd -c conda-forge
 ```
+
+#### Own Modules
+
+```bash
+cd src
+pip install -e utils
