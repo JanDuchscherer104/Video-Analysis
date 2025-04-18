@@ -10,3 +10,6 @@
 [submodule "src/external/UniTraj"]
 	path = src/external/UniTraj
 	url = git@github.com:JanDuchscherer104/UniTraj.git
+[submodule "src/external/scenarionet"]
+	path = src/external/scenarionet
+	url = git@github.com:metadriverse/scenarionet.git
