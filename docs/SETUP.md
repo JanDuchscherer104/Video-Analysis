@@ -1,4 +1,4 @@
-# 🧩 Remote Access Quick‑Start (`goliath` – CVPR Lab)
+# 🧩 Setup SSH and Environment
 
 ## 1. 🔐 SSH Connection Setup
 
@@ -146,4 +146,14 @@ mkdir -p "$TARGET_DIR"
 
 # Download dataset from public S3 bucket (no credentials needed)
 s5cmd --no-sign-request cp "s3://argoverse/datasets/av2/$DATASET_NAME/*" "$TARGET_DIR/"
+```
+
+Install the AV2 devkit
+```bash
+pip install av2
+```
+
+Convert the AV2 dataset to ScenerioNet format
+```bash
+python -m scenarionet.convert_argoverse2 --database_path /work/share/argoverse2_scenarionet/av2_scenarionet --raw_data_path /work/share/argoverse2/motion-forecasting
 ```
