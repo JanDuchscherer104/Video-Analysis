@@ -4,3 +4,9 @@
 [submodule "external/av2-api"]
 	path = src/external/av2-api
 	url = git@github.com:argoverse/av2-api.git
+[submodule "src/external/QCNet"]
+	path = src/external/QCNet
+	url = https://github.com/ZikangZhou/QCNet.git
+[submodule "src/external/UniTraj"]
+	path = src/external/UniTraj
+	url = git@github.com:JanDuchscherer104/UniTraj.git
