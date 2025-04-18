@@ -1,6 +1,6 @@
 [submodule "external/nuscenes-devkit"]
-	path = external/nuscenes-devkit
+	path = src/external/nuscenes-devkit
 	url = git@github.com:nutonomy/nuscenes-devkit.git
 [submodule "external/av2-api"]
-	path = external/av2-api
+	path = src/external/av2-api
 	url = git@github.com:argoverse/av2-api.git
