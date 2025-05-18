@@ -1,0 +1,131 @@
+% CVPR 2025 Paper Template; see https://github.com/cvpr-org/author-kit
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
+\usepackage{cvpr}              % To produce the CAMERA-READY version
+% \usepackage[review]{cvpr}      % To produce the REVIEW version
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{makecell}
+% \usepackage[pagenumbers]{cvpr} % To force page numbers, e.g. for an arXiv version
+
+% Import additional packages in the preamble file, before hyperref
+\input{preamble}
+
+% It is strongly recommended to use hyperref, especially for the review version.
+% hyperref with option pagebackref eases the reviewers' job.
+% Please disable hyperref *only* if you encounter grave issues, 
+% e.g. with the file validation for the camera-ready version.
+%
+% If you comment hyperref and then uncomment it, you should delete *.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you should be clear).
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+%%%%%%%%% PAPER ID  - PLEASE UPDATE
+% \def\paperID{7} % *** Enter the Paper ID here
+\def\confName{CVPR}
+\def\confYear{2025}
+
+%%%%%%%%% TITLE - PLEASE UPDATE
+\title{LMFormer: Lane based Motion Prediction Transformer}
+
+%%%%%%%%% AUTHORS - PLEASE UPDATE
+\author{
+    Harsh Yadav$^1$ \quad Maximilian Sch\"afer$^2$ \quad Kun Zhao$^2$ \quad Tobias Meisen$^1$\\
+    $^1$University of Wuppertal, Germany \quad $^2$ Aptiv Services Deutschland GmbH \\
+    {\tt\small {harsh.yadav@uni-wuppertal.de}}
+}
+
+\usepackage{acro}
+
+\DeclareAcronym{ad}{
+	short=AD,
+	long=Autonomous Driving,
+}
+
+\DeclareAcronym{adas}{
+	short=ADAS,
+	long=Advance Driver Assistance Systems,
+}
+\DeclareAcronym{hd}{
+	short=HD,
+	long=High Definition,
+}
+\DeclareAcronym{gnn}{
+	short=GNN,
+	long=Graph Neural Network,
+}
+\DeclareAcronym{bev}{
+	short=BEV,
+	long=Bird-Eye-View,
+}
+\DeclareAcronym{msda}{
+	short=MSDA,
+	long=Multi-Scale-Deformable-Attention,
+}
+\DeclareAcronym{cnn}{
+	short=CNN,
+	long=Convolutional Neural Network,
+}
+\DeclareAcronym{GAN}{
+	short=GAN,
+	long=Generative Adversial Network,
+}
+\DeclareAcronym{VAE}{
+	short=VAE,
+	long=Variational Autoencoder,
+}
+\DeclareAcronym{detr}{
+	short=DETR,
+	long=Detection Transformer,
+}
+\DeclareAcronym{dino}{
+	short=DINO,
+	long=DETR with Improved deNoising anchOr box,
+}
+\DeclareAcronym{caspformer}{
+	short=CASPFormer,
+	long=Context Aware Scene Prediction Transformer,
+}
+\DeclareAcronym{caspnet}{
+	short=CASPNet,
+	long=Context Aware Scene Prediction Network,
+}
+\DeclareAcronym{mlp}{
+	short=MLP,
+	long=Multi-Layer Perceptron,
+}
+\DeclareAcronym{cv}{
+	short=CV,
+	long=Computer Vision,
+}
+\DeclareAcronym{wta}{
+	short=WTA,
+	long=Winner-Takes-All,
+}
+\DeclareAcronym{nll}{
+	short=NLL,
+	long=Negative Log Likelihood,
+}
+
+
+\begin{document}
+\maketitle
+\input{lane_based/0_abstract}    
+\input{lane_based/1_intro}
+\input{lane_based/2_related_works}
+\input{lane_based/3_approach}
+\input{lane_based/4_experiments}
+\input{lane_based/5_conclusion}
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{main}
+}
+
+% WARNING: do not forget to delete the supplementary pages from your submission 
+% \input{sec/X_suppl}
+
+\end{document}

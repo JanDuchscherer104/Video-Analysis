@@ -1,0 +1,46 @@
+\begin{thebibliography}{1}\itemsep=-1pt
+
+\bibitem{loshchilov2016sgdr}
+Ilya Loshchilov and Frank Hutter.
+\newblock Sgdr: Stochastic gradient descent with warm restarts.
+\newblock In {\em Proceedings of the International Conference on Learning
+  Representations (ICLR)}, 2017.
+
+\bibitem{loshchilov2017decoupled}
+Ilya Loshchilov and Frank Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In {\em Proceedings of the International Conference on Learning
+  Representations (ICLR)}, 2019.
+
+\bibitem{ngiam2021scene}
+Jiquan Ngiam, Benjamin Caine, Vijay Vasudevan, Zhengdong Zhang, Hao-Tien~Lewis
+  Chiang, Jeffrey Ling, Rebecca Roelofs, Alex Bewley, Chenxi Liu, Ashish
+  Venugopal, et~al.
+\newblock Scene transformer: A unified architecture for predicting multiple
+  agent trajectories.
+\newblock In {\em Proceedings of the International Conference on Learning
+  Representations (ICLR)}, 2022.
+
+\bibitem{Argoverse2}
+Benjamin Wilson, William Qi, Tanmay Agarwal, John Lambert, Jagjeet Singh,
+  Siddhesh Khandelwal, Bowen Pan, Ratnesh Kumar, Andrew Hartnett,
+  Jhony~Kaesemodel Pontes, Deva Ramanan, Peter Carr, and James Hays.
+\newblock Argoverse 2: Next generation datasets for self-driving perception and
+  forecasting.
+\newblock In {\em Proceedings of the Neural Information Processing Systems
+  Track on Datasets and Benchmarks (NeurIPS Datasets and Benchmarks)}, 2021.
+
+\bibitem{zhou2023query}
+Zikang Zhou, Jianping Wang, Yung-Hui Li, and Yu-Kai Huang.
+\newblock Query-centric trajectory prediction.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, 2023.
+
+\bibitem{zhou2022hivt}
+Zikang Zhou, Luyao Ye, Jianping Wang, Kui Wu, and Kejie Lu.
+\newblock Hivt: Hierarchical vector transformer for multi-agent motion
+  prediction.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, 2022.
+
+\end{thebibliography}

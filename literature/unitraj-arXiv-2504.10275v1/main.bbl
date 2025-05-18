@@ -1,0 +1,223 @@
+\begin{thebibliography}{43}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Caesar et~al.(2020)Caesar, Bankiti, Lang, Vora, Liong, Xu, Krishnan, Pan, Baldan, and Beijbom]{caesar2020nuscenes}
+Holger Caesar, Varun Bankiti, Alex~H Lang, Sourabh Vora, Venice~Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Giancarlo Baldan, and Oscar Beijbom.
+\newblock nuscenes: A multimodal dataset for autonomous driving.
+\newblock In \emph{Proceedings of the IEEE/CVF conference on computer vision and pattern recognition}, pages 11621--11631, 2020.
+
+\bibitem[Casas et~al.(2020)Casas, Gulino, Suo, Luo, Liao, and Urtasun]{casas2020implicit}
+Sergio Casas, Cole Gulino, Simon Suo, Katie Luo, Renjie Liao, and Raquel Urtasun.
+\newblock Implicit latent variable model for scene-consistent motion forecasting.
+\newblock In \emph{Computer Vision--ECCV 2020: 16th European Conference, Glasgow, UK, August 23--28, 2020, Proceedings, Part XXIII 16}, pages 624--641. Springer, 2020.
+
+\bibitem[Chai et~al.(2019)Chai, Sapp, Bansal, and Anguelov]{chai2019multipath}
+Yuning Chai, Benjamin Sapp, Mayank Bansal, and Dragomir Anguelov.
+\newblock Multipath: Multiple probabilistic anchor trajectory hypotheses for behavior prediction.
+\newblock \emph{CoRR}, abs/1910.05449, 2019.
+
+\bibitem[Chang et~al.(2019)Chang, Lambert, Sangkloy, Singh, Bak, Hartnett, Wang, Carr, Lucey, Ramanan, et~al.]{chang2019argoverse}
+Ming-Fang Chang, John Lambert, Patsorn Sangkloy, Jagjeet Singh, Slawomir Bak, Andrew Hartnett, De Wang, Peter Carr, Simon Lucey, Deva Ramanan, et~al.
+\newblock Argoverse: 3d tracking and forecasting with rich maps.
+\newblock In \emph{Proceedings of the IEEE/CVF conference on computer vision and pattern recognition}, pages 8748--8757, 2019.
+
+\bibitem[Chen et~al.(2023)Chen, Wang, Wang, and Cai]{chen2023q}
+Jiuyu Chen, Zhongli Wang, Jian Wang, and Baigen Cai.
+\newblock Q-eanet: Implicit social modeling for trajectory prediction via experience-anchored queries.
+\newblock \emph{IET Intelligent Transport Systems}, 2023.
+
+\bibitem[Cheng et~al.(2023)Cheng, Mei, and Liu]{cheng2023forecast}
+Jie Cheng, Xiaodong Mei, and Ming Liu.
+\newblock Forecast-mae: Self-supervised pre-training for motion forecasting with masked autoencoders.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on Computer Vision}, pages 8679--8689, 2023.
+
+\bibitem[Cui et~al.(2021)Cui, Casas, Sadat, Liao, and Urtasun]{cui2021lookout}
+Alexander Cui, Sergio Casas, Abbas Sadat, Renjie Liao, and Raquel Urtasun.
+\newblock Lookout: Diverse multi-future prediction and planning for self-driving.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on Computer Vision}, pages 16107--16116, 2021.
+
+\bibitem[Cui et~al.(2019)Cui, Radosavljevic, Chou, Lin, Nguyen, Huang, Schneider, and Djuric]{cui2019multimodal}
+Henggang Cui, Vladan Radosavljevic, Fang-Chieh Chou, Tsung-Han Lin, Thi Nguyen, Tzu-Kuo Huang, Jeff Schneider, and Nemanja Djuric.
+\newblock Multimodal trajectory predictions for autonomous driving using deep convolutional networks.
+\newblock In \emph{2019 International Conference on Robotics and Automation (ICRA)}, pages 2090--2096. IEEE, 2019.
+
+\bibitem[Dauner et~al.(2023)Dauner, Hallgarten, Geiger, and Chitta]{dauner2023parting}
+Daniel Dauner, Marcel Hallgarten, Andreas Geiger, and Kashyap Chitta.
+\newblock Parting with misconceptions about learning-based vehicle motion planning.
+\newblock In \emph{Conference on Robot Learning}, pages 1268--1281. PMLR, 2023.
+
+\bibitem[Deo et~al.(2021)Deo, Wolff, and Beijbom]{deo2021multimodal}
+Nachiket Deo, Eric Wolff, and Oscar Beijbom.
+\newblock Multimodal trajectory prediction conditioned on lane-graph traversals.
+\newblock In \emph{5th Annual Conference on Robot Learning}, 2021.
+
+\bibitem[Feng et~al.(2023)Feng, Zhou, Lin, Zhang, Xu, Zhang, Zhou, and Shen]{feng2023macformer}
+Chen Feng, Hangning Zhou, Huadong Lin, Zhigang Zhang, Ziyao Xu, Chi Zhang, Boyu Zhou, and Shaojie Shen.
+\newblock Macformer: Map-agent coupled transformer for real-time and robust trajectory prediction.
+\newblock \emph{IEEE Robotics and Automation Letters}, 2023.
+
+\bibitem[Feng et~al.(2024)Feng, Bahari, Amor, Zablocki, Cord, and Alahi]{feng2024unitraj}
+Lan Feng, Mohammadhossein Bahari, Kaouther Messaoud~Ben Amor, {\'E}loi Zablocki, Matthieu Cord, and Alexandre Alahi.
+\newblock Unitraj: A unified framework for scalable vehicle trajectory prediction.
+\newblock \emph{arXiv preprint arXiv:2403.15098}, 2024.
+
+\bibitem[Gao et~al.(2020)Gao, Sun, Zhao, Shen, Anguelov, Li, and Schmid]{gao2020vectornet}
+Jiyang Gao, Chen Sun, Hang Zhao, Yi Shen, Dragomir Anguelov, Congcong Li, and Cordelia Schmid.
+\newblock Vectornet: Encoding hd maps and agent dynamics from vectorized representation.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 11525--11533, 2020.
+
+\bibitem[Gilles et~al.(2022{\natexlab{a}})Gilles, Sabatini, Tsishkou, Stanciulescu, and Moutarde]{gilles2022gohome}
+Thomas Gilles, Stefano Sabatini, Dzmitry Tsishkou, Bogdan Stanciulescu, and Fabien Moutarde.
+\newblock Gohome: Graph-oriented heatmap output for future motion estimation.
+\newblock In \emph{2022 international conference on robotics and automation (ICRA)}, pages 9107--9114. IEEE, 2022{\natexlab{a}}.
+
+\bibitem[Gilles et~al.(2022{\natexlab{b}})Gilles, Sabatini, Tsishkou, Stanciulescu, and Moutarde]{gilles2022thomas}
+Thomas Gilles, Stefano Sabatini, Dzmitry Tsishkou, Bogdan Stanciulescu, and Fabien Moutarde.
+\newblock {THOMAS}: Trajectory heatmap output with learned multi-agent sampling.
+\newblock In \emph{International Conference on Learning Representations}, 2022{\natexlab{b}}.
+
+\bibitem[Girgis et~al.(2021)Girgis, Golemo, Codevilla, D'Souza, Kahou, Heide, and Pal]{girgis2021latent}
+Roger Girgis, Florian Golemo, Felipe Codevilla, Jim~Aldon D'Souza, Samira~Ebrahimi Kahou, Felix Heide, and Christopher~J. Pal.
+\newblock Latent variable nested set transformers {\&} autobots.
+\newblock \emph{CoRR}, abs/2104.00563, 2021.
+
+\bibitem[Hu et~al.(2023)Hu, Yang, Chen, Li, Sima, Zhu, Chai, Du, Lin, Wang, et~al.]{hu2023planning}
+Yihan Hu, Jiazhi Yang, Li Chen, Keyu Li, Chonghao Sima, Xizhou Zhu, Siqi Chai, Senyao Du, Tianwei Lin, Wenhai Wang, et~al.
+\newblock Planning-oriented autonomous driving.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 17853--17862, 2023.
+
+\bibitem[Huang et~al.(2020)Huang, McGill, DeCastro, Fletcher, Leonard, Williams, and Rosman]{huang2020diversitygan}
+Xin Huang, Stephen~G McGill, Jonathan~A DeCastro, Luke Fletcher, John~J Leonard, Brian~C Williams, and Guy Rosman.
+\newblock Diversitygan: Diversity-aware vehicle motion prediction via latent semantic sampling.
+\newblock \emph{IEEE Robotics and Automation Letters}, 5\penalty0 (4):\penalty0 5089--5096, 2020.
+
+\bibitem[Kim et~al.(2021)Kim, Park, Lee, Khoshimjonov, Kum, Kim, Kim, and Choi]{kim2021lapred}
+ByeoungDo Kim, Seong~Hyeon Park, Seokhwan Lee, Elbek Khoshimjonov, Dongsuk Kum, Junsoo Kim, Jeong~Soo Kim, and Jun~Won Choi.
+\newblock Lapred: Lane-aware prediction of multi-modal future trajectories of dynamic agents.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 14636--14645, 2021.
+
+\bibitem[Lan et~al.(2023)Lan, Jiang, Mu, Chen, and Li]{lan2023sept}
+Zhiqian Lan, Yuxuan Jiang, Yao Mu, Chen Chen, and Shengbo~Eben Li.
+\newblock Sept: Towards efficient scene representation learning for motion prediction.
+\newblock In \emph{The Twelfth International Conference on Learning Representations}, 2023.
+
+\bibitem[Liang et~al.(2020)Liang, Yang, Hu, Chen, Liao, Feng, and Urtasun]{liang2020learning}
+Ming Liang, Bin Yang, Rui Hu, Yun Chen, Renjie Liao, Song Feng, and Raquel Urtasun.
+\newblock Learning lane graph representations for motion forecasting.
+\newblock In \emph{Computer Vision--ECCV 2020: 16th European Conference, Glasgow, UK, August 23--28, 2020, Proceedings, Part II 16}, pages 541--556. Springer, 2020.
+
+\bibitem[Liu et~al.(2024)Liu, Cheng, Chen, Broszio, Li, Zhao, Sester, and Yang]{liu2024laformer}
+Mengmeng Liu, Hao Cheng, Lin Chen, Hellward Broszio, Jiangtao Li, Runjiang Zhao, Monika Sester, and Michael~Ying Yang.
+\newblock Laformer: Trajectory prediction for autonomous driving with lane-aware scene constraints.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 2039--2049, 2024.
+
+\bibitem[Liu et~al.(2022)Liu, Li, Zhang, Yang, Qi, Su, Zhu, and Zhang]{liu2022dabdetr}
+Shilong Liu, Feng Li, Hao Zhang, Xiao Yang, Xianbiao Qi, Hang Su, Jun Zhu, and Lei Zhang.
+\newblock {DAB}-{DETR}: Dynamic anchor boxes are better queries for {DETR}.
+\newblock In \emph{International Conference on Learning Representations}, 2022.
+
+\bibitem[Liu et~al.(2021)Liu, Zhang, Fang, Jiang, and Zhou]{liu2021multimodal}
+Yicheng Liu, Jinghuai Zhang, Liangji Fang, Qinhong Jiang, and Bolei Zhou.
+\newblock Multimodal motion prediction with stacked transformers.
+\newblock In \emph{Proceedings of the IEEE/CVF conference on computer vision and pattern recognition}, pages 7577--7586, 2021.
+
+\bibitem[Loshchilov and Hutter(2019)]{loshchilov2018decoupled}
+Ilya Loshchilov and Frank Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In \emph{International Conference on Learning Representations}, 2019.
+
+\bibitem[Lu et~al.(2023)Lu, Yue, and Ali]{lu2023deepscenario}
+Chengjie Lu, Tao Yue, and Shaukat Ali.
+\newblock Deepscenario: An open driving scenario dataset for autonomous driving system testing.
+\newblock In \emph{2023 IEEE/ACM 20th International Conference on Mining Software Repositories (MSR)}, pages 52--56. IEEE, 2023.
+
+\bibitem[Makansi et~al.(2019)Makansi, Ilg, Cicek, and Brox]{makansi2019overcoming}
+Osama Makansi, Eddy Ilg, Ozgun Cicek, and Thomas Brox.
+\newblock Overcoming limitations of mixture density networks: A sampling and fitting framework for multimodal future prediction.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 7144--7153, 2019.
+
+\bibitem[Mei et~al.(2022)Mei, Zhu, Yan, Yan, Qiao, Chen, and Kretzschmar]{mei2022waymo}
+Jieru Mei, Alex~Zihao Zhu, Xinchen Yan, Hang Yan, Siyuan Qiao, Liang-Chieh Chen, and Henrik Kretzschmar.
+\newblock Waymo open dataset: Panoramic video panoptic segmentation.
+\newblock In \emph{European Conference on Computer Vision}, pages 53--72. Springer, 2022.
+
+\bibitem[Ngiam et~al.(2021)Ngiam, Vasudevan, Caine, Zhang, Chiang, Ling, Roelofs, Bewley, Liu, Venugopal, et~al.]{ngiam2021scene}
+Jiquan Ngiam, Vijay Vasudevan, Benjamin Caine, Zhengdong Zhang, Hao-Tien~Lewis Chiang, Jeffrey Ling, Rebecca Roelofs, Alex Bewley, Chenxi Liu, Ashish Venugopal, et~al.
+\newblock Scene transformer: A unified architecture for predicting future trajectories of multiple agents.
+\newblock In \emph{International Conference on Learning Representations}, 2021.
+
+\bibitem[nuScenes Prediction Challenge~by Motional()]{nuscene2020prediction}
+nuScenes Prediction Challenge~by Motional.
+\newblock eval.ai/web/challenges/challenge-page/591/.
+\newblock accessed: 20th Feb 2025.
+
+\bibitem[Park et~al.(2023)Park, Ryu, Yang, Cho, Kim, and Yoon]{park2023leveraging}
+Daehee Park, Hobin Ryu, Yunseo Yang, Jegyeong Cho, Jiwon Kim, and Kuk-Jin Yoon.
+\newblock Leveraging future relationship reasoning for vehicle trajectory prediction.
+\newblock In \emph{The Eleventh International Conference on Learning Representations}, 2023.
+
+\bibitem[Rupprecht et~al.(2017)Rupprecht, Laina, DiPietro, Baust, Tombari, Navab, and Hager]{rupprecht2017learning}
+Christian Rupprecht, Iro Laina, Robert DiPietro, Maximilian Baust, Federico Tombari, Nassir Navab, and Gregory~D Hager.
+\newblock Learning in an uncertain world: Representing ambiguity through multiple hypotheses.
+\newblock In \emph{Proceedings of the IEEE international conference on computer vision}, pages 3591--3600, 2017.
+
+\bibitem[Sch{\"a}fer et~al.(2023)Sch{\"a}fer, Zhao, and Kummert]{schafer2023caspnet++}
+Maximilian Sch{\"a}fer, Kun Zhao, and Anton Kummert.
+\newblock Caspnet++: Joint multi-agent motion prediction.
+\newblock \emph{arXiv preprint arXiv:2308.07751}, 2023.
+
+\bibitem[Seff et~al.(2023)Seff, Cera, Chen, Ng, Zhou, Nayakanti, Refaat, Al-Rfou, and Sapp]{seff2023motionlm}
+Ari Seff, Brian Cera, Dian Chen, Mason Ng, Aurick Zhou, Nigamaa Nayakanti, Khaled~S Refaat, Rami Al-Rfou, and Benjamin Sapp.
+\newblock Motionlm: Multi-agent motion forecasting as language modeling.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on Computer Vision}, pages 8579--8590, 2023.
+
+\bibitem[Sun et~al.(2024)Sun, Wang, Halilaj, and Luettin]{sun2024semanticformer}
+Zhigang Sun, Zixu Wang, Lavdim Halilaj, and Juergen Luettin.
+\newblock Semanticformer: Holistic and semantic traffic scene representation for trajectory prediction using knowledge graphs.
+\newblock \emph{arXiv preprint arXiv:2404.19379}, 2024.
+
+\bibitem[Tancik et~al.(2020)Tancik, Srinivasan, Mildenhall, Fridovich-Keil, Raghavan, Singhal, Ramamoorthi, Barron, and Ng]{tancik2020fourier}
+Matthew Tancik, Pratul Srinivasan, Ben Mildenhall, Sara Fridovich-Keil, Nithin Raghavan, Utkarsh Singhal, Ravi Ramamoorthi, Jonathan Barron, and Ren Ng.
+\newblock Fourier features let networks learn high frequency functions in low dimensional domains.
+\newblock \emph{Advances in neural information processing systems}, 33:\penalty0 7537--7547, 2020.
+
+\bibitem[Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, and Polosukhin]{vaswani2017attention}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan~N Gomez, {\L}ukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock \emph{Advances in neural information processing systems}, 30, 2017.
+
+\bibitem[Wang et~al.(2022)Wang, Ye, Gu, and Chen]{wang2022ltp}
+Jingke Wang, Tengju Ye, Ziqing Gu, and Junbo Chen.
+\newblock Ltp: Lane-based trajectory prediction for autonomous driving.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 17134--17142, 2022.
+
+\bibitem[Wilson et~al.(2023)Wilson, Qi, Agarwal, Lambert, Singh, Khandelwal, Pan, Kumar, Hartnett, Pontes, et~al.]{wilson2023argoverse}
+Benjamin Wilson, William Qi, Tanmay Agarwal, John Lambert, Jagjeet Singh, Siddhesh Khandelwal, Bowen Pan, Ratnesh Kumar, Andrew Hartnett, Jhony~Kaesemodel Pontes, et~al.
+\newblock Argoverse 2: Next generation datasets for self-driving perception and forecasting.
+\newblock \emph{arXiv preprint arXiv:2301.00493}, 2023.
+
+\bibitem[Yadav et~al.(2025)Yadav, Schaefer, Zhao, and Meisen]{yadav2025caspformer}
+Harsh Yadav, Maximilian Schaefer, Kun Zhao, and Tobias Meisen.
+\newblock Caspformer: Trajectory prediction from bev images with deformable attention.
+\newblock In \emph{International Conference on Pattern Recognition}, pages 420--434. Springer, 2025.
+
+\bibitem[Zhou et~al.(2024)Zhou, Shao, Wang, Waslander, Li, and Liu]{zhou2024smartrefine}
+Yang Zhou, Hao Shao, Letian Wang, Steven~L Waslander, Hongsheng Li, and Yu Liu.
+\newblock Smartrefine: A scenario-adaptive refinement framework for efficient motion prediction.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 15281--15290, 2024.
+
+\bibitem[Zhou et~al.(2022)Zhou, Ye, Wang, Wu, and Lu]{zhou2022hivt}
+Zikang Zhou, Luyao Ye, Jianping Wang, Kui Wu, and Kejie Lu.
+\newblock Hivt: Hierarchical vector transformer for multi-agent motion prediction.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 8823--8833, 2022.
+
+\bibitem[Zhou et~al.(2023)Zhou, Wang, Li, and Huang]{zhou2023query}
+Zikang Zhou, Jianping Wang, Yung-Hui Li, and Yu-Kai Huang.
+\newblock Query-centric trajectory prediction.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 17863--17873, 2023.
+
+\end{thebibliography}
