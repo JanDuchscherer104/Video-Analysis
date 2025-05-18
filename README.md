@@ -1,11 +1,9 @@
 # Video-Analysis
 
-- [Resources](/RESOURCES.md): Overview of all considered approaches and resources like datasets, code, and papers.
-- [Setup](/SETUP.md): Instructions for setting up the remote device.
-- [Project Idea & Scope](/IDEAD.md): Project idea based on the CASPFormer architecture.
-- [Questions](/QUESTIONS.md)
+- [Resources](docs/RESOURCES.md): Overview of all considered approaches and resources like datasets, code, and papers.
+- [Setup](docs/SETUP.md): Instructions for setting up the remote device.
 
-- [LM-Former Summary](/lm-former.md)
+- [LM-Former Summary](docs/literature/lm-former.md)
 - [Ideas on SmolLM-Former](literature/smol-lm-former.md)
 
 - [Jan's Notes (Google-Drive)](https://drive.google.com/drive/folders/1pCqvKy3jx0FrvmH9EIDcMBJo3a7-Q1kw?usp=share_link): handwritten notes and papers

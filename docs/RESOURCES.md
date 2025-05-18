@@ -39,8 +39,8 @@
 **Loss**: Mixture model WTA regression, classification, and intermediate refinement losses
 **Links**:
 
-- 📄 [Paper (local preprint)](literature/CVPR_2025_WAD__LMFormer-1.pdf)
-- 📄 [Detailed Explanation](./LMFormer_Details.md)
+- 📄 [Paper](https://arxiv.org/abs/2504.10275)
+- 📄 [Detailed Summary](/docs/literature/lm-former.md)
 
 ---
 
