@@ -41,6 +41,7 @@
 
 - 📄 [Paper](https://arxiv.org/abs/2504.10275)
 - 📄 [Detailed Summary](/docs/literature/lm-former.md)
+- [Local LaTeX Source](/literature/lm-former-arXiv-2504.10275/)
 
 ---
 
@@ -89,7 +90,7 @@
 
 - 📄 [Paper (arXiv:2403.11643)](https://arxiv.org/abs/2403.11643)
 - 💻 [GitHub](https://github.com/tl-qz/trajdiffuse)
-d
+
 
 ---
 ---
@@ -98,6 +99,10 @@ d
 
 - [Paper](https://openaccess.thecvf.com/content/CVPR2023/papers/Zhou_Query-Centric_Trajectory_Prediction_CVPR_2023_paper.pdf)
 - [GitHub](https://github.com/ZikangZhou/QCNet?tab=readme-ov-file)
+
+### 6. QCNeXt
+- [Paper](https://arxiv.org/abs/2306.10508)
+- [Local LaTeX Source](/literature/qcnext-arXiv-2306.10508v1/)
 
 ## 🗺️ Datasets
 
