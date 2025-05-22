@@ -68,6 +68,7 @@
 **Links**:
 
 - 📄 [Paper](https://arxiv.org/pdf/2403.15098)
+- [Local LaTeX Source](/literature/untraj-arXiv-2403.15098/)
 - 💻 [GitHub](https://github.com/vita-epfl/UniTraj)
 - [Website](https://vita-epfl.github.io/UniTraj/)
 - 🎥 [Presentation Video](https://www.youtube.com/watch?v=2IzuUtiNA_4)
