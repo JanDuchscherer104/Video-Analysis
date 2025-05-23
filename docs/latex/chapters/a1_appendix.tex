@@ -1,0 +1,51 @@
+% Appendix
+\appendix
+\section{Citations and References} % (fold)
+\label{sec:citations_and_references}
+
+\subsection{Examples of Citations} % (fold)
+\label{sub:examples_of_citations}
+
+In this section, examples for different types of citations are given.
+
+\begin{quotation}
+	\emph{``A persona is a rich picture of an imaginary person who represents your core user group.''}
+	\citep{Dix04}
+\end{quotation}
+
+Sometimes you might want to make use of the authors name within the text. Before, we used the command \texttt{citep\{\}}, which creates the brackets around author name and year. You can also use the \texttt{cite} command like this: \\
+
+\cite{Dix04} defined the concept of persona as follows:
+\begin{quotation}
+	\emph{``A persona is a rich picture of an imaginary person who represents your core user group.''}
+	\citep{Dix04}
+\end{quotation}
+
+You may notice, that this increases the readability of the text. \\
+
+According to APA format\footnote{American Psychological Association (APA)} there are some rules, when and how to include page numbers, when referring to literature.
+
+\begin{quotation}
+	\emph{``Include page numbers for any citations in the text of your paper that include direct quotations or refer to a specific part of the work you are referencing. Direct quotations must include a page number as part of the citation. The quoted material should be followed by a citation in parentheses that gives the author's name, the year in which the work was published, and the page number from which the quoted material appears.''}
+	\citep{Hall}
+\end{quotation}
+
+Check out the example and recommendations of \cite{Hall} on \url{http://www.ehow.com/how_5689799_cite-numbers-apa-format.html}. In \LaTeX you can include the pages very easy. For example: \\
+
+\citet[p. 86]{Baddeley:1974ts} stated:
+
+\begin{quotation}
+	\emph{``We hope that our preliminary attempts to begin answering the question will convince the reader, not necessarily that our views are correct, but that the question was and is well worth asking''}
+	\citep[p. 86]{Baddeley:1974ts}
+\end{quotation}
+
+Note that in the first reference, we used \texttt{citet[]\{\}} in order to have brackets just around year and page number; later we used \texttt{citep[]\{\}}.
+
+\subsection{References within the Document} % (fold)
+\label{sub:references_within_the_document}
+
+If you want to refer to your own chapters, figures, tables or the like, you can make use of the \texttt{ref\{\}} command, for example:
+\begin{itemize}
+	\item section~\ref{sec:introduction} on page \pageref{sec:introduction}
+\end{itemize}
+% section citations_and_references (end)

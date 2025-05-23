@@ -1,12 +1,30 @@
-\documentclass[a4paper]{article}
+\documentclass[a4paper,11pt]{report}
 \usepackage[english]{babel}
 \usepackage[utf8x]{inputenc}
-% package for including graphics with figure-environment
+% packages for including graphics with figure-environment
 \usepackage{graphicx}
+\usepackage{float}
+% hyperref for clickable links and PDF metadata
 \usepackage{hyperref}
 % colors for hyperlinks
 % colored borders (false) colored text (true)
-\hypersetup{colorlinks=true,citecolor=black,filecolor=black,linkcolor=black,urlcolor=black}
+\hypersetup{
+    colorlinks=true,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black,
+    pdftitle={Multimodal Trajectory Prediction in Multi-Agent Scenarios},
+    pdfauthor={Jan Duscherer, Lukas Röß},
+    pdfsubject={Seminar: Video Analysis and Object Detection},
+    pdfkeywords={trajectory prediction, multi-agent, video analysis}
+}
+% Additional useful packages
+\usepackage{amsmath,amssymb}  % For mathematical formulas
+\usepackage{booktabs}         % For better looking tables
+\usepackage{listings}         % For code listings
+\usepackage{xcolor}           % For colored text
+\usepackage{microtype}        % For better typography
 
 % package for bibliography
 \usepackage[authoryear,round]{natbib}
@@ -19,11 +37,33 @@
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 \setlength{\headheight}{15pt}
+
+% For proper chapter styling
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{50pt}{40pt}
+
+% Define frontmatter, mainmatter, and backmatter for report class
+\makeatletter
+\newcommand{\frontmatter}{%
+  \cleardoublepage
+  \pagenumbering{roman}}
+\newcommand{\mainmatter}{%
+  \cleardoublepage
+  \pagenumbering{arabic}}
+\newcommand{\backmatter}{%
+  \if@openright
+    \cleardoublepage
+  \else
+    \clearpage
+  \fi}
+\makeatother
 \begin{document}
 	\title{
 	\begin{figure}[!ht]
-		\flushleft
-			\includegraphics[width=0.7\textwidth]{hochschule-muenchen-logo.png}
+		\centering
+			\includegraphics[width=0.7\textwidth]{figures/hm-logo.pdf}
 	\end{figure}
 	\vspace{1cm}
 	\Huge Multimodal Trajectory \\ Prediction in Multi-Agent Scenarios \\
@@ -40,7 +80,7 @@
 
 	% name of the course and module
 	\date{
-	\large Seminar: Viedo Analysis and Object Detection \\
+	\large Seminar: Video Analysis and Object Detection \\
 	\vspace{0.8cm}
 	\large Lecturer: Prof. Dr. Claudius Schnörr \\
 	\vspace{1cm}
@@ -50,109 +90,33 @@
 	\maketitle
 	\setlength{\parindent}{0pt}
 
+\frontmatter
 \vspace{2cm}
-\begin{abstract}
+% Include abstract
+\input{chapters/01_abstract.tex}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\mainmatter
+% Include introduction
+\chapter{Introduction}
+\input{chapters/02_introduction.tex}
+
+% Include literature review
+\chapter{Literature Review}
+\input{chapters/03_literature_review.tex}
+
+\chapter{Conclusion} % (fold)
+\label{ch:conclusion}
 Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+% chapter conclusion (end)
 
-\end{abstract}
-	\newpage
-	\tableofcontents
-	\newpage
-
-\section{Introduction} % (fold)
-\label{sec:introduction}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. \citep{Stanford09} At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% section introduction (end)
-
-\section{Foundations} % (fold)
-\label{sec:foundations}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-
-\section{Section about quotations} % (fold)
-\label{sec:section_about_quotations}
-
-In this section, an example for a literal quotation is given.
-
-\begin{quotation}
-	\emph{``A persona is a rich picture of an imaginary person who represents your core user group.''}
-	\citep{Dix04}
-\end{quotation}
-
-Sometimes you might want to make use of the authors name within the text. Before, we used the command \texttt{citep\{\}}, which creates the brackets around author name and year. You can also use the \texttt{cite} command like this: \\
-
-\cite{Dix04} defined the concept of persona as follows:
-\begin{quotation}
-	\emph{``A persona is a rich picture of an imaginary person who represents your core user group.''}
-	\citep{Dix04}
-\end{quotation}
-
-You may notice, that this increases the readability of the text. \\
-
-According to APA format\footnote{ American Psychological Association (APA)} there are some rules, when and how to include page numbers, when referring to literature.
-
-\begin{quotation}
-	\emph{``Include page numbers for any citations in the text of your paper that include direct quotations or refer to a specific part of the work you are referencing. Direct quotations must include a page number as part of the citation. The quoted material should be followed by a citation in parentheses that gives the author's name, the year in which the work was published, and the page number from which the quoted material appears.''}
-	\citep{Hall}
-\end{quotation}
-
-Check out the example and recommendations of \cite{Hall} on \url{http://www.ehow.com/how_5689799_cite-numbers-apa-format.html}. In \LaTeX you can include the pages very easy. For example: \\
-
-\citet[p. 86]{Baddeley:1974ts} stated:
-
-\begin{quotation}
-	\emph{``We hope that our preliminary attempts to begin answering the question will convince the reader, not necessarily that our views are correct, but that the question was and is well worth asking''}
-	\citep[p. 86]{Baddeley:1974ts}
-\end{quotation}
-
-Note that in the first reference, we used \texttt{citet[]\{\}} in order to have brackets just around year and page number; later we used \texttt{citep[]\{\}}.
-
-% section section_about_quotations (end)
-
-
-\section{Section about references within the document} % (fold)
-\label{sec:section_about_references_within_the_document}
-
-If you want to refer to you own chapters, figures, tables or the like, you can make use of the \texttt{ref\{\}} command, for example:
-\begin{itemize}
-	\item section~\ref{sec:section_about_quotations} on page \pageref{sec:section_about_quotations}
-\end{itemize}
-
-
-
-% section section_about_references_within_the_document (end)
-
-\subsection{Subsection within Foundations} % (fold)
-\label{sub:subsection_within_foundations}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% subsection subsection_within_foundations (end)
-
-\subsection{Another subsection within Foundations} % (fold)
-\label{sub:another_subsection_within_foundations}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% subsection another_subsection_within_foundations (end)
-
-
-% section foundations (end)
-
-\section{Methodology} % (fold)
-\label{sec:methodology}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua \citep{Dix04}. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% section methodology (end)
-
-\section{Results} % (fold)
-\label{sec:results}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua \citep[p. 48]{Baddeley:1974ts}. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% section results (end)
-
-\section{Conclusion} % (fold)
-\label{sec:conclusion}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% section conclusion (end)
-
-
-\newpage
+\backmatter
+% Include appendix
+\input{chapters/a1_appendix.tex}
 
 \bibliographystyle{natdin}
-	\bibliography{references} % expects file "references.bib"
-	\addcontentsline{toc}{section}{References}
+\bibliography{references} % expects file "references.bib"
 \end{document}
