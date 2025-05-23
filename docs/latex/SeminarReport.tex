@@ -1,7 +1,12 @@
 \documentclass[a4paper,11pt]{article}
 \usepackage[english]{babel}
+<<<<<<< HEAD
 \usepackage[utf8x]{inputenc}
 % packages for including graphics with figure-environment
+=======
+\usepackage[utf8]{inputenc}
+% package for including graphics with figure-environment
+>>>>>>> 8cccb8d (created report structure)
 \usepackage{graphicx}
 \usepackage{float}
 % Enhanced hyperref setup with professional colors
@@ -123,6 +128,11 @@
 \usepackage[numbers]{natbib}
 % Enhanced headers and footers
 \usepackage{fancyhdr}
+
+% packages for mathematics
+\usepackage{amsmath}        % For mathematical formulas
+\usepackage{amssymb}        % For mathematical symbols
+
 \pagestyle{fancy}
 \fancyhf{} % clear all header and footer fields
 \fancyhead[L]{Jan Duscherer, Lukas Röß}
@@ -156,10 +166,10 @@
 	\Huge Multimodal Trajectory \\ Prediction in Multi-Agent Scenarios \\
 	}
 
-	\vspace{1cm}
+    \vspace{1cm}
 
-	% if you are the only author, you might use the following
-	% \author{Jan Duscherer, Lukas Röß}
+    \author{\Large \href{mailto:jan.duscherer@hm.edu}{Jan Duscherer} \and \Large \href{mailto:lukas.roess@hm.edu}{Lukas Röß}
+    \vspace{1cm}}
 
 	% Insert here your name and correct mail address
 	\author{\Large \href{mailto:jan.duscherer@hm.edu}{Jan Duscherer} \and \Large \href{mailto:lukas.roess@hm.edu}{Lukas Röß}
