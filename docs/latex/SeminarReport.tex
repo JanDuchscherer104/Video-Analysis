@@ -19,6 +19,7 @@
     pdfsubject={Seminar: Video Analysis and Object Detection},
     pdfkeywords={trajectory prediction, multi-agent, video analysis}
 }
+
 % Additional useful packages
 \usepackage{amsmath,amssymb}  % For mathematical formulas
 \usepackage{booktabs}         % For better looking tables
@@ -93,25 +94,21 @@
 \frontmatter
 \vspace{2cm}
 % Include abstract
-\input{chapters/01_abstract.tex}
 
 \tableofcontents
 \listoffigures
 \listoftables
 
 \mainmatter
-% Include introduction
-\chapter{Introduction}
-\input{chapters/02_introduction.tex}
+%%%%% Include chapters %%%%%
 
-% Include literature review
-\chapter{Literature Review}
-\input{chapters/03_literature_review.tex}
-
-\chapter{Conclusion} % (fold)
-\label{ch:conclusion}
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-% chapter conclusion (end)
+\input{chapters/01_introduction.tex}
+\input{chapters/02_background.tex}
+\input{chapters/03_data_methodology.tex}
+\input{chapters/04_model_architecture.tex}
+\input{chapters/05_experimental_design.tex}
+\input{chapters/06_results_evaluation.tex}
+\input{chapters/07_conclusion.tex}
 
 \backmatter
 % Include appendix

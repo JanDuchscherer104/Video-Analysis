@@ -1,0 +1,37 @@
+
+% 3. Data Corpus and Preprocessing Methodology
+\chapter{Data Corpus and Preprocessing Methodology}
+\label{ch:data_methodology}
+
+\section{Utilized Datasets and Amalgamation Strategy}
+\label{sec:data_datasets}
+Formal characterization of the constituent autonomous driving datasets (ArgoverseV2, NuScenes, Waymo) and the UniTraj fusion methodology.
+
+\section{UniTraj Data Preprocessing Pipeline}
+\label{sec:data_pipeline}
+    \subsection{Agent Instance Selection Protocol}
+    Detailed criteria for agent inclusion (type $\in \{\text{VEH, PED, CYCL}\}$, minimum displacement $\Delta d_{i}$, visibility threshold $\rho_{i}$, Kalman filter-based difficulty estimation). Clarification of the distinction between total agents ($N_{\text{max}}$) and focal agents of interest ($N_{c}$).
+    \subsection{Coordinate System Normalization}
+    Specification of the transformation to an agent-centric reference frame ($p_{t}^{(i),a}=R_{z}(-\theta_{c})(p_{t}^{(i),w}-p_{c})$).
+    \subsection{Feature Vector Assembly and Masking}
+    Formal definition of dynamic agent feature tensors ($X_{d}\in\mathbb{R}^{N_{\text{max}}\times T_{p}\times F_{ap}}$, $M_{d}\in\{0,1\}^{N_{\text{max}}\times T_{p}}$) and static map feature tensors ($X_{s}\in\mathbb{R}^{K\times L\times F_{\text{map}}}$, $M_{s}\in\{0,1\}^{K\times L}$).
+
+\section{Dataset Specification and Feature Semantics}
+\label{sec:data_datasetitem}
+    \subsection{Agent-Centric Sample Generation}
+    Explanation of how multiple \texttt{DatasetItems} are derived from a single scenario.
+    \subsection{Input Tensor Definitions}
+    \texttt{obj\_trajs}, \texttt{map\_polylines}, \texttt{center\_gt\_trajs}.
+    \subsection{Semantic Description of Feature Dimensions}
+    $F_{ap}$ (Agent-State Features): e.g., relative spatiotemporal coordinates, physical dimensions, one-hot encoded object class, one-hot encoded temporal index, heading embedding, relative velocity and acceleration vectors.
+    $F_{\text{map}}$ (Map Element Features): e.g., polyline point coordinates, tangent vectors, one-hot encoded lane types.
+    \subsection{Auxiliary Metadata}
+    Utilization of metadata such as Kalman difficulty and trajectory classification for stratified analysis.
+
+% \section{Data Loading and Batching Strategy}
+% \label{sec:data_loading}
+% Description of the HDF5-based random-access sharding mechanism for efficient, parallelized data ingestion during training.
+
+\section{Challenges in Data Curation and Representational Fidelity within UniTraj}
+\label{sec:data_challenges}
+Addressing data limitations (e.g., absence of BBOX information from AV2, restriction to vehicle types) and potential impacts on model generalizability.

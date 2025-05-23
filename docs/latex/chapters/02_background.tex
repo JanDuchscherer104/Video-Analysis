@@ -1,0 +1,30 @@
+% 2. Theoretical Background and Related Work
+\chapter{Theoretical Background and Related Work}
+\label{ch:background_main}
+
+\section{The Canonical Motion Forecasting Pipeline}
+\label{sec:bg_pipeline_main}
+A formal description of the standard processing cascade in motion forecasting, from raw scene perception and representation (e.g., agent states $X_d$, map features $X_s$) to the generation of trajectory predictions (e.g., mode probabilities $\pi$, trajectory parameters $\mu, b$).
+
+\section{Fundamental Concepts in Trajectory Prediction}
+\label{sec:bg_concepts_main}
+    \subsection{Agent Representation and Dynamics}
+    Formal definitions of agents (e.g., vehicles (VEH), pedestrians (PED), cyclists (CYCL)), their state representations, and the modeling of their interactions.
+    \subsection{Multimodality in Trajectory Space}
+    Articulation of the concept of multiple plausible future paths and the probabilistic nature of agent behavior.
+    \subsection{The Role of Environmental Context}
+    Significance of high-definition (HD) map information and its encoding (e.g., lane polylines, crosswalks) for context-aware predictions.
+
+\section{Review of Salient Trajectory Prediction Models}
+\label{sec:bg_models_main}
+    \subsection{Motion Transformer (MTR)}
+    Exposition of its architectural tenets, including map-awareness, modular transformer design, and intention-conditioned decoding mechanisms.
+    \subsection{(Optional) Comparative Models (e.g., CASPFormer, Smol-LMFormer)}
+    Brief overview of alternative or foundational architectures (e.g., CASPFormer, Smol-LMFormer) and their relevance to the current work.
+
+\section{The UniTraj Framework: A Standardized Research Platform}
+\label{sec:bg_unitraj_main}
+    \subsection{Objectives and Architecture}
+    Description of UniTraj as a framework designed to promote reproducible research through standardized dataset amalgamation (ArgoverseV2, NuScenes, Waymo), unified feature spaces, and integrated training/evaluation workflows (PyTorch Lightning, WandB).
+    \subsection{Benefits, Limitations and Complications}
+    Preliminary discussion of the framework's utility and potential drawbacks for model development and benchmarking.
