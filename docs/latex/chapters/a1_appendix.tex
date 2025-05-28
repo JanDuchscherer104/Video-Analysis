@@ -1,51 +1,200 @@
 % Appendix
 \appendix
-\chapter{Citations and References} % (fold)
-\label{ch:citations_and_references}
+\section{Appendix}
 
-\section{Examples of Citations} % (fold)
-\label{sub:examples_of_citations}
+\subsection{The UniTraj Dataprocessing Pipeline}
 
-In this section, examples for different types of citations are given.
+\textbf{Phase 1: Temporal Window Extraction}
 
-\begin{quotation}
-	\emph{``A persona is a rich picture of an imaginary person who represents your core user group.''}
-	\citep{Dix04}
-\end{quotation}
+The first processing stage extracts \emph{uniformly sampled} windows containing historical context ($T_p$ steps) and future ground truth ($T_f$ steps) from raw agent trajectories. Frequency masking ensures consistent uniform temporal resolution with a sampling interval $\Delta t_{s}$ across datasets, and is combined with the original validity masks to indicate which observations are valid at each timestep. Validity masks indicate missing observations throughout the pipeline.
 
-Sometimes you might want to make use of the authors name within the text. Before, we used the command \texttt{citep\{\}}, which creates the brackets around author name and year. You can also use the \texttt{cite} command like this: \\
+\begin{algorithm}[H]
+\caption{Phase 1: Temporal Window Extraction}
+\label{alg:phase1_temporal}
+\begin{algorithmic}[1]
+\REQUIRE Raw scenario tracks $\mathcal{T}$, time horizons $T_p, T_f$, sampling interval $\Delta t_{s}$
+\ENSURE Temporally windowed agent trajectories with validity masks
+\STATE $T_{total} \leftarrow T_p + T_f$ \COMMENT{Total time window length}
+\STATE $M_{freq} \leftarrow \text{generate\_mask}(T_p - 1, T_{total}, \Delta t_{s})$ \COMMENT{Temporal sampling mask}
+\FOR{each agent track $i \in \mathcal{T}$, timestep $t = 0$ to $T_{total}$}
+    \STATE Extract state vectors: $\boldsymbol{s}_i^{(t)} = [\boldsymbol{p}_i^{(t)}, l_i, w_i, h_i, \theta_i^{(t)}, \boldsymbol{v}_i^{(t)}, \text{valid}_i^{(t)}]^T$
+    \STATE Apply temporal windowing: $\boldsymbol{s}_i \leftarrow \boldsymbol{s}_i[t_{start} : t_{start} + T_{total}]$
+    \STATE Apply frequency masking: $\text{valid}_i^{(t)} \leftarrow \text{valid}_i^{(t)} \cdot M_{freq}[t]$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
 
-\cite{Dix04} defined the concept of persona as follows:
-\begin{quotation}
-	\emph{``A persona is a rich picture of an imaginary person who represents your core user group.''}
-	\citep{Dix04}
-\end{quotation}
+\textbf{Phase 2: Map Feature Processing}
 
-You may notice, that this increases the readability of the text. \\
+This phase converts heterogeneous map primitives (lanes, boundaries, signs, crosswalks) into standardized polyline sequences with consistent geometric and semantic encoding. Polyline interpolation ensures uniform point density, direction vectors encode the local orientation of each segment, and type-based filtering selects relevant map elements for prediction scenarios.
 
-According to APA format\footnote{American Psychological Association (APA)} there are some rules, when and how to include page numbers, when referring to literature.
+\begin{algorithm}[H]
+\caption{Phase 2: Map Feature Processing}
+\label{alg:phase2_map}
+\begin{algorithmic}[1]
+\REQUIRE Raw map features $\mathcal{M}$, allowed polyline types
+\ENSURE Processed polyline collection $\mathcal{P}$
+\STATE $\mathcal{P} \leftarrow \emptyset$ \COMMENT{Initialize polyline collection}
+\FOR{each map feature $f \in \mathcal{M}$}
+    \STATE $polyline\_type \leftarrow \text{classify\_polyline\_type}(f)$
+    \IF{$polyline\_type \in \text{allowed\_types}$}
+        \STATE $\boldsymbol{p}_{polyline} \leftarrow \text{interpolate\_polyline}(f.geometry)$
+        \STATE $\boldsymbol{d}_{polyline} \leftarrow \text{compute\_direction\_vectors}(\boldsymbol{p}_{polyline})$
+        \STATE $\boldsymbol{f}_{polyline} \leftarrow [\boldsymbol{p}_{polyline}, \boldsymbol{d}_{polyline}, polyline\_type]$
+        \STATE $\mathcal{P} \leftarrow \mathcal{P} \cup \{\boldsymbol{f}_{polyline}\}$
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
 
-\begin{quotation}
-	\emph{``Include page numbers for any citations in the text of your paper that include direct quotations or refer to a specific part of the work you are referencing. Direct quotations must include a page number as part of the citation. The quoted material should be followed by a citation in parentheses that gives the author's name, the year in which the work was published, and the page number from which the quoted material appears.''}
-	\citep{Hall}
-\end{quotation}
+\textbf{Phase 3: Agent Selection and Filtering}
 
-Check out the example and recommendations of \cite{Hall} on \url{http://www.ehow.com/how_5689799_cite-numbers-apa-format.html}. In \LaTeX you can include the pages very easy. For example: \\
+This phase applies multiple criteria to identify suitable center agents $\mathcal{A}_{c}$: agents must belong to relevant classes (vehicles, pedestrians, cyclists), maintain $\geq 50\%$ observability, demonstrate meaningful motion ($\geq 2$m movement for vehicles), and be present at prediction time.
 
-\citet[p. 86]{Baddeley:1974ts} stated:
+\begin{algorithm}[H]
+\caption{Phase 3: Agent Selection and Filtering}
+\label{alg:phase3_filtering}
+\begin{algorithmic}[1]
+\REQUIRE Agent tracks $\mathcal{T}$, filtering criteria
+\ENSURE Filtered center agents $\mathcal{A}_{c}$
+\STATE $\mathcal{A}_{c} \leftarrow \emptyset$
+\FOR{each agent $c \in \mathcal{T}$}
+    \STATE Verify type constraint: $\text{type}_{c} \in \{\text{VEH}, \text{PED}, \text{CYC}\}$
+    \STATE Compute validity ratio: $\rho_c = \frac{\sum_{t=0}^{T_p-1} \text{valid}_c^{(t)}}{T_p}$
+    \STATE Compute movement distance: $\Delta d_c = \sum_{t=1}^{T_p-1} \|\boldsymbol{p}_c^{(t)} - \boldsymbol{p}_c^{(t-1)}\|_2$
+    \IF{$\rho_c \geq 0.5 \land \Delta d_c \geq 2.0 \land \text{valid}_c^{(T_p-1)} = 1$}
+        \STATE $\mathcal{A}_{c} \leftarrow \mathcal{A}_{c} \cup \{c\}$
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
 
-\begin{quotation}
-	\emph{``We hope that our preliminary attempts to begin answering the question will convince the reader, not necessarily that our views are correct, but that the question was and is well worth asking''}
-	\citep[p. 86]{Baddeley:1974ts}
-\end{quotation}
+Each suitable center agent $c \in \mathcal{A}_{c}$ will subsequently yield a unique \texttt{DatasetItem} instance, containing all relevant data for that agent's prediction scenario.
 
-Note that in the first reference, we used \texttt{citet[]\{\}} in order to have brackets just around year and page number; later we used \texttt{citep[]\{\}}.
+\textbf{Phase 4: Agent-Centric Coordinate Transformation}
 
-\section{References within the Document} % (fold)
-\label{sub:references_within_the_document}
+This phase transforms all \emph{scene-centric} spatial data to an \emph{agent-centric} coordinate frame by translating to the center agent's current position and rotating to align with its heading.
 
-If you want to refer to your own chapters, figures, tables or the like, you can make use of the \texttt{ref\{\}} command, for example:
-\begin{itemize}
-	\item section~\ref{ch:introduction} on page \pageref{sec:introduction}
-\end{itemize}
-% section citations_and_references (end)
+\begin{algorithm}[H]
+\caption{Phase 4: Agent-Centric Coordinate Transformation}
+\label{alg:phase4_transform}
+\begin{algorithmic}[1]
+\REQUIRE Center agent $c$, all agent tracks, polylines $\mathcal{P}$
+\ENSURE Transformed agent trajectories and polylines in agent-centric frame
+\STATE $\boldsymbol{p}_{c,ref} \leftarrow \boldsymbol{p}_c^{(T_p-1)}$ \COMMENT{Reference position}
+\STATE $\theta_{c,ref} \leftarrow \theta_c^{(T_p-1)}$ \COMMENT{Reference heading}
+\STATE $\mathbf{R} \leftarrow \text{rotation\_matrix}(-\theta_{c,ref})$ \COMMENT{Inverse rotation matrix}
+\FOR{each agent $i$ in scenario}
+    \FOR{$t = 0$ to $T_p - 1$}
+        \STATE $\tilde{\boldsymbol{p}}_i^{(t)} \leftarrow \boldsymbol{p}_i^{(t)} - \boldsymbol{p}_{c,ref}$ \COMMENT{Translate}
+        \STATE $\boldsymbol{p}_i^{(t),a} \leftarrow \mathbf{R} \cdot \tilde{\boldsymbol{p}}_i^{(t)}$ \COMMENT{Rotate positions}
+        \STATE $\boldsymbol{v}_i^{(t),a} \leftarrow \mathbf{R} \cdot \boldsymbol{v}_i^{(t)}$ \COMMENT{Rotate velocities}
+        \STATE $\theta_i^{(t),a} \leftarrow \theta_i^{(t)} - \theta_{c,ref}$ \COMMENT{Normalize heading}
+    \ENDFOR
+\ENDFOR
+\FOR{each polyline $p \in \mathcal{P}$}
+    \STATE Apply same coordinate transformation to polyline points
+    \STATE Filter polylines within spatial range: $\|\boldsymbol{p}_{polyline}\|_2 \leq \text{map\_range}$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+After this transformation, all spatial map features and agent states are expressed in a common reference frame, whose origin is the center agent's position at the last historical timestep $T_p-1$. This yields both \emph{translation} and \emph{rotation} invariance, when perceiving the scene from the center agent's perspective.
+
+\textbf{Phase 5: Feature Vector Assembly}
+
+This processing step constructs the final feature vectors for each agent by combining spatial attributes (position, dimensions), semantic information (object type, roles), temporal one-hot encoding, kinematic properties (velocity, acceleration), and geometric features (sinusoidal heading encoding). Finally, the resulting feature vectors $\boldsymbol{X}_{agent}^{(i,t)}$ are masked by the validity of each agent at each timestep, ensuring that only valid observations contribute to the model input.
+
+\begin{algorithm}[H]
+\caption{Phase 5: Feature Vector Assembly}
+\label{alg:phase5_features}
+\begin{algorithmic}[1]
+\REQUIRE Transformed agent states, center agent $c$
+\ENSURE Assembled feature vectors $\boldsymbol{X}_{agent}^{(i,t)}$
+\FOR{each agent $i$, timestep $t$}
+    \STATE $\boldsymbol{f}_{spatial} \leftarrow [\boldsymbol{p}_i^{(t),a}, l_i, w_i, h_i]$
+    \STATE $\boldsymbol{o}_{type} \leftarrow \text{one\_hot\_encode}(\text{type}_i, \text{is\_center}, \text{is\_sdc})$
+    \STATE $\boldsymbol{e}_{time} \leftarrow \text{temporal\_embedding}(t, T_p)$ \COMMENT{One-hot encoding of timestep}
+    \STATE $\boldsymbol{h}_{embed} \leftarrow [\sin(\theta_i^{(t),a}), \cos(\theta_i^{(t),a})]$
+    \STATE $\boldsymbol{a}_i^{(t)} \leftarrow \frac{\boldsymbol{v}_i^{(t)} - \boldsymbol{v}_i^{(t-1)}}{\Delta t}$ \COMMENT{Compute acceleration}
+    \STATE $\boldsymbol{f}_{kinematic} \leftarrow [\boldsymbol{v}_i^{(t),a}, \boldsymbol{a}_i^{(t)}]$
+    \STATE $\boldsymbol{X}_{agent}^{(i,t)} \leftarrow [\boldsymbol{f}_{spatial}, \boldsymbol{o}_{type}, \boldsymbol{e}_{time}, \boldsymbol{h}_{embed}, \boldsymbol{f}_{kinematic}]$
+    \STATE Apply validity masking: $\boldsymbol{X}_{agent}^{(i,t)} \leftarrow \boldsymbol{X}_{agent}^{(i,t)} \cdot \text{valid}_i^{(t)}$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Phase 6: Proximity-Based Agent Selection}
+
+Another handle to balance computational tractability and expressivity of the data representation is to select a fixed number of agents based on their proximity to the center agent at the last historical timestep $T_p-1$. This phase ranks agents by their distance to the center agent and retains only the closest $N_{max}$ agents. The agent tensor is padded to a fixed size, and a validity mask is created to indicate which agents are present in the padded tensor.
+
+\begin{algorithm}[H]
+\caption{Phase 6: Proximity-Based Agent Selection}
+\label{alg:phase6_proximity}
+\begin{algorithmic}[1]
+\REQUIRE Transformed agent positions, center agent $c$, $N_{max}$
+\ENSURE Padded agent tensor $\boldsymbol{X}_d$, validity mask $\boldsymbol{M}_d$
+\STATE Compute distances: $d_{ic} = \|\boldsymbol{p}_i^{(T_p-1),a}\|_2$ for all agents $i$
+\STATE Sort agents by distance and select top $N_{max}$ closest agents
+\STATE Pad agent tensor to fixed size: $\boldsymbol{X}_d \in \mathbb{R}^{N_{max} \times T_p \times F_{ap}}$
+\STATE Create validity mask: $\boldsymbol{M}_d \in \{0,1\}^{N_{max} \times T_p}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Phase 7: Map Feature Processing}
+
+This phase converts agent-centric map polylines into a fixed-size neural network input through a three-stage process: segmentation based on geometric discontinuities (gaps > 1.0m), uniform resampling to exactly L=20 points per segment, and proximity-based selection of the top K=256 closest segments. Each point is encoded with comprehensive geometric context including position, direction vectors, previous point reference, and semantic type information for robust spatial reasoning.
+
+\begin{algorithm}[H]
+\caption{Phase 7: Map Feature Processing}
+\label{alg:phase7_map_features}
+\begin{algorithmic}[1]
+\REQUIRE Transformed polylines $\mathcal{P}$, center agent $c$, $K_{max} = 256$, $L = 20$
+\ENSURE Padded map tensor $\boldsymbol{X}_s$, validity mask $\boldsymbol{M}_s$
+\STATE Sample points at interval $\Delta s$ and identify breaks where $\|\boldsymbol{p}_i - \boldsymbol{p}_{i-1}\|_2 > d_{break} = 1.0$m
+\STATE Split polylines at break points into segments
+\STATE Chunk each segment into pieces of max $L$ consecutive points
+\STATE Resample/pad each chunk to exactly $L$ points via interpolation
+\STATE Compute segment centers and select top $K_{max}$ closest to agent
+\FOR{each selected segment $(k,l)$}
+    \STATE $\boldsymbol{X}_{map}^{(k,l)} \leftarrow [\boldsymbol{p}_{k,l}^a, \boldsymbol{d}_{k,l}^a, \boldsymbol{p}_{k,l-1}^a, \boldsymbol{o}_{type\_onehot}]$
+\ENDFOR
+\STATE Pad map tensor: $\boldsymbol{X}_s \in \mathbb{R}^{K_{max} \times L \times F_{map}}$ where $F_{map} = 29$
+\STATE Create map validity mask: $\boldsymbol{M}_s \in \{0,1\}^{K_{max} \times L}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Phase 8: Ground Truth Construction}
+
+This phase constructs target trajectory labels for supervised learning by extracting future trajectory segments in the agent-centric coordinate frame. Validity masks handle agents that may disappear before the full prediction horizon, and final valid index computation enables proper loss calculation for variable-length targets during training.
+
+\begin{algorithm}[H]
+\caption{Phase 8: Ground Truth Construction}
+\label{alg:phase8_ground_truth}
+\begin{algorithmic}[1]
+\REQUIRE Center agent $c$, future horizon $T_f$
+\ENSURE Future trajectory targets $\boldsymbol{y}_c$, validity mask $\boldsymbol{M}_{future}$
+\FOR{$t = 0$ to $T_f - 1$}
+    \STATE Extract future trajectory: $\boldsymbol{y}_c^{(t)} = [\boldsymbol{p}_c^{(T_p+t),a}, \boldsymbol{v}_c^{(T_p+t),a}]$
+\ENDFOR
+\STATE Create future validity mask: $\boldsymbol{M}_{future} \in \{0,1\}^{T_f}$
+\STATE Compute final valid index: $idx_{final} = \max\{t : \boldsymbol{M}_{future}[t] = 1\}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Phase 9: DatasetItem Assembly}
+
+This phase assembles all processed components into final DatasetItem instances for model consumption. It performs data validation, applies optional attribute masking (e.g., zeroing z-coordinates), ensures float32 compatibility, and creates structured objects. The assembly includes error handling for robustness and converts from batch processing back to individual training examples.
+
+\begin{algorithm}[H]
+\caption{Phase 9: DatasetItem Assembly}
+\label{alg:phase9_assembly}
+\begin{algorithmic}[1]
+\REQUIRE All processed tensors and masks
+\ENSURE Final \texttt{DatasetItem} instance
+\STATE Create \texttt{DatasetItem} instance with all processed tensors
+\STATE Apply attribute masking (optional): zero out z-axis, size, velocity, etc.
+\STATE Convert data types to float32
+\RETURN \texttt{DatasetItem} instance
+\end{algorithmic}
+\end{algorithm}
