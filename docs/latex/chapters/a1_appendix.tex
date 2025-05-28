@@ -1,8 +1,8 @@
 % Appendix
 \appendix
-\section{Appendix}
+\section*{Appendix}
 
-\subsection{The UniTraj Dataprocessing Pipeline}
+\subsection*{The UniTraj Dataprocessing Pipeline}
 
 \textbf{Phase 1: Temporal Window Extraction}
 
@@ -143,7 +143,7 @@ Another handle to balance computational tractability and expressivity of the dat
 
 \textbf{Phase 7: Map Feature Processing}
 
-This phase converts agent-centric map polylines into a fixed-size neural network input through a three-stage process: segmentation based on geometric discontinuities (gaps > 1.0m), uniform resampling to exactly L=20 points per segment, and proximity-based selection of the top K=256 closest segments. Each point is encoded with comprehensive geometric context including position, direction vectors, previous point reference, and semantic type information for robust spatial reasoning.
+The agent-centric map polylines are converted into a fixed-size tensor representations in a three-stage process: segmentation based on geometric discontinuities (gaps $>$ 1.0m), uniform resampling to exactly $L$ points per segment, and proximity-based selection of the top $K$ segments closest to the center agent. Each point is encoded with geometric context including position $\boldsymbol{p}_{k,l}^a$, direction vectors $\boldsymbol{d}_{k,l}^a$, previous point reference $\boldsymbol{p}_{k,l-1}^a$, and semantic type information $\boldsymbol{o}_{type\_onehot}$. The resulting map tensor $\boldsymbol{X}_s$ is padded to a fixed size of $K_{max}$ segments, each with $L$ points, and a validity mask $\boldsymbol{M}_s$ is created to indicate which segments are actually present.
 
 \begin{algorithm}[H]
 \caption{Phase 7: Map Feature Processing}
@@ -154,7 +154,7 @@ This phase converts agent-centric map polylines into a fixed-size neural network
 \STATE Sample points at interval $\Delta s$ and identify breaks where $\|\boldsymbol{p}_i - \boldsymbol{p}_{i-1}\|_2 > d_{break} = 1.0$m
 \STATE Split polylines at break points into segments
 \STATE Chunk each segment into pieces of max $L$ consecutive points
-\STATE Resample/pad each chunk to exactly $L$ points via interpolation
+\STATE Resample each chunk to exactly $L$ points via interpolation
 \STATE Compute segment centers and select top $K_{max}$ closest to agent
 \FOR{each selected segment $(k,l)$}
     \STATE $\boldsymbol{X}_{map}^{(k,l)} \leftarrow [\boldsymbol{p}_{k,l}^a, \boldsymbol{d}_{k,l}^a, \boldsymbol{p}_{k,l-1}^a, \boldsymbol{o}_{type\_onehot}]$
@@ -166,7 +166,7 @@ This phase converts agent-centric map polylines into a fixed-size neural network
 
 \textbf{Phase 8: Ground Truth Construction}
 
-This phase constructs target trajectory labels for supervised learning by extracting future trajectory segments in the agent-centric coordinate frame. Validity masks handle agents that may disappear before the full prediction horizon, and final valid index computation enables proper loss calculation for variable-length targets during training.
+The ground truth's are constructed by extracting future trajectory segments for the center agent in the agent-centric coordinate frame. This phase handles variable-length targets by creating a validity mask that indicates which future timesteps are valid, and computes the final valid index to ensure proper loss calculation during training. The future trajectory segments are extracted from the last historical timestep $T_p$ to the end of the prediction horizon $T_f$.
 
 \begin{algorithm}[H]
 \caption{Phase 8: Ground Truth Construction}
@@ -184,8 +184,7 @@ This phase constructs target trajectory labels for supervised learning by extrac
 
 \textbf{Phase 9: DatasetItem Assembly}
 
-This phase assembles all processed components into final DatasetItem instances for model consumption. It performs data validation, applies optional attribute masking (e.g., zeroing z-coordinates), ensures float32 compatibility, and creates structured objects. The assembly includes error handling for robustness and converts from batch processing back to individual training examples.
-
+The final processing phase assembles all processed components into final \texttt{DatasetItem} instances. It performs data validation, applies optional attribute masking (e.g., zeroing z-coordinates or object bounding boxes), ensures float32 compatibility, and finally creates structured \texttt{DatasetItem} instances.
 \begin{algorithm}[H]
 \caption{Phase 9: DatasetItem Assembly}
 \label{alg:phase9_assembly}
@@ -194,7 +193,9 @@ This phase assembles all processed components into final DatasetItem instances f
 \ENSURE Final \texttt{DatasetItem} instance
 \STATE Create \texttt{DatasetItem} instance with all processed tensors
 \STATE Apply attribute masking (optional): zero out z-axis, size, velocity, etc.
-\STATE Convert data types to float32
+\STATE Convert floating data types to float32
 \RETURN \texttt{DatasetItem} instance
 \end{algorithmic}
 \end{algorithm}
+
+The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training and evaluation. They include all agent tensors, map tensors, ground truth labels, and validity masks as \texttt{numpy} arrays in various formats for easy handling at different training, evaluation or visualization stages.
