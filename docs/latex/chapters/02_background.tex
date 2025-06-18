@@ -23,7 +23,8 @@ This section provides a brief survey of salient forecasting architectures, from 
 \subsection{Rasterized Scene Representations}
 Early approaches rasterized scenes into bird's-eye-view (BEV) images, applying CNNs to learn scene-representations~\cite{cui2019multimodal,chai2019multipath}. Static context is encoded as \(\mathbf{I}_s \in \mathbb{R}^{C \times H \times W}\), while dynamic elements are expressed as stacks over \(T_p\) timesteps.
 
-\textbf{CASPNet}~\cite{caspnetSchäfer2022} processes rasterised \emph{dynamic} (BEV trajectory stack) and \emph{static} (HD-map RGB) inputs through two \emph{symmetric} encoder pyramids. The trajectory branch is a four-stage CNN down-sampling cascade, whereas the map branch swaps the first two \(3{\times}3\) kernels for \emph{Gabor CNN blocks}~\cite{jiang2017gabor} to provide steerable orientation-scale filters well aligned with elongated lane markings. At every resolution level~\(\ell\!\in\!\{0,\dots,3\}\) a ConvLSTM cell integrates the \(T_p\) history, producing multi-scale feature maps \(F_\ell\!\in\!\mathbb{R}^{C_\ell\times H_\ell\times W_\ell}\). The encoder therefore outputs the \textbf{scene representation}
+\textbf{CASPNet}~\cite{caspnetSchäfer2022} processes rasterized \emph{dynamic} (BEV trajectory stack) and \emph{static} (RGB HD map) inputs through two symmetric encoder pyramids. The trajectory branch is a four-stage CNN down-sampling cascade, whereas the map encoder branch employs \emph{Gabor CNN blocks} in place of the first two regular convolutional filters. These Gabor blocks learn steerable filters parametrized by orientation, scale, and frequency, providing enhanced sensitivity to elongated lane markings and improving generalization to geometric ~\cite{Luan2018GCNN}. At every resolution level~\( \ell \in \{0, \ldots, 3 \} \) a ConvLSTM cell integrates the series of \( T_p \) feature maps, producing time-aggregated feature maps which are subsequently concatenated with their static counterparts.
+ The encoder therefore outputs the multi-scale scene representation:
 \begin{equation}
 \label{eq:caspnet_scene_repr}
 \mathcal{F}
@@ -37,7 +38,7 @@ which is fed into the decoder via \emph{lateral skip connections}, heavily resem
 
 The grid-based decoder employs residual up-sampling blocks (similar to a U-Net decoder) to predict joint occupancy and offset heat-maps for every agent, preserving constant inference cost regardless of agent. Finally, a ConvLSTM ``unfolds'' the up-scaled heat-maps onto \( T_f \) future time steps.
 
-\textbf{CASPFormer}~\cite{caspformerYadav2024} retains CASPNet's multi-scale CNN backbone to encode rasterized BEV inputs into hierarchical feature maps $\mathcal{F} = \{F_0, F_1, F_2, F_3\}$. These are flattened into tokens at each scale and enriched with 2D sinusoidal position embeddings before being passed into a \textbf{Deformable Self-Attention} layer that fuses multi-scale context efficiently at $\mathcal{O}(N)$ complexity~\cite{zhu2021deformabledetr}. The resulting fused tokens serve as the keys and values in the decoder.
+\textbf{CASPFormer}~\cite{caspformerYadav2024} retains CASPNet's multi-scale CNN backbone to encode rasterized BEV inputs into hierarchical feature maps. These are flattened into tokens at each scale and enriched with 2D sinusoidal position encodings before being passed into a \textbf{Deformable Self-Attention} layer that fuses multi-scale context efficiently at $\mathcal{O}(N)$ complexity~\cite{zhu2021deformabledetr}. The resulting fused tokens serve as the keys and values in the decoder.
 
 The decoder recurrently predicts future trajectories via a \textbf{Deformable Cross-Attention} module. At each timestep, it uses two sets of learnable queries:
 \begin{enumerate}
@@ -45,7 +46,7 @@ The decoder recurrently predicts future trajectories via a \textbf{Deformable Cr
     \item \emph{mode queries} that allow the model to specialize into $M$ diverse behavior patterns and combat mode collapse.
 \end{enumerate}
 
-These are summed element-wise to form the final decoder query which is used to predict both the attention weights and the sampling offsets for deformable attention, relative to a \emph{reference anchor point} (initially the ego pose).
+These are summed element-wise to form the final decoder query which is used to compute both the attention weights and the sampling offsets for deformable attention, relative to a \emph{reference anchor point} (initially the ego pose).
 
 The decoder updates the reference point in each iteration using the trajectory output of the previous step. The final trajectory positions $\boldsymbol{\mu}_t = (x, y)$ are generated through a shared \textbf{MLP head} that maps decoder outputs Cartesian coordinates as well \emph{mode logits} $\pi_k$ and an uncertainty measure \( b_t \) for each mode \( k \in \{1, \ldots, M\} \). The final multi-modal trajectory distribution is modeled as a mixture of Laplacian distributions:
 \begin{equation}
