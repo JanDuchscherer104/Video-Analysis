@@ -1,0 +1,273 @@
+\chapter{The Query-Centric Paradigm}
+\label{chap:query_centric_paradigm}
+
+\section{Motivation and Background}
+Trajectory prediction for autonomous driving requires encoding both dynamic agents (vehicles, pedestrians) and static context (road lanes, traffic elements) into a representation suitable for forecasting future motion. Traditionally, the \emph{agent-centric} encoding scheme is used, where all coordinates are normalized with respect to a single reference agent (the prediction target). This normalizes the target agent to the origin and aligns its heading with the $x$-axis, simplifying learning for that agent. However, this approach has key drawbacks:
+\begin{itemize}
+    \item \textbf{Redundant computation:} Each time the prediction target changes (or time advances), the entire scene must be re-normalized and re-encoded.
+    \item \textbf{Broken symmetry:} The encoding is tied to a particular agent, breaking permutation symmetry and complicating joint or multi-agent prediction.
+\end{itemize}
+
+Zhou et al.~\cite{Zhou2023QueryCentric} proposed the groundbreaking \textbf{query-centric paradigm}, where \emph{each scene element is encoded in its own local coordinate frame}. Every agent and every map element defines a ``query'' with its own origin and orientation, and features are expressed relative to that frame. This paradigm shift, implemented in QCNet and later extended in QCNeXt~\cite{qcnextZhou2023}, enables:
+\begin{itemize}
+    \item \textbf{Efficient reuse:} Encodings are independent of prediction target and can be shared across agents and time steps.
+    \item \textbf{Permutation symmetry:} No agent is privileged; all elements are represented equally.
+    \item \textbf{Multi-agent and streaming:} The same scene encoding can be used for parallel prediction of all agents and for streaming updates.
+    \item \textbf{Joint prediction capability:} Unlike marginal prediction approaches, query-centric models can effectively capture future social interactions among agents.
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+% (Placeholder) Illustration of agent-centric vs. query-centric reference frames in a driving scene.
+\caption[Agent-centric vs. Query-centric Frames]{\textbf{Agent-centric vs. Query-centric representations.} \emph{Left:} Agent-centric scheme with the target agent at the origin and all others transformed. \emph{Right:} Query-centric scheme where each agent and map element uses its own local frame.}
+\label{fig:agent_vs_query}
+\end{figure}
+
+\section{Coordinate Frames and Transformations}
+\subsection{Agent-Centric Coordinate Transformation}
+In the agent-centric paradigm, if $(x_{\text{ref}}, y_{\text{ref}}, \theta_{\text{ref}})$ is the reference agent's pose, any global point $(x, y)$ is transformed via:
+\begin{equation}
+\label{eq:agent_centric_transform}
+\begin{pmatrix}
+    x_{\text{rel}} \\ y_{\text{rel}}
+\end{pmatrix}
+=
+\begin{pmatrix}
+    \cos\theta_{\text{ref}} & \sin\theta_{\text{ref}} \\
+    -\sin\theta_{\text{ref}} & \cos\theta_{\text{ref}}
+\end{pmatrix}
+\begin{pmatrix}
+    x - x_{\text{ref}} \\ y - y_{\text{ref}}
+\end{pmatrix}
+\end{equation}
+so that the reference agent is at $(0,0)$ and faces the $+x$ axis.
+
+\subsection{Query-Centric Transformation}
+In the query-centric paradigm, each element $e$ at $(x_e, y_e, \theta_e)$ defines its own frame. Any point $(x, y)$ is transformed via:
+\begin{equation}
+\label{eq:query_frame_transform}
+\begin{pmatrix}
+    x' \\ y'
+\end{pmatrix}
+=
+\begin{pmatrix}
+    \cos\theta_e & \sin\theta_e \\
+    -\sin\theta_e & \cos\theta_e
+\end{pmatrix}
+\begin{pmatrix}
+    x - x_e \\ y - y_e
+\end{pmatrix}
+\end{equation}
+so that $e$ is at $(0,0)$ and oriented along $+x'$.
+
+Each element is encoded in its own frame, and relative relationships between elements are preserved by computing relative positional embeddings during attention computation.
+
+\section{Geometric Deep Learning Symmetries}
+The query-centric paradigm is motivated by fundamental symmetries from geometric deep learning~\cite{bronstein2021geometric}:
+\begin{itemize}
+    \item \textbf{Permutation symmetry:} The set of agents and map elements is unordered. The model should be equivariant to permutations of the input.
+    \item \textbf{$\SE(2)$ symmetry:} The laws of physics are invariant under translation and rotation. The model should be equivariant to global $\SE(2)$ transformations.
+    \item \textbf{Temporal symmetry:} The encoding should be invariant to shifts in the time origin (for streaming).
+\end{itemize}
+
+Query-centric encoding naturally respects these symmetries as demonstrated in QCNet~\cite{Zhou2023QueryCentric}:
+\begin{itemize}
+    \item Each element is encoded independently, supporting permutation-equivariant processing through Transformer architectures.
+    \item Local frames remove dependence on global position/orientation, so encodings are invariant to global $\SE(2)$ transforms.
+    \item Static elements (map lanes) need not be re-encoded over time; dynamic elements can be incrementally updated, enabling streaming processing.
+\end{itemize}
+
+This approach follows the philosophy of \emph{relative spacetime}, where the model is equipped with roto-translation invariance in the space dimension and translation invariance in the time dimension. These invariance properties not only enable accurate multi-agent forecasting fundamentally but also empower the encoder with streaming processing capabilities~\cite{qcnextZhou2023}.
+
+\section{Polar Encodings and Relative Descriptors}
+\subsection{Static Map Segments}
+Each lane polyline is broken into straight segments between consecutive points $(x_s, y_s)$ and $(x_e, y_e)$. The segment's orientation is
+\begin{equation}
+\phi = \arctan2(y_e - y_s,\, x_e - x_s)
+\end{equation}
+and its length is
+\begin{equation}
+L = \sqrt{(x_e - x_s)^2 + (y_e - y_s)^2}
+\end{equation}
+In the segment's own frame (origin at $(x_s, y_s)$, $x'$ axis along the segment), the start is at $(0,0)$ and the end is at $(L,0)$. The geometric feature for the segment is simply $L$ (plus semantic attributes).
+
+\subsection{Dynamic Agent Motions}
+For each agent $j$ at time $t$, with pose $(x_{j,t}, y_{j,t}, \theta_{j,t})$, the displacement to $t+1$ is
+\begin{equation}
+\Delta x_{j,t} = x_{j,t+1} - x_{j,t}, \qquad \Delta y_{j,t} = y_{j,t+1} - y_{j,t}
+\end{equation}
+Rotated into the agent's frame at $t$:
+\begin{equation}
+\begin{pmatrix}
+    \Delta x'_{j,t} \\ \Delta y'_{j,t}
+\end{pmatrix}
+=
+\begin{pmatrix}
+    \cos\theta_{j,t} & \sin\theta_{j,t} \\
+    -\sin\theta_{j,t} & \cos\theta_{j,t}
+\end{pmatrix}
+\begin{pmatrix}
+    \Delta x_{j,t} \\ \Delta y_{j,t}
+\end{pmatrix}
+\end{equation}
+The polar encoding is:
+\begin{align}
+l_{j,t} &= \sqrt{(\Delta x'_{j,t})^2 + (\Delta y'_{j,t})^2} \\
+\delta\theta_{j,t} &= \arctan2(\Delta y'_{j,t},\, \Delta x'_{j,t})
+\end{align}
+where $l_{j,t}$ is the motion length (distance traveled) and $\delta\theta_{j,t}$ is the change in direction relative to heading.
+
+\subsection{Relative Positional Descriptors}
+To relate elements $i$ and $j$, QCNet~\cite{Zhou2023QueryCentric} defines the following relative descriptor:
+\begin{equation}
+\label{eq:relative_descriptor_v2}
+d_{j \to i} = \left(
+    \left\| p_j - p_i \right\|,\;
+    \arctan2(y_j - y_i,\, x_j - x_i) - \theta_i,\;
+    \theta_j - \theta_i,\;
+    t_j - t_i
+\right)
+\end{equation}
+where $p_i = (x_i, y_i)$, $\theta_i$ is orientation, $t_i$ is timestamp. This encodes:
+\begin{itemize}
+    \item Euclidean distance between $i$ and $j$
+    \item Relative direction from $i$ to $j$ in $i$'s frame
+    \item Orientation difference
+    \item Time difference
+\end{itemize}
+These are typically embedded using Fourier features and MLPs to produce relative embedding vectors used in attention layers, specifically in the key/value elements that are concatenated with spatial-temporal positional embeddings relative to the query elements before performing QKV attention.
+
+\begin{figure}[t]
+\centering
+% (Placeholder) Diagram of query-centric encoding pipeline.
+\caption[Query-Centric Encoding Pipeline]{\textbf{Query-centric encoding pipeline.} Raw scene data is transformed into local frames for each element, embedded as features, and paired with relative descriptors for use in a permutation- and $\SE(2)$-equivariant encoder.}
+\label{fig:query_pipeline}
+\end{figure}
+
+\section{QCNet Architecture and Multi-Agent Extensions}
+
+\subsection{Factorized Attention-Based Scene Encoder}
+The query-centric scene encoder in QCNet~\cite{Zhou2023QueryCentric} employs a factorized attention-based Transformer that captures temporal dependencies, agent-map interactions, and social interactions. The architecture follows a systematic attention pattern:
+
+\begin{enumerate}
+    \item \textbf{Map-Map Attention:} Captures spatial relationships between static map elements (lanes, crosswalks, etc.)
+    \item \textbf{Temporal Attention:} Models temporal dependencies within each agent's trajectory history
+    \item \textbf{Agent-Map Attention:} Encodes interactions between dynamic agents and static map context
+    \item \textbf{Social Attention:} Captures social interactions among agents at historical time steps
+\end{enumerate}
+
+The encoder produces map encodings of shape $[M, D]$ and agent encodings of shape $[A, T, D]$, where $M$, $A$, $T$, $D$ are the numbers of map polygons, modeled agents, historical time steps, and hidden units, respectively.
+
+\subsection{From Marginal to Joint Prediction: QCNeXt}
+While QCNet excels at marginal trajectory prediction (predicting each agent independently), real-world driving scenarios require modeling future social interactions. QCNeXt~\cite{qcnextZhou2023} extends the query-centric paradigm to joint multi-agent trajectory prediction through several key innovations:
+
+\subsubsection{Multi-Agent DETR-Like Decoder}
+QCNeXt introduces a novel decoder architecture that can capture future social interactions among agents:
+
+\begin{itemize}
+    \item \textbf{Anchor-Free Trajectory Proposal:} Uses $K$ randomly initialized embeddings, each repeated $A$ times to form a tensor of shape $[K, A, D]$, where each row represents one of the $K$ joint futures.
+    \item \textbf{Mode2Time Cross-Attention:} Updates embeddings to assign responsibility for predicting each agent.
+    \item \textbf{Mode2Map Cross-Attention:} Incorporates neighboring map information.
+    \item \textbf{Row-wise Self-Attention:} Models social interactions among agents within each joint scene.
+    \item \textbf{Column-wise Self-Attention:} Enables communication between the $K$ joint scenes.
+\end{itemize}
+
+\subsubsection{Scene-Level Scoring}
+Unlike agent-level scoring in marginal prediction, QCNeXt employs scene-level confidence scoring using attentive pooling to summarize all target agents' mode embeddings into a single scene embedding, acknowledging that some agents may have uninteresting behavior (e.g., remaining static).
+
+\subsubsection{Joint Distribution Modeling}
+The joint future trajectory distribution is parameterized as a mixture of Laplace distributions:
+\begin{equation}
+\sum_{k=1}^K \pi_{k} \prod_{i=1}^{A'} \prod_{t=1}^{T'} f\left(\mathbf{p}_i^{t,x} \mid \boldsymbol{\mu}_{i,k}^{t,x}, \mathbf{b}_{i,k}^{t,x}\right) f\left(\mathbf{p}_i^{t,y} \mid \boldsymbol{\mu}_{i,k}^{t,y}, \mathbf{b}_{i,k}^{t,y}\right)
+\end{equation}
+where $K$ is the number of modes, $A'$ is the number of target agents, and $T'$ is the prediction horizon.
+
+\subsection{Performance Breakthrough}
+Remarkably, QCNeXt demonstrated that a joint prediction model can outperform marginal prediction models even on marginal metrics, challenging the previous belief that joint prediction was inherently more difficult. This breakthrough won the championship of the Argoverse Challenge at CVPR 2023 Workshop on Autonomous Driving, achieving state-of-the-art results on the Argoverse 2 multi-agent motion forecasting benchmark~\cite{av2Wilson2023}.
+
+\section{Algorithm: Query-Centric Conversion}
+\subsection*{Conversion from DatasetItem to QCDatasetItem}
+We describe the process for converting a standard dataset item (with global or agent-centric coordinates) into a query-centric dataset item. The pseudocode uses the following structures:
+\begin{itemize}
+    \item \texttt{MapPolylines}: List of polylines (each a sequence of global points)
+    \item \texttt{AgentTrajectories}: List of agents, each with a sequence of $(x, y, \theta)$ states over time
+    \item \texttt{QCDatasetItem}: Holds two lists: lane segments (with query-centric features) and agent motion vectors (with query-centric features)
+\end{itemize}
+
+\begin{algorithm}[h!]
+\caption{Convert DatasetItem (global/agent-centric) to QCDatasetItem (query-centric)}
+\label{alg:qc_conversion}
+\begin{algorithmic}[1]
+\REQUIRE \texttt{item} = (\texttt{MapPolylines}, \texttt{AgentTrajectories}, \texttt{TargetAgents})
+\ENSURE \texttt{qc\_item} = (\texttt{SegmentList}, \texttt{MotionList})
+
+\COMMENT{Process static context (map lanes)}
+\STATE Initialize empty \texttt{SegmentList}
+\FOR{polyline $P$ in \texttt{item.MapPolylines}}
+    \FOR{consecutive pair $(p_k, p_{k+1})$ in $P$}
+        \STATE $(x_s, y_s) \gets p_k$; $(x_e, y_e) \gets p_{k+1}$
+        \STATE $\Delta x \gets x_e - x_s$; $\Delta y \gets y_e - y_s$
+        \STATE $\phi \gets \arctan2(\Delta y, \Delta x)$
+        \STATE $L \gets \sqrt{\Delta x^2 + \Delta y^2}$
+        \STATE $m_{\text{seg}} \gets [L,\; \text{lane\_type}(P),\; \text{other attributes}]$
+        \STATE Append $m_{\text{seg}}$ to \texttt{SegmentList}
+    \ENDFOR
+\ENDFOR
+
+\COMMENT{Process dynamic context (agents)}
+\STATE Initialize empty \texttt{MotionList}
+\FOR{agent $j$ in \texttt{item.AgentTrajectories}}
+    \STATE Extract trajectory states $(x_{j,t}, y_{j,t}, \theta_{j,t})$ for $t = t_0 - T_p$ to $t_0$
+    \FOR{$t = t_0 - T_p$ to $t_0 - 1$}
+        \STATE $\Delta x \gets x_{j,t+1} - x_{j,t}$; $\Delta y \gets y_{j,t+1} - y_{j,t}$
+        \STATE $\psi \gets \theta_{j,t}$
+        \COMMENT{Rotate displacement into agent's local frame}
+        \STATE $\begin{pmatrix}\Delta x',\, \Delta y'\end{pmatrix} \gets
+        \begin{pmatrix}
+            \cos\psi & \sin\psi \\
+            -\sin\psi & \cos\psi
+        \end{pmatrix}
+        \begin{pmatrix}
+            \Delta x \\ \Delta y
+        \end{pmatrix}$
+        \STATE $l \gets \sqrt{(\Delta x')^2 + (\Delta y')^2}$
+        \STATE $\delta\theta \gets \arctan2(\Delta y',\, \Delta x')$
+        \STATE $m_{\text{mot}} \gets [l,\, \delta\theta,\, \text{agent\_type}(j),\, \text{other attributes}]$
+        \STATE Append $m_{\text{mot}}$ to \texttt{MotionList}
+    \ENDFOR
+\ENDFOR
+\RETURN \texttt{qc\_item} = (\texttt{SegmentList}, \texttt{MotionList})
+\end{algorithmic}
+\end{algorithm}
+
+\subsection*{Algorithm Details}
+The static context loop iterates over each polyline and its segments, computing length and attributes for each segment in its own local coordinate frame. The dynamic context loop processes each agent's historical trajectory, computes motion vectors, and rotates them into the agent's heading frame, producing polar features as described in QCNet~\cite{Zhou2023QueryCentric}. Additional attributes such as agent type, velocity, and acceleration may be concatenated to enhance the representation.
+
+Optionally, the origin and orientation for each element can be stored for later reconstruction of global coordinates during inference. Relative descriptors $d_{j \to i}$ (Eq.~\eqref{eq:relative_descriptor_v2}) are typically computed on-the-fly during model forward passes and embedded using learnable functions, not stored in the dataset.
+
+This conversion process is fundamental to enabling the query-centric paradigm's benefits, including permutation equivariance, streaming processing capabilities, and efficient multi-agent reasoning as demonstrated in both QCNet~\cite{Zhou2023QueryCentric} and its joint prediction extension QCNeXt~\cite{qcnextZhou2023}.
+
+\section{Discussion: Expressiveness and Equivariance}
+Query-centric encoding achieves several important properties that make it superior to traditional agent-centric approaches:
+
+\begin{itemize}
+    \item \textbf{Expressiveness:} Each element's representation is a learnable summary of its local geometry and context. The model can capture complex interactions via attention over both content and relative pose.
+    \item \textbf{Permutation- and $\SE(2)$-equivariance:} The encoding respects symmetries of the scene, enabling generalization and reducing the need for data augmentation.
+    \item \textbf{Inductive bias and model simplicity:} By removing dependence on global coordinates, standard architectures (MLPs, Transformers) suffice, without specialized equivariant layers.
+    \item \textbf{Multi-agent and streaming capabilities:} All agents and map elements share a common latent space, supporting joint reasoning and efficient updates.
+    \item \textbf{Scalability:} The paradigm enables training on large-scale datasets like Argoverse 2~\cite{av2Wilson2023}, Waymo Open Motion Dataset~\cite{wmodSun2020}, and ScenarioNet~\cite{scenarionetLi2023}.
+\end{itemize}
+
+The success of query-centric models has influenced subsequent trajectory prediction architectures, including UniTraj~\cite{unitrajFeng2024} and LMFormer~\cite{lmformerYadav2025}, demonstrating the paradigm's broad applicability and impact on the field.
+
+\section{Integration with Modern Architectures}
+The query-centric paradigm has been successfully integrated with various modern deep learning architectures:
+
+\begin{itemize}
+    \item \textbf{Transformer-based models:} QCNet and QCNeXt demonstrate the natural synergy between query-centric encoding and attention mechanisms.
+    \item \textbf{Graph neural networks:} The paradigm can be adapted for GNN-based trajectory prediction by treating each element's local frame as a node feature.
+    \item \textbf{Diffusion models:} Recent work has explored combining query-centric representations with diffusion-based trajectory generation.
+    \item \textbf{Multi-modal architectures:} The encoding scheme facilitates integration with camera and LiDAR data through consistent spatial representations.
+\end{itemize}
+
+In summary, the query-centric paradigm provides a principled, symmetry-respecting, and efficient foundation for trajectory forecasting. The combination of local polar encodings and relative descriptors yields a flexible and lossless representation, underpinning the success of recent state-of-the-art models. This approach has fundamentally changed how the community thinks about scene representation for autonomous driving, moving from agent-centric to truly democratic, multi-agent reasoning systems.
