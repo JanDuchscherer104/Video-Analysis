@@ -2,713 +2,140 @@
 \chapter{Model Architecture and Functional Decomposition}
 \label{ch:model_architecture}
 
-\section{Overview and Core Principles MTR}
-\label{sec:overview}
+\section{MTR Architectural Structure}
+\label{sec:model_mtr_architecture}
 
-The Motion Transformer (MTR) framework represents a significant advancement in predicting the future movements of traffic participants, a critical capability for the safe and efficient operation of autonomous vehicles. This section outlines the fundamental problem MTR addresses, its central theoretical contributions, and a high-level overview of its operational workflow.
+The Motion Transformer (MTR) framework provides a unified approach to multimodal motion prediction, a critical task for autonomous systems. Its central principle is to model motion prediction as a joint optimization of two tasks: \textbf{global intention localization} and \textbf{local movement refinement}. In simpler terms, the model first identifies a diverse set of high-level goals or destinations for an agent and then fine-tunes the precise paths to reach those goals.
 
-\subsection{The Fundamental Problem and Key Challenges}
-\label{subsec:problem_challenges}
-
-MTR is designed to tackle the complex task of \textbf{multimodal motion prediction}. This involves forecasting not just a single likely future path for an agent (e.g., vehicle, pedestrian, cyclist), but a diverse set of plausible future trajectories, each with an associated likelihood \cite{Shi2022MTR, Shi2022MTR_A}. This capability is paramount for autonomous systems, enabling them to anticipate potential behaviors of surrounding entities and make proactive, safe decisions.
-
-Several key challenges inherent in motion prediction are addressed by MTR:
+The architecture consists of two main stages:
 \begin{enumerate}
-    \item \textbf{Inherently Multimodal Behaviors:} Traffic agents rarely have a single deterministic future. They can choose to turn, continue straight, change lanes, accelerate, or decelerate, leading to a multitude of possible future paths. Accurately capturing this inherent multimodality is a primary difficulty \cite{Shi2022MTR, Shi2022MTR_A}.
-    \item \textbf{Complex Scene Environments:} An agent's future motion is heavily influenced by the surrounding environment. This includes the static road layout (lanes, intersections, stop signs), traffic rules, and the dynamic states and interactions of other agents in the vicinity \cite{Shi2022MTR, Shi2022MTR_A}. Modeling these multifaceted interactions is crucial.
-    \item \textbf{Limitations of Prior Approaches:}
-    \begin{itemize}
-        \item \textbf{Goal-based methods:} These methods typically sample a dense set of potential goal points in the scene and predict trajectories leading to these goals. While they can capture multimodality, they often suffer from high computational and memory overheads, as their performance is contingent on the density of these candidate goals \cite{Shi2022MTR, Shi2022MTR_A}.
-        \item \textbf{Direct-regression methods:} These approaches attempt to directly regress a set of future trajectories from encoded scene context and agent history. However, they can struggle with slow convergence, especially when various motion modes must be learned from the same undifferentiated feature representation without explicit spatial priors. They may also exhibit a bias towards predicting more frequent motion modes observed during training, potentially missing rarer but critical behaviors \cite{Shi2022MTR, Shi2022MTR_A}.
-    \end{itemize}
+    \item \textbf{Scene Context Encoding:} An encoder processes historical data from all agents and map features to build a rich understanding of the scene, including interactions between elements.
+    \item \textbf{Prediction Generation:} A decoder uses a special set of "Motion Queries" to propose and refine multiple future trajectories for an agent of interest based on the encoded scene context.
 \end{enumerate}
 
-MTR endeavors to synthesize the strengths of both paradigms. It introduces a concise set of learnable "motion query pairs" that inject spatial priors, akin to goal-based methods, yet allow for the adaptive and refined generation of trajectories, characteristic of direct-regression techniques \cite{Shi2022MTR, Shi2022MTR_A}. The effectiveness of these motion query pairs, particularly the static intention points, is underscored by experimental results. For instance, when a larger number of motion query pairs (e.g., 64 or 100) are employed, using static intention points for assigning training targets (strategy $\alpha$) yields superior mean Average Precision (mAP) and miss rates. This is because each query becomes specialized for a particular motion mode, leading to a more stable training process. In contrast, for a smaller number of queries (e.g., 6, as in MTR-e2e), relying on the predicted trajectories for target assignment (strategy $\beta$) proves more effective, as these queries are not tethered to fixed spatial regions and can adapt more globally to cover the necessary motion modes \cite{Shi2022MTR}. This highlights a nuanced trade-off between query specificity and adaptive coverage depending on the number of queries.
+This modular, Transformer-based structure allows MTR to effectively manage the inherent uncertainty and multimodality of traffic scenarios.
 
-\subsection{Central Thesis of MTR}
-\label{subsec:central_thesis}
-
-The central thesis underpinning the MTR architecture is the modeling of motion prediction as a \textbf{joint optimization of global intention localization and local movement refinement} \cite{Shi2022MTR}. This dual-focus approach aims to efficiently identify high-level behavioral intentions while simultaneously fine-tuning the precise path details of the corresponding trajectories.
-
-This philosophy manifests architecturally through the innovative use of \textbf{Motion Query Pairs} within the Transformer decoder:
-
-\begin{enumerate}
-    \item \textbf{Global Intention Localization:} This aspect is primarily realized through \textbf{Static Intention Queries ($Q_I$)}.
-    \begin{itemize}
-        \item These queries originate from a set of $K$ representative intention points ($I$). These points are derived by applying k-means clustering to the endpoints of ground-truth trajectories from the training dataset, effectively capturing common destinations or high-level maneuvers \cite{Shi2022MTR, Shi2022MTR_A}. The distribution of these intention points, as shown for various agent categories \cite{Shi2022MTR}, provides a data-driven foundation for the model's initial hypotheses about future movement.
-        \item Each intention point is transformed into a learnable positional embedding, $Q_I = \text{MLP}(\text{PE}(I))$, where PE denotes sinusoidal position encoding \cite{Shi2022MTR, Shi2022MTR_A}.
-        \item The role of $Q_I$ is to provide a coarse, global understanding of potential motion modes. Each $Q_I$ is dedicated to a specific mode, introducing spatial priors that stabilize the training process by disentangling the prediction of diverse behaviors \cite{Shi2022MTR, Shi2022MTR_A}. This mechanism allows MTR to efficiently explore the intention space without resorting to an exhaustive set of dense goal candidates.
-    \end{itemize}
-    \item \textbf{Local Movement Refinement:} This is achieved via \textbf{Dynamic Searching Queries ($Q_S^j$)} in conjunction with a \textbf{Dynamic Map Collection} strategy.
-    \begin{itemize}
-        \item $Q_S^j$ are also initialized from the intention points but, crucially, are dynamically updated at each decoder layer $j$ based on the trajectory ($Y_T^{j-1}$) predicted by the preceding layer $(j-1)$ \cite{Shi2022MTR}.
-        \item These dynamic queries are tasked with probing for fine-grained, trajectory-specific features from the agent and map context.
-        \item The Dynamic Map Collection mechanism assists by selecting the $L$ map polylines most relevant (closest) to the current predicted trajectory segment. This ensures that the refinement process is informed by the most pertinent local map geometry \cite{Shi2022MTR, Shi2022MTR_A}.
-        \item The iterative nature of this process, where dynamic queries and map features are updated based on the \textit{previous layer's prediction}, suggests a form of progressive refinement. The initial decoder layer might produce a rough trajectory estimate. Subsequent layers then use this estimate to focus the dynamic query and map collection on more relevant local details, allowing the model to iteratively correct and refine the trajectory. This hierarchical approach—from global intention to detailed local movement—is a cornerstone of MTR's design.
-    \end{itemize}
-\end{enumerate}
-
-The joint optimization occurs as these two types of queries operate synergistically within the Transformer decoder. Static queries establish stable anchors for different motion modes, while dynamic queries iteratively fine-tune the path details for these modes by adaptively focusing on relevant local context, guided by the evolving prediction itself.
-
-\subsection{High-Level Conceptual Block Diagram of MTR's Workflow}
-\label{subsec:high_level_workflow}
-
-The MTR framework processes inputs through two primary macro-stages to generate multimodal future trajectory predictions. This workflow is conceptually based on Figure 1 in \cite{Shi2022MTR} and \cite{Shi2022MTR_A}.
-
-\begin{itemize}
-    \item \textbf{Inputs:}
-    \begin{itemize}
-        \item Agent Historical States ($A_{in}$): Past trajectory data for all relevant agents.
-        \item Map Features ($M_{in}$): Vectorized representations of the road environment.
-    \end{itemize}
-    \item \textbf{Macro-Stage 1: Input Encoding \& Scene Context Understanding (Transformer Encoder)}
-    \begin{enumerate}
-        \item \textbf{Polyline Vectorization:} Raw inputs ($A_{in}$, $M_{in}$) are structured as vectorized polylines.
-        \item \textbf{Polyline Encoding:} PointNet-like polyline encoders transform these raw polylines into initial fixed-size feature vectors: agent features ($A_p$) and map features ($M_p$) \cite{Shi2022MTR, Shi2022MTR_A}.
-        \item \textbf{Transformer Encoder Processing:} A Transformer Encoder, employing local self-attention, processes the concatenated features $[A_p, M_p]$ along with their positional encodings. This stage models interactions between agents and map elements, producing contextualized agent history features ($A_{past}$) and map features ($M$) \cite{Shi2022MTR, Shi2022MTR_A}.
-        \item \textbf{Dense Future Prediction (Auxiliary Task):} An auxiliary MLP head predicts future trajectories ($S_{1:T}$) for all agents based on $A_{past}$. These predictions are encoded into $A_{future}$ and used to enhance the agent context: $A = \text{MLP}([A_{past}, A_{future}])$ \cite{Shi2022MTR}. This enriched agent context $A$ and the map context $M$ are passed to the decoder.
-    \end{enumerate}
-    \item \textbf{Macro-Stage 2: Prediction Generation (Motion Decoder with Motion Query Pairs)}
-    \begin{enumerate}
-        \item \textbf{Motion Query Initialization:} $K$ Motion Query Pairs are initialized. Each pair comprises a Static Intention Query ($Q_I$) derived from pre-defined intention points, and a Dynamic Searching Query ($Q_S^0$) also initialized from these intention points. Query content features ($C^0$) are typically initialized to zeros \cite{Shi2022MTR}.
-        \item \textbf{Iterative Refinement (N Decoder Layers):} The core prediction generation occurs over $N$ stacked Transformer decoder layers. For each layer $j$:
-        \begin{itemize}
-            \item The static intention queries ($Q_I$) are used in a self-attention mechanism with the query content features from the previous layer ($C^{j-1}$) to produce $C_{sa}^j$, facilitating information exchange between different motion mode hypotheses.
-            \item The dynamic searching queries ($Q_S^j$) are updated based on the endpoint of the trajectory ($Y_T^{j-1}$) predicted by the previous layer (for $j>0$).
-            \item The Dynamic Map Collection strategy selects $L$ relevant map polylines ($\alpha(M)$) based on the current trajectory estimate $Y_T^{j-1}$.
-            \item Cross-attention mechanisms then use $Q_S^j$ and $C_{sa}^j$ to query the enhanced agent features ($A$) and the dynamically collected map features ($\alpha(M)$). This produces the updated query content features $C^j$ for the current layer \cite{Shi2022MTR, Shi2022MTR_A}.
-        \end{itemize}
-        \item \textbf{Prediction Head (GMM):} An MLP (the prediction head) takes the final query content features ($C^N$) from the last decoder layer and transforms them into parameters for a Gaussian Mixture Model (GMM). This GMM represents $K$ multimodal future trajectories over $T$ future timesteps, including waypoint coordinates and mode probabilities ($Z_{1:T}^N$) \cite{Shi2022MTR, Shi2022MTR_A}.
-    \end{enumerate}
-    \item \textbf{Outputs:}
-    \begin{itemize}
-        \item $K$ multimodal future trajectories, each defined by a sequence of $T$ waypoints and an associated probability $p_k$.
-        \item For final evaluation, Non-Maximum Suppression (NMS) is typically applied to select a smaller subset (e.g., 6) of these $K$ trajectories \cite{Shi2022MTR}.
-    \end{itemize}
-\end{itemize}
-
-\begin{figure}[h!]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{placeholder_workflow.png} % Replace with actual image file
-    \caption{High-level conceptual block diagram of MTR's workflow, depicting sequential stages from input processing to multimodal trajectory output, highlighting feature flow, encoder/decoder roles, and motion queries.}
-    \label{fig:workflow}
+    \includegraphics[width=\textwidth]{figures/mtr_overall_architecture_detail.png}
+    \caption{A high-level diagram of the MTR architecture, illustrating the flow from vectorized inputs through the scene encoder and motion decoder to the final multimodal trajectory outputs. (Based on Figure 1 from \cite{Shi2022MTR}).}
+    \label{fig:mtr_architecture}
 \end{figure}
 
-\section{Input Domain}
-\label{sec:input_domain}
+\section{Input Encoding}
+\label{sec:model_input_encoding}
+MTR represents all input data—both from agents and the map—as vectorized polylines, which are sequences of points. This method is more efficient and precise than grid-based representations like bird's-eye-view (BEV) images, as it avoids quantization errors and handles sparse map data well. PointNet-like encoders then process these polylines to generate fixed-size feature vectors for the Transformer model.
 
-The performance and behavior of the MTR model are fundamentally shaped by the nature and structure of its input data. This section details the composition of agent historical states and map features, the agent-centric normalization strategy employed, and the typical data characteristics MTR is designed to handle, particularly in the context of datasets like the Waymo Open Motion Dataset (WOMD).
+\subsection{Map Encoders}
+Map features are represented as a collection of polylines, where each polyline describes a map element like a lane centerline, road boundary, or crosswalk. Each point within a polyline has attributes such as its position (x, y, z) and direction vector. A five-layer MLP processes the points of each map polyline, and a max-pooling operation aggregates this information into a single feature vector ($M_p$) for that polyline. This vector is then projected to a 256-dimensional space to match the agent feature dimensionality.
 
-\subsection{Composition of Agent Historical States ($A_{in}$) and Map Features ($M_{in}$)}
-\label{subsec:composition_inputs}
-
-MTR processes two primary streams of input data: historical states of agents and features of the surrounding map.
-
+\subsection{Agent Encoders}
+An agent's historical state is also treated as a polyline. The input for each agent includes its motion history (position, size, heading, velocity) over the last second. To help the model understand the data, several specific features are included:
 \begin{itemize}
-    \item \textbf{Agent Historical States ($A_{in}$):}
-    These are represented as a tensor with dimensions $\mathbb{R}^{N_a \times t \times C_a}$, where $N_a$ is the number of agents, $t$ is the number of history frames, and $C_a$ is the dimensionality of the state information for each agent at each frame \cite{Shi2022MTR}. For the WOMD, $t$ typically corresponds to 1 second of historical data \cite{WOMD2021}. If an agent's trajectory has fewer than $t$ frames, zero-padding is applied \cite{Shi2022MTR}.
-    The specific attributes ($C_a$) comprising an agent's state at a given history frame include \cite{Shi2022MTR, Shi2022MTR_A}:
-    \begin{itemize}
-        \item \textbf{History Motion State:}
-        \begin{itemize}
-            \item Position: (x, y, z) coordinates. While z (height) is included, its criticality may be lower for predominantly 2D trajectory forecasting.
-            \item Object Size: Dimensions of the agent (length, width, height).
-            \item Heading Angle: The orientation of the agent.
-            \item Velocity: (vx, vy) components of the agent's velocity.
-        \end{itemize}
-        \item \textbf{One-hot Category Mask:} A vector indicating the agent's class (e.g., Vehicle, Pedestrian, Cyclist).
-        \item \textbf{One-hot Time Embedding:} A vector representing the specific time step within the history window. This allows the model to distinguish the temporal order and recency of past states, which is vital for a Transformer architecture that might otherwise not inherently capture sequence order without such explicit temporal signals.
-    \end{itemize}
-    \item \textbf{Map Features ($M_{in}$):}
-    These are represented as a tensor $\mathbb{R}^{N_m \times n \times C_m}$, where $N_m$ is the number of map polylines, $n$ is the number of points constituting each polyline, and $C_m$ is the dimensionality of attributes for each point \cite{Shi2022MTR}. Map elements are organized as vectorized polylines \cite{Shi2022MTR, Shi2022MTR_A}. For WOMD, $n$ is typically up to 20 points per polyline, covering approximately 10 meters \cite{Shi2022MTR_A}.
-    The specific attributes ($C_m$) for each point within a map polyline include \cite{Shi2022MTR, Shi2022MTR_A}:
-    \begin{itemize}
-        \item \textbf{Position of each polyline point:} (x, y, z) coordinates.
-        \item \textbf{Polyline direction at each point:} (dx, dy, dz) vector or heading information.
-        \item \textbf{Type of each polyline:} Semantic information such as lane centerlines, road boundaries, crosswalks, stop lines, etc., often represented as a one-hot encoding (e.g., "Lane type one-hot encoding" \cite{Shi2022MTR_A}).
-    \end{itemize}
+    \item \textbf{One-hot Category Mask:} This vector identifies the agent's type (e.g., Vehicle, Pedestrian, Cyclist). The model is designed to handle these different agent classes.
+    \item \textbf{One-hot Time Embedding:} This feature explicitly encodes the timestep of each point in the history. This is crucial for the Transformer architecture, which does not otherwise have a built-in sense of sequence order.
 \end{itemize}
+A three-layer MLP processes these point-wise features, and max-pooling creates a 256-dimensional feature vector ($A_p$) for each agent's history.
 
-\subsection{Agent-Centric Coordinate Normalization Strategy}
-\label{subsec:agent_centric_norm}
+\section{Trajectory Decoding}
+\label{sec:model_decoding}
+Once the inputs are encoded, the core of the MTR model performs context aggregation and generates predictions.
 
-MTR employs an agent-centric coordinate normalization strategy. For predicting the future motion of a specific agent of interest, all input data—both the historical trajectories of all agents and the map features—are transformed into a coordinate system centered at the \textbf{current position of this agent of interest}. Typically, this normalization also aligns the coordinate system with the agent's current heading, for example, by rotating the scene so the agent faces along the positive x-axis \cite{Shi2022MTR, Shi2022MTR_A, DenseTNT2021}.
-
-The importance of this strategy is multifaceted:
-\begin{itemize}
-    \item \textbf{Translation and Rotation Invariance:} It makes the learned motion patterns independent of the agent's absolute global position and orientation.
-    \item \textbf{Focus on Relevant Information:} By centering the "world view" on the agent, the model can more easily focus on the immediate local context.
-    \item \textbf{Simplified Learning Task:} Predicting relative movements within a normalized frame is often simpler.
-    \item \textbf{Reduced Input Variance:} Normalization reduces variance related to absolute positions, potentially leading to more stable training.
-\end{itemize}
-This normalization is a standard yet powerful preprocessing step.
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{placeholder_agent_centric.png} % Replace with actual image file
-    \caption{Illustration of agent-centric coordinate normalization: global scene view transformed to a local view with the agent of interest at the origin.}
-    \label{fig:agent_centric}
-\end{figure}
-
-\subsection{Typical Data Characteristics (e.g., Waymo Open Motion Dataset)}
-\label{subsec:data_characteristics}
-
-MTR is designed and evaluated on large-scale datasets like the Waymo Open Motion Dataset (WOMD). Key characteristics it handles include:
-
-\begin{itemize}
-    \item \textbf{Sequence Length (History):} 1 second of historical data (e.g., 11 frames at 10Hz) \cite{WOMD2021}.
-    \item \textbf{Sequence Length (Future):} Prediction horizon of 8 seconds \cite{WOMD2021}.
-    \item \textbf{Number of Agents ($N_a$):} Up to 8 agents of interest (WOMD marginal prediction) \cite{WOMD2021}; MTR++ handles $N_o$ focal agents \cite{Shi2023MTRplusplus}; up to 128 for dense future prediction in original MTR \cite{Shi2022MTR}.
-    \item \textbf{Map Complexity:}
-    \begin{itemize}
-        \item \textbf{Number of Map Polylines ($N_m$):} $N_m=768$ nearest map polylines for context encoding \cite{Shi2022MTR}.
-        \item \textbf{Points per Polyline ($n$):} Up to 20 points per polyline ($\sim$10m in WOMD) \cite{Shi2022MTR_A}.
-        \item \textbf{Dynamic Map Collection ($L$):} $L=128$ closest map polylines for local refinement \cite{Shi2022MTR, Shi2022MTR_A}.
-    \end{itemize}
-\end{itemize}
-
-\begin{table}[h!]
-    \centering
-    \caption{Input Data Specification for MTR (WOMD Context)}
-    \label{tab:input_spec}
-    \begin{tabular}{@{}llll@{}}
-        \toprule
-        Input Type & Attribute & Representation & Typical WOMD Values \\
-        \midrule
-        Agent Historical States ($A_{in}$) & Position (x,y,z), Size (l,w,h), & $\mathbb{R}^{N_a \times t \times C_a}$ & $N_a$: up to 8 (interest), \\
-        & Heading, Velocity (vx,vy), & & up to 128 (context); \\
-        & Category (one-hot), & & $t$: 1s (e.g., 11 frames at 10Hz) \\
-        & Time step (one-hot) & & \\
-        \addlinespace
-        Map Features ($M_{in}$) & Polyline points (x,y,z seq.), & $\mathbb{R}^{N_m \times n \times C_m}$ & $N_m$: 768 (encoder), \\
-        & Direction at points, & & $L=128$ (decoder dynamic); \\
-        & Polyline type (one-hot) & & $n$: up to 20 points/polyline ($\sim$10m) \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\section{Input Encoding and Representation}
-\label{sec:input_encoding}
-
-Once the raw input data is defined and normalized, it must be transformed into a suitable format for the core Transformer architecture. This section details how MTR represents these inputs as vectorized polylines and employs PointNet-like encoders to generate initial feature representations.
-
-\subsection{Representation as Vectorized Polylines}
-\label{subsec:vectorized_polylines}
-
-MTR adopts the \textbf{vectorized representation} strategy, similar to models like VectorNet \cite{VectorNet2020}. Both agent trajectories and HD map elements are structured as sequences of points, forming polylines \cite{Shi2022MTR, Shi2022MTR_A}.
-
-Advantages include:
-\begin{itemize}
-    \item \textbf{Efficiency and Scalability:} More compact than BEV images, especially for sparse HD maps \cite{VectorNet2020}.
-    \item \textbf{Preservation of Geometric Precision:} Avoids quantization errors of grid-based methods.
-    \item \textbf{Direct Semantic Association:} Features are tied to specific entities.
-    \item \textbf{Sparsity Handling:} Efficient for large, sparsely detailed maps.
-\end{itemize}
-MTR uses a Transformer encoder on a dynamically constructed local graph of polylines \cite{Shi2022MTR}.
-
-\subsection{PointNet-like Polyline Encoders}
-\label{subsec:pointnet_encoders}
-
-MTR utilizes \textbf{PointNet-like polyline encoders} for agent history ($A_{in}$) and map features ($M_{in}$) \cite{Shi2022MTR, Shi2022MTR_A}.
-\begin{enumerate}
-    \item \textbf{Point-wise Feature Extraction (MLP):} Each point in a polyline is processed by an MLP.
-    \begin{itemize}
-        \item Agent history: three-layer MLP \cite{Shi2022MTR}.
-        \item Map features: five-layer MLP \cite{Shi2022MTR}.
-    \end{itemize}
-    \item \textbf{Aggregation (Max-Pooling):} A max-pooling operation ($\phi$) is applied across point features within a polyline to get a fixed-size vector \cite{Shi2022MTR}.
-\end{enumerate}
-Outputs are agent polyline features $A_p \in \mathbb{R}^{N_a \times D}$ and map polyline features $M_p \in \mathbb{R}^{N_m \times D}$.
-
-\subsection{Dimensionality ($D$) and Preparation for Transformer Encoder}
-\label{subsec:dimensionality_prep}
-
-\begin{itemize}
-    \item \textbf{Dimensionality ($D$):} The common feature dimension $D$ for $A_p$ and $M_p$ fed to the Transformer encoder is \textbf{256} \cite{Shi2022MTR}. Agent history features are 256-D. Map features are initially 64-D then projected to 256-D \cite{Shi2022MTR}. (MTR-A report mentions 512-D for its specific model \cite{Shi2022MTR_A}).
-    \item \textbf{Preparation for Transformer Encoder:} $A_p$ and $M_p$ are concatenated: $G^0 = [A_p, M_p]$ \cite{Shi2022MTR}. Sinusoidal \textbf{Positional Encoding (PE)} is added. For agent tokens, PE is from their latest position; for map tokens, PE is from the polyline center \cite{Shi2022MTR}.
-\end{itemize}
-
-\begin{table}[h!]
-    \centering
-    \caption{Polyline Encoder Configuration (MTR Base)}
-    \label{tab:polyline_encoder_config}
-    \begin{tabular}{@{}llllll@{}}
-        \toprule
-        Feature Type & Input Attributes (Examples) & MLP Architecture & Aggregation & Output & Final Dim (D) \\
-        \midrule
-        Agent History ($A_{in}$) & Pos, Vel, Head, Size, Cat, Time & 3-layer MLP & Max-Pool ($\phi$) & $A_p$ & 256 \\
-        Map Features ($M_{in}$) & Poly Pt. Pos, Pt. Dir, Poly Type & 5-layer MLP (to 64D) + Lin. Proj. & Max-Pool ($\phi$) & $M_p$ & 256 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{placeholder_pointnet_encoder.png} % Replace with actual image file
-    \caption{Diagram of the PointNet-like polyline encoder, showing input points, MLP processing, max-pooling, and the output fixed-size feature vector for a polyline.}
-    \label{fig:pointnet_encoder}
-\end{figure}
-
-\section{Core Architectural Modules and Processing Flow}
-\label{sec:core_modules}
-
-\subsection{Scene Context Understanding Module (Transformer Encoder)}
-\label{subsec:scene_context_encoder}
-
-The Transformer Encoder processes initial polyline features, modeling interactions and producing a contextualized scene representation.
-
-\subsubsection{Precise Input to the Transformer Encoder}
-Input is $G^0 = [A_p, M_p]$, a sequence of $(N_a + N_m)$ tokens, each $D$-dimensional (typically 256) \cite{Shi2022MTR}. Sinusoidal positional encoding (PE) is added, based on latest agent positions and map polyline centers \cite{Shi2022MTR}.
-
-\subsubsection{Rationale and Mechanics of "Local Self-Attention"}
-MTR's Transformer Encoder uses "local self-attention" \cite{Shi2022MTR}.
-\begin{itemize}
-    \item \textbf{Rationale:} Preserves locality, improves memory efficiency and scalability, and can enhance performance \cite{Shi2022MTR}.
-    \item \textbf{Mechanics:} Attention is $G^{j} = \text{MultiHeadAttn}(query=G^{j-1}+\text{PE}_{G^{j-1}}, key=\kappa(G^{j-1})+\text{PE}_{\kappa(G^{j-1})}, value=\kappa(G^{j-1}))$ \cite{Shi2022MTR}. $\kappa(\cdot)$ is a k-nearest neighbor (k-NN) algorithm selecting $k$ spatially closest polyline tokens (e.g., $k=16$ \cite{Shi2022MTR}).
-    \item \textbf{Difference from Global Self-Attention:} Global attention means $\kappa(G^{j-1}) = G^{j-1}$. Local attention restricts this. Benefits include better local structure preservation, reduced memory, and improved mAP \cite{Shi2022MTR}.
-\end{itemize}
-
-\subsubsection{Application of Positional Encoding (PE)}
-PE is added to $G^0$ (latest agent positions, map polyline centers) \cite{Shi2022MTR}. In local self-attention (Eq. 2 in \cite{Shi2022MTR}), PE is added to both query and selected key features.
-
-\subsubsection{Exact Outputs ($A_{past}$, $M$) and Contextualized Scene Representation}
-After $N_{enc}$ encoder layers (e.g., 6 \cite{Shi2022MTR_A}), output $G^{N_{enc}}$ is de-concatenated:
-\begin{itemize}
-    \item $A_{past} \in \mathbb{R}^{N_a \times D}$: Contextualized features for agents.
-    \item $M \in \mathbb{R}^{N_m \times D}$: Contextualized features for map polylines.
-\end{itemize}
-$A_{past}$ is further processed by the Dense Future Prediction module to create enhanced agent feature $A = \text{MLP}([A_{past}, A_{future}])$, which, along with $M$, feeds the Motion Decoder \cite{Shi2022MTR}.
-
-\begin{table}[h!]
-    \centering
-    \caption{Transformer Encoder Layer Configuration (MTR Base)}
-    \label{tab:encoder_config}
-    \begin{tabular}{@{}lll@{}}
-        \toprule
-        Parameter & Value & Reference \\
-        \midrule
-        Number of Encoder Layers & 6 & \cite{Shi2022MTR_A} \\
-        Hidden Dimension (D) & 256 & \cite{Shi2022MTR} \\
-        Number of Attention Heads & e.g., 8 & General Transformer knowledge \\
-        k for k-NN Local Attention & 16 & \cite{Shi2022MTR} \\
-        Positional Encoding Type & Sinusoidal & \cite{Shi2022MTR} \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{placeholder_encoder_layer.png} % Replace with actual image file
-    \caption{A single Transformer Encoder layer, highlighting local attention between an agent token and nearby map/agent tokens, showing inputs, k-NN selection, attention connections, and outputs.}
-    \label{fig:encoder_layer}
-\end{figure}
-
-\subsection{Prediction Generation Module (Motion Decoder with Motion Query Pairs)}
-\label{subsec:prediction_generation}
-
-The Transformer Decoder generates diverse future trajectories using "Motion Query Pairs."
-
-\subsubsection{"Motion Query Pairs"}
-$K$ (typically 64) motion query pairs are used \cite{Shi2022MTR, Shi2022MTR_A}. Each pair has:
-\begin{itemize}
-    \item \textbf{Static Intention Queries ($Q_I \in \mathbb{R}^{K \times D}$):}
-    \begin{itemize}
-        \item \textbf{Generation:} From $K$ intention points ($I \in \mathbb{R}^{K \times 2}$) via k-means on GT trajectory endpoints \cite{Shi2022MTR, Shi2022MTR_A}. Distribution shown in \cite{Shi2022MTR}.
-        \item \textbf{Transformation:} $Q_I = \text{MLP}(\text{PE}(I))$ \cite{Shi2022MTR, Shi2022MTR_A}. Fixed across decoder layers.
-        \item \textbf{Role ("Global Intention Localization"):} Coarsely identify high-level intentions, stabilize training, ensure mode-specific predictions \cite{Shi2022MTR, Shi2022MTR_A}.
-    \end{itemize}
-    \item \textbf{Dynamic Searching Queries ($Q_S^j \in \mathbb{R}^{K \times D}$):}
-    \begin{itemize}
-        \item \textbf{Initialization:} For $j=0$, $Q_S^0$ initialized like $Q_I$ \cite{Shi2022MTR}.
-        \item \textbf{Dynamic Update:} For layer $j$, $Q_S^j$ updated based on endpoint of trajectory $Y_T^{j-1}$ from layer $(j-1)$: $Q_S^j = \text{MLP}(\text{PE}(Y_T^{j-1}))$ \cite{Shi2022MTR}.
-        \item \textbf{Role ("Local Movement Refinement"):} Retrieve fine-grained local features, adaptively gather trajectory-specific information for iterative refinement \cite{Shi2022MTR, Shi2022MTR_A}.
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Architecture of a Single Transformer Decoder Layer}
-Based on Figure 2 in \cite{Shi2022MTR}:
-\begin{itemize}
-    \item \textbf{Inputs:}
-    \begin{itemize}
-        \item Query Content Features ($C^{j-1} \in \mathbb{R}^{K \times D}$): From layer $(j-1)$, $C^0$ initialized (e.g., zeros) \cite{Shi2022MTR}.
-        \item Static Intention Queries ($Q_I \in \mathbb{R}^{K \times D}$).
-        \item Dynamic Searching Queries ($Q_S^j \in \mathbb{R}^{K \times D}$).
-        \item Scene Context Encoder Outputs: Enhanced Agent Features ($A \in \mathbb{R}^{N_a \times D}$), Map Features ($M \in \mathbb{R}^{N_m \times D}$), dynamically selected as $\alpha(M)$.
-    \end{itemize}
-    \item \textbf{Self-Attention Block:} $Q_I$ as positional embeddings for self-attention on $C^{j-1}$: $C_{sa}^j = \text{MultiHeadAttn}(query=C^{j-1}+Q_I, key=C^{j-1}+Q_I, value=C^{j-1})$ \cite{Shi2022MTR}. Exchanges info between motion mode hypotheses.
-    \item \textbf{Cross-Attention Blocks (Agent and Map):} $Q_S^j$ and $C_{sa}^j$ query agent features ($A$) and dynamically collected map features ($\alpha(M)$) \cite{Shi2022MTR}.
-    \begin{itemize}
-        \item \textbf{Content/Position Embedding Combination:} Query: $C_{sa}^j + Q_S^j$. Key (Agent): $[A, \text{PE}_A]$. Key (Map): $[\alpha(M), \text{PE}_{\alpha(M)}]$. Value (Agent): $A$. Value (Map): $\alpha(M)$.
-        \item Operations: $C_A^j = \text{MultiHeadAttn}(\dots)$, $C_M^j = \text{MultiHeadAttn}(\dots)$.
-    \end{itemize}
-    \item \textbf{Output (Updated Query Content Features $C^j$):} $C^j = \text{MLP}([C_A^j, C_M^j])$ \cite{Shi2022MTR}.
-\end{itemize}
-
-\subsubsection{Stacking Decoder Layers for Iterative Refinement}
-$N_{dec}$ (e.g., 6) layers are stacked \cite{Shi2022MTR_A}. $C^j$ from layer $j$ is input to $j+1$. Trajectory $Y_{1:T}^j$ from $C^j$ updates $Q_S^{j+1}$ and guides Dynamic Map Collection $\alpha(M)$ for layer $j+1$, enabling progressive refinement \cite{Shi2022MTR, Vaswani2017Attention}.
-
-\subsubsection{Role of the Final Prediction Head (MLP)}
-A 3-layer MLP prediction head \cite{Shi2022MTR, Shi2022MTR_A} transforms $C^N$ from the last decoder layer into GMM parameters: $Z_{1:T}^N = \text{MLP}(C^N)$ \cite{Shi2022MTR}.
-
-\subsubsection{Parameters of the Gaussian Mixture Model (GMM)}
-For each of $K$ modes and future timestep $t$, GMM parameters are \cite{Shi2022MTR, Chai2019MultiPath}:
-\begin{itemize}
-    \item $(\mu_{x,k,t}, \mu_{y,k,t})$: Mean (waypoint).
-    \item $(\sigma_{x,k,t}, \sigma_{y,k,t})$: Standard deviations.
-    \item $\rho_{k,t}$: Correlation coefficient.
-    \item $p_k$: Mixture probability/confidence for mode $k$ \cite{Shi2022MTR}.
-\end{itemize}
-
-\begin{table}[h!]
-    \centering
-    \caption{Motion Query Pair Components and Roles}
-    \label{tab:motion_query_pair_roles}
-    \begin{tabular}{@{}lllll@{}}
-        \toprule
-        Component & Initialization & Update Mechanism & Role & Associated Mechanisms \\
-        \midrule
-        Static Intention Query ($Q_I$) & MLP(PE(Intention Point $I_k$)) & Fixed & Global Intention Localization & K-means on GT endpoints \\
-        Dynamic Searching Query ($Q_S^j$) & MLP(PE($I_k$)) for $Q_S^0$ & $Q_S^j = \text{MLP}(\text{PE}(Y_T^{j-1}))$ & Local Movement Refinement & Dynamic Map Collection $\alpha(M)$ \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{table}[h!]
-    \centering
-    \caption{Transformer Decoder Layer Inputs/Outputs (Layer $j$)}
-    \label{tab:decoder_layer_io}
-    \resizebox{\textwidth}{!}{%
-    \begin{tabular}{@{}llll@{}}
-        \toprule
-        Category & Item & Source/Destination & Dimension (Example) \\
-        \midrule
-        \textbf{Inputs} & Query Content & $C^{j-1}$ from Layer $j-1$ & $K \times D$ \\
-        & Static Intention Query & $Q_I$ (fixed) & $K \times D$ \\
-        & Dynamic Searching Query & $Q_S^j$ (updated via $Y_T^{j-1}$) & $K \times D$ \\
-        & Agent Features & $A$ from Scene Encoder (enhanced) & $N_a \times D$ \\
-        & Dynamic Map Features & $\alpha(M)$ from Dynamic Map Collection & $L \times D$ \\
-        \addlinespace
-        \textbf{Internal Ops} & Self-Attention Output & $C_{sa}^j$ & $K \times D$ \\
-        & Agent Cross-Attention Output & $C_A^j$ & $K \times D$ \\
-        & Map Cross-Attention Output & $C_M^j$ & $K \times D$ \\
-        \addlinespace
-        \textbf{Outputs} & Updated Query Content & $C^j = \text{MLP}([C_A^j, C_M^j])$ & $K \times D$ \\
-        & Predicted GMM Params & $Z_{1:T}^j = \text{PredictionHead}(C^j)$ & $K \times T \times 6$ \\
-        & Predicted Trajectories (Means) & $Y_{1:T}^j$ from $Z_{1:T}^j$ & $K \times T \times 2$ \\
-        \bottomrule
-    \end{tabular}%
-    }
-\end{table}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.6\textwidth]{placeholder_query_generation.png} 
-    \caption{Diagram showing generation of $Q_I$ from intention points and $Q_S^j$ from prior predictions.}
-    \label{fig:query_generation}
-\end{figure}
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{placeholder_decoder_layer_detail.png} 
-    \caption{Detailed diagram of one Transformer Decoder Layer (based on Figure 2 in \cite{Shi2022MTR}), showing inputs, self-attention with $Q_I$, cross-attentions with $Q_S^j$ and scene context, and outputs.}
-    \label{fig:decoder_layer_detail}
-\end{figure}
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{placeholder_iterative_refinement.png} 
-    \caption{Flowchart illustrating the iterative refinement process across multiple decoder layers, highlighting the feedback loop.}
-    \label{fig:iterative_refinement}
-\end{figure}
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.5\textwidth]{placeholder_gmm_head.png} 
-    \caption{Diagram of the GMM Prediction Head transforming $C^j$ into GMM parameters.}
-    \label{fig:gmm_head}
-\end{figure}
-
-\section{Auxiliary Mechanisms or Supporting Strategies}
-\label{sec:auxiliary_mechanisms}
-
-\subsection{Dense Future Prediction Module}
-\label{subsec:dense_future_prediction}
-
-This module enhances scene context by explicitly modeling future movements of all agents.
-
-\subsubsection{Precise Input and Output}
-\begin{itemize}
-    \item \textbf{Input:} Contextualized agent history features $A_{past} \in \mathbb{R}^{N_a \times D}$ from Scene Context Encoder \cite{Shi2022MTR}.
-    \item \textbf{Output:} Predicted future states $S_{1:T}$ for all $N_a$ agents \cite{Shi2022MTR}. For each future timestep $i$, $S_i \in \mathbb{R}^{N_a \times 4}$ (predicted future position (x, y) and velocity (vx, vy)) \cite{Shi2022MTR}. Achieved by $S_{1:T} = \text{MLP}(A_{past})$ \cite{Shi2022MTR}. MLP intermediate dim 512 \cite{Shi2022MTR}.
-\end{itemize}
-
-\subsubsection{Encoding Predicted Future States ($A_{future}$) and Context Enhancement}
-Predicted $S_{1:T}$ are encoded using the same PointNet-like polyline encoder as for $A_{in}$ (Eq. 1 in \cite{Shi2022MTR}) into $A_{future} \in \mathbb{R}^{N_a \times D}$ \cite{Shi2022MTR}. Enhanced context $A = \text{MLP}([A_{past}, A_{future}])$ is fed to Motion Decoder \cite{Shi2022MTR}.
-
-\subsubsection{Benefit of the Auxiliary Task}
-Benefits include modeling future interactions \cite{Shi2022MTR}, improved scene-compliant trajectories \cite{Shi2022MTR}, context enrichment for the decoder, enhanced representation learning (regularization) \cite{Shi2022MTR}, and empirical performance gains (+1.78\% mAP reported in \cite{Shi2022MTR}). Acknowledged in \cite{Shi2023MTRplusplus}.
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{placeholder_dense_future_pred.png} % Replace with actual image file
-    \caption{Block diagram of the Dense Future Prediction module (based on Figure 1(a) in \cite{Shi2022MTR}), showing input $A_{past}$, MLP, output $S_{1:T}$, encoding to $A_{future}$, and integration to form enhanced context $A$.}
-    \label{fig:dense_future_pred}
-\end{figure}
+\subsection{Transformer Encoder Module}
+The feature vectors for all agents ($A_p$) and map polylines ($M_p$) are fed into a Transformer Encoder. This module's job is to contextualize each element by modeling its interactions with its surroundings. To do this efficiently, MTR uses a \textbf{local self-attention} mechanism. Instead of having each element attend to every other element in the scene, it only attends to its $k$ nearest neighbors (e.g., $k=16$). This preserves local structure, reduces computational cost, and improves performance compared to global attention. The output of this stage is a set of context-aware feature vectors for agents ($A_{past}$) and the map ($M$).
 
 \subsection{Dynamic Map Collection Strategy}
-\label{subsec:dynamic_map_collection}
+\label{subsec:dynamic_map_collection_strategy}
+To ensure that trajectory refinement is guided by the most relevant parts of the map, MTR uses a Dynamic Map Collection strategy within its decoder. For each stage of trajectory prediction, the model identifies the $L$ map polylines (e.g., $L=128$) that are spatially closest to the current trajectory being generated. These selected map features are then used in the decoder's cross-attention mechanism, allowing the model to focus on the immediate local geometry (like lane boundaries for a lane-change maneuver) to make precise, context-aware adjustments.
 
-This strategy adaptively incorporates local map information within the Motion Decoder.
-
-\subsubsection{Determining L Closest Map Polylines ($\alpha(M)$)}
-Selects $L$ map polylines from $M$ closest to the current predicted trajectory $Y_{1:T}^j$ \cite{Shi2022MTR}. MTR-A report \cite{Shi2022MTR_A} specifies ranking by smallest distance of polyline center to all 80 predicted waypoints, then selecting $L=128$ closest. For the first decoder layer, collection is based on proximity to initial intention points \cite{Shi2022MTR_A}. $L=128$ typically \cite{Shi2022MTR, Shi2022MTR_A}. Output is $\alpha(M)$.
-
-\subsubsection{Utilization within Motion Decoder's Cross-Attention}
-$\alpha(M)$ and $PE_{\alpha(M)}$ are key and value in map-focused cross-attention \cite{Shi2022MTR}. Query is $?$. Suggested in Figure 1(b) and Figure 3 of \cite{Shi2022MTR}.
-
-\subsubsection{Impact on Contextually Aware and Refined Predictions}
-Impacts include enhanced contextual awareness \cite{Shi2022MTR}, iterative refinement facilitation \cite{Shi2022MTR}, computational efficiency, and improved performance (mAP increases with $L$ from 32 to 128 \cite{Shi2022MTR}). MTR-A report also emphasizes this \cite{Shi2022MTR_A}.
-
-\begin{figure}[h!]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{placeholder_dynamic_map.png} % Replace with actual image file
-    \caption{Illustration of the Dynamic Map Collection process (based on Figures 1(b) and 3 in \cite{Shi2022MTR}). Shows a predicted trajectory, surrounding map polylines, and highlighted $L$ selected polylines whose features $\alpha(M)$ are used in cross-attention.}
+    \includegraphics[width=\textwidth]{figures/dynamic_map.png}
+    \caption{An illustration of the Dynamic Map Collection strategy. As a trajectory is refined (dashed line), the model selects the L closest map polylines (highlighted) to inform the next prediction step. (Based on Figure 3 from \cite{Shi2022MTR}).}
     \label{fig:dynamic_map}
 \end{figure}
 
-\section{Output Domain Specification}
-\label{sec:output_domain}
+\subsection{Motion Decoder Module (Transformer Decoder Layer)}
+The Motion Decoder generates the final trajectory predictions. Its key innovation is the use of \textbf{Motion Query Pairs} to guide this process. Each of the $K$ pairs (e.g., $K=64$) consists of a static query and a dynamic query.
 
-Defines the final output structure of MTR.
-
-\subsection{Final Output: K Multimodal Future Trajectories and Selection}
-MTR generates $K$ multimodal future trajectories \cite{Shi2022MTR, Shi2022MTR_A}. Typically $K=64$ \cite{Shi2022MTR, Shi2022MTR_A}. For evaluation (e.g., WOMD top 6), Non-Maximum Suppression (NMS) is used, often on trajectory endpoints \cite{Shi2022MTR}. MTR-A report \cite{Shi2022MTR_A} describes an adaptive NMS threshold. MTR-e2e uses $K=6$ directly, no NMS needed \cite{Shi2022MTR}.
-
-\subsection{Structure of Each Predicted Trajectory}
-Each of $K$ trajectories is a sequence of $T$ waypoints \cite{Vaswani2017Attention}. $T$ is future horizon (e.g., 8s, 80 waypoints at 10Hz for WOMD \cite{WOMD2021}). Waypoints are means $(\mu_{x,k,t}, \mu_{y,k,t})$ from GMM parameters \cite{Chai2019MultiPath}.
-
-\subsection{Probability $p_k$ and Confidence/Likelihood}
-Probability $p_k$ associated with each GMM component reflects model's confidence/likelihood for mode $k$ \cite{Shi2022MTR, Chai2019MultiPath}. Training aims to maximize $p_h$ of the chosen positive component \cite{Shi2022MTR}. Used for ranking in NMS.
-
-\begin{table}[h!]
-    \centering
-    \caption{MTR Output Specification}
-    \label{tab:output_spec}
-    \begin{tabular}{@{}lll@{}}
-        \toprule
-        Aspect & Description & Details \\
-        \midrule
-        \textbf{Output Type} & K multimodal future trajectories & K=64 (std MTR) or 6 (MTR-e2e) \\
-        \textbf{Selection (K=64)} & Non-Maximum Suppression (NMS) & Selects top e.g., 6 trajectories \\
-        \textbf{Structure/Trajectory} & Sequence of T waypoints & (x,y) coords. T=future horizon \\
-        \textbf{Waypoint Derivation} & Means of GMM components & $(\mu_{x,k,t}, \mu_{y,k,t})$ \\
-        \textbf{Associated Info} & Probability $p_k$ & Confidence for mode $k$ \\
-        \textbf{Probabilistic Model} & Gaussian Mixture Model (GMM) & Params $(\mu_x, \mu_y, \sigma_x, \sigma_y, \rho)_k$ \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.6\textwidth]{placeholder_gmm_output.png} 
-    \caption{Diagram showing K GMM components at a future timestep T, with means as waypoints.}
-    \label{fig:gmm_output}
-\end{figure}
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{placeholder_nms_process.png} 
-    \caption{Illustration of NMS process selecting a representative trajectory from several similar ones.}
-    \label{fig:nms_process}
-\end{figure}
-
-\section{Model Variants and Extensions}
-\label{sec:model_variants}
-
-\subsection{MTR-e2e Variant}
-Proposed to streamline prediction for a fixed small number of outputs \cite{Shi2022MTR}.
 \begin{itemize}
-    \item \textbf{Key Architectural Differences:} Uses only 6 motion query pairs (vs. 64 in standard MTR), eliminating NMS \cite{Shi2022MTR}.
-    \item \textbf{Training Target Assignment Strategy Difference:} Standard MTR ($K=64$) uses static intention point-based assignment. MTR-e2e ($K=6$) uses prediction-based assignment (distances between 6 predicted trajectories and GT) due to sparse intention points \cite{Shi2022MTR}.
-    \item \textbf{Performance Characteristics:} MTR-e2e better minADE/FDE; standard MTR better mAP \cite{Shi2022MTR}.
-\end{itemize}
-
-\subsection{MTR++ (Multi-Agent Motion Prediction with Symmetric Scene Modeling and Guided Intention Querying)}
-Significant extension for simultaneous multi-agent prediction \cite{Shi2023MTRplusplus}.
-\begin{itemize}
-    \item \textbf{Primary Motivations:} Simultaneous multi-agent prediction ($N_o$ focal agents) for efficiency \cite{Shi2023MTRplusplus}. Modeling inter-agent future behaviors for scene-compliant joint predictions \cite{Shi2023MTRplusplus}.
-    \item \textbf{Core Concepts:}
+    \item \textbf{Intention-Driven Querying:} The process is driven by two types of queries:
     \begin{itemize}
-        \item \textbf{Symmetric Scene Context Modeling (and Query-Centric Self-Attention):}
-        \begin{itemize}
-            \item \textbf{Objective:} Shared, agent-perspective scene context encoding \cite{Shi2023MTRplusplus}.
-            \item \textbf{Mechanism:} Polylines encoded in own local systems. Query-centric self-attention transforms other tokens to query token's local frame for attention computation \cite{Shi2023MTRplusplus}.
-            \item \textbf{Benefit:} Efficient shared encoder for any agent \cite{Shi2023MTRplusplus}. Figure 5 in \cite{Shi2023MTRplusplus} contrasts.
-        \end{itemize}
-        \item \textbf{Mutually-Guided Intention Querying:}
-        \begin{itemize}
-            \item \textbf{Objective:} Interaction among intention queries of different agents \cite{Shi2023MTRplusplus}.
-            \item \textbf{Mechanism:} Intention points transformed to global frame. Query-centric self-attention among all queries from all $N_o$ agents (transformed to querying agent's local frame) \cite{Shi2023MTRplusplus}. Figure 6 in \cite{Shi2023MTRplusplus} illustrates.
-            \item \textbf{Benefit:} Coherent, scene-compliant joint predictions \cite{Shi2023MTRplusplus}.
-        \end{itemize}
+        \item \textbf{Static Intention Queries ($Q_I$):} These queries act as stable anchors for different motion modes (e.g., turn left, go straight, stop). They are derived from a set of representative "intention points," which are pre-calculated by clustering the endpoints of ground-truth trajectories from the training data. Each static query specializes in a specific high-level intention, which helps disentangle the prediction of diverse behaviors and stabilizes training.
+        \item \textbf{Dynamic Searching Queries ($Q_S^j$):} These queries perform the fine-grained refinement. At each decoder layer, the dynamic query is updated based on the trajectory predicted by the previous layer. It then probes the scene context (both agent and map features) to gather the specific local details needed to refine that trajectory.
     \end{itemize}
-    \item \textbf{How MTR++ Aims to Improve Upon Original MTR:} Efficiency in multi-agent settings \cite{Shi2023MTRplusplus}. More realistic joint predictions by modeling interactions \cite{Shi2023MTRplusplus}. Improved performance metrics \cite{Shi2023MTRplusplus}.
+    \item \textbf{Goal-Conditioned Prediction:} The static queries ($Q_I$) enable goal-conditioned prediction. By grounding each of the $K$ prediction modes in a fixed, data-driven intention point, the model generates trajectories that are explicitly conditioned on achieving these latent goals. This synthesizes the strengths of goal-based methods (which are good at capturing multimodality) and direct-regression methods (which are good at generating refined paths).
 \end{itemize}
 
-\begin{table}[h!]
+\begin{figure}[htbp]
     \centering
-    \caption{Comparison of MTR, MTR-e2e, and MTR++}
-    \label{tab:mtr_variants_comparison}
-    \resizebox{\textwidth}{!}{%
-    \begin{tabular}{@{}llll@{}}
-        \toprule
-        Feature & MTR (Standard) & MTR-e2e & MTR++ \\
-        \midrule
-        \textbf{Primary Goal} & Single-agent multimodal & End-to-end single-agent (fixed K) & Simultaneous multi-agent multimodal w/ interactions \\
-        \textbf{Motion Queries (K)} & Typically 64 & 6 & Typically 64 (per agent, for $N_o$ agents) \\
-        \textbf{Target Assignment} & Static intention point based & Predicted trajectory based & Static intention point based (per agent) \\
-        \textbf{Scene Encoder} & Agent-centric (local self-attn) & Agent-centric (local self-attn) & Symmetric Scene Context (shared, query-centric self-attn) \\
-        \textbf{Decoder Interaction} & None (independent agents) & None & Mutually-Guided Intention Querying \\
-        \textbf{NMS Needed?} & Yes (64 $\to$ 6) & No & Yes (per agent, 64 $\to$ 6) \\
-        \textbf{Key Perf. Trade-offs} & Good mAP, flexible proposals & Better minADE/FDE, no NMS & Best for joint prediction, efficient multi-agent \\
-        \bottomrule
-    \end{tabular}%
-    }
-\end{table}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.5\textwidth]{placeholder_mtr_e2e.png} 
-    \caption{Simplified diagram for MTR-e2e showing K=6 queries directly outputting 6 trajectories.}
-    \label{fig:mtr_e2e}
-\end{figure}
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{placeholder_mtrplusplus_symmetric.png} 
-    \caption{Diagram for MTR++ Symmetric Scene Context Modeling (inspired by \cite{Shi2023MTRplusplus}).}
-    \label{fig:mtrplusplus_symmetric}
-\end{figure}
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{placeholder_mtrplusplus_mutual_guidance.png} 
-    \caption{Diagram for MTR++ Mutually-Guided Intention Querying (inspired by \cite{Shi2023MTRplusplus}).}
-    \label{fig:mtrplusplus_mutual_guidance}
+    \includegraphics[width=0.6\textwidth]{figures/decoder_layer_detail.png}
+    \caption{The architecture of a single Motion Decoder layer, showing how the static intention query ($Q_I$) and dynamic searching query ($Q_S^j$) interact with scene context to refine a trajectory hypothesis. (Based on Figure 2 from \cite{Shi2022MTR}).}
+    \label{fig:decoder_layer}
 \end{figure}
 
-\section{Interpreting Predictions and Visualizations (Model-Specific Examples)}
-\label{sec:interpreting_visualizations}
+\subsection{Probabilistic Multimodal Output Generation}
+To represent its multimodal predictions, MTR uses a Gaussian Mixture Model (GMM) as its final output layer. The features from the final decoder layer are passed through an MLP (prediction head) to generate the parameters for $K$ different Gaussian distributions. Each of these $K$ components represents one possible future mode and includes:
+\begin{itemize}
+    \item A mean trajectory (a sequence of waypoints).
+    \item A probability score ($p_k$), which reflects the model's confidence in that specific mode.
+\end{itemize}
+This probabilistic output provides a rich distribution over plausible futures rather than a single deterministic guess.
 
-\subsection{Mapping Visual Elements to Model Inputs and Outputs}
-\label{subsec:mapping_visual_elements}
+\subsection{Iterative Query Refinement and Training}
+The decoder consists of multiple stacked layers (e.g., 6 layers). This stacked structure enables an iterative refinement process. The output trajectory from layer $j-1$ is used to update the dynamic searching query ($Q_S^j$) and to guide the Dynamic Map Collection for layer $j$. Thus, an initial rough trajectory from the first layer is progressively corrected and detailed by subsequent layers, which can focus on more relevant local information.
 
-Common visualizations (e.g., in \cite{Shi2022MTR}, \cite{Shi2022MTR_A}, \cite{Shi2023MTRplusplus}) map to MTR components:
+The model is trained by comparing its $K$ predictions to the single ground-truth trajectory. A loss function guides the model to improve its predictions over time. It essentially encourages the model to assign a high probability ($p_k$) to the predicted trajectory that most closely matches the ground truth, while also moving the waypoints of that trajectory even closer to the actual path. This process can be thought of as a learned form of hypothesis testing: the queries propose $K$ hypotheses, and the training process teaches the model how to evaluate and refine them based on scene context.
+
+\section{MTR Input-Output Formulation}
+\label{sec:model_mtr_io}
+
+At a high level, the MTR model transforms historical scene data into a set of ranked, probable future paths.
+
+% toDO(luroess): replace figure with improved visualization of input-output visualization
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/input_output_viz.png}
+    \caption{Qualitative examples of MTR's multimodal predictions in interactive scenarios. The model generates multiple future trajectories (orange paths) for an agent of interest, with agent shwon in green. Other agents are represented by blue boxes. The examples highlight the model's ability to predict socially compliant behaviors, such as yielding to another vehicle (a), a pedestrian (b), or a fast-moving car at an intersection (c).}
+    \label{fig:input_output_example}
+\end{figure}
 
 \begin{itemize}
-    \item \textbf{"Ego vehicle" / "Focal Agent"}: Agent of interest in $A_{in}$; center of normalization. One of $N_o$ focal agents in MTR++.
-    \item \textbf{"Other agents"}: Other entries in $A_{in}$. Futures $S_{1:T}$ from Dense Future Prediction; part of context $A$.
-    \item \textbf{"Past trajectory"}: Historical (x,y) positions from $A_{in}$ for ego.
-    \item \textbf{"Future trajectory (ground truth)"}: $Y_{GT}$ (training target).
-    \item \textbf{A single "Predicted path" with its probability}: Mean trajectory $(\mu_{x,k,1:T}, \mu_{y,k,1:T})$ from GMM component $k$ in $Z_{1:T}^N$. Probability is $p_k$.
-    \item \textbf{Multiple "Predicted paths"}: Set of $K$ mean trajectories, reduced by NMS.
-    \item \textbf{"Lanes" / "Lane Markings"}: Part of $M_{in}$, encoded to $M_p$, contextualized to $M$, selected by $\alpha(M)$.
-    \item \textbf{"Crosswalks"}: Specific map polylines in $M_{in}$, processed similarly.
-    \item \textbf{"Intention Points"} (Conceptual): Points $I$ used to initialize $Q_I$. Visualized in \cite{Shi2022MTR}.
-    \item \textbf{"Dynamic Map Collection Area"} (Conceptual): $L$ map polylines in $\alpha(M)$ selected based on $Y_{1:T}^j$.
+    \item \textbf{Input Domain:} The minimum necessary input for a single agent's prediction is its historical spatiotemporal data and the features of the surrounding map environment. All input coordinates are normalized into an agent-centric frame, which makes the learning task simpler and invariant to global position and rotation. The framework is designed to process data from large-scale datasets like the Waymo Open Motion Dataset (WOMD). The model can handle various agent types, including vehicles, pedestrians, and cyclists. Within a scene, MTR processes up to 128 context agents, from which a smaller group of up to 8 "agents of interest" are designated for prediction, as specified by the WOMD benchmark. The provided documentation focuses on the MTR architecture itself and does not detail specific dataset fusion techniques (e.g., for UniTraj) or agent selection criteria (e.g., based on Kalman difficulty).
+
+    \item \textbf{Output Domain:} The model's exact output is a set of $K$ plausible future trajectories (e.g., $K=64$) for an agent of interest over a future time horizon (e.g., 8 seconds). Each trajectory is defined by a sequence of waypoints and is associated with a probability score ($p_k$) indicating its likelihood. For evaluation against benchmarks that require a smaller number of predictions (e.g., 6), a Non-Maximum Suppression (NMS) algorithm is used to select the most likely and diverse trajectories from the initial set of $K$ proposals.
 \end{itemize}
 
-\begin{table}[h!]
-    \centering
-    \caption{Mapping Visualization Elements to MTR Components}
-    \label{tab:viz_mapping}
-    \resizebox{\textwidth}{!}{%
-    \begin{tabular}{@{}ll@{}}
-        \toprule
-        Visual Element & MTR Input / Internal Variable / Output Component \\
-        \midrule
-        Ego Vehicle / Focal Agent & Agent of interest in $A_{in}$; center of agent-centric normalization. \\
-        Other Agents & Other agent entries in $A_{in}$; futures $S_{1:T}$ from Dense Future Pred.; part of context $A$. \\
-        Past Trajectory (Ego) & Sequence of (x,y) from $A_{in}$ for the ego agent. \\
-        Future Trajectory (GT) & $Y_{GT}$ (target for training loss). \\
-        Single Predicted Path (Mode k) & Mean trajectory $(\mu_{x,k,1:T}, \mu_{y,k,1:T})$ from $k^{th}$ GMM component in $Z_{1:T}^N$. \\
-        Probability of Path (Mode k) & Mixture weight $p_k$ for $k^{th}$ GMM component. \\
-        Multiple Predicted Paths & Set of K mean trajectories from GMMs, typically reduced by NMS. \\
-        Lane Polylines & Polylines in $M_{in}$, encoded to $M_p$, contextualized to $M$, selected by $\alpha(M)$. \\
-        Crosswalk Polylines & Polylines in $M_{in}$, processed similarly. \\
-        (Conceptual) Intention Point $k$ & Point $I_k$ used to initialize Static Intention Query $Q_{I_k}$. \\
-        (Conceptual) Dynamic Map Collection & $L$ map polylines in $\alpha(M)$ selected based on $Y_{k,1:T}^j$. \\
-        \bottomrule
-    \end{tabular}%
-    }
-\end{table}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{placeholder_viz_key.png} % Replace with actual image file
-    \caption{Annotated "key" or legend linking typical visualization elements (e.g., from \cite{Shi2022MTR_A}) to MTR's architectural components or data structures.}
-    \label{fig:viz_key}
-\end{figure}
-
-\subsection{Illustrative Scenario Analysis (Agent at a Crosswalk)}
-\label{subsec:scenario_crosswalk}
-
-Scenario: Vehicle approaches a crosswalk.
-
+### Illustrative Scenario: Agent at a Crosswalk
+To understand how the components work together, consider a vehicle approaching a crosswalk where a pedestrian is present.
 \begin{enumerate}
-    \item \textbf{Input Processing and Encoding:}
-    \begin{itemize}
-        \item \textbf{Critical $A_{in}$:} Vehicle's current state (pos, vel, head), other agents (pedestrian state).
-        \item \textbf{Critical $M_{in}$:} Crosswalk polyline, stop line, lane markings. MTR (base) no traffic lights \cite{Shi2022MTR_A}.
-        \item \textbf{Encoding ($A_p, M_p$):} Histories and map elements encoded by polyline encoders. Forms $G^0 = [A_p, M_p]$.
-    \end{itemize}
-    \item \textbf{Scene Context Encoder (Local Attention):}
-    \begin{itemize}
-        \item Transformer Encoder processes $G^0$. Vehicle token's local attention (k-NN) includes crosswalk, stop line, lane, pedestrian tokens.
-        \item Produces contextualized $A_{vehicle}$ (understands proximity to crosswalk, pedestrian) and $M_{crosswalk}$.
-        \item Dense Future Prediction enhances $A$ with $A_{future}$ (predicted futures for vehicle and pedestrian).
-    \end{itemize}
-    \item \textbf{Motion Decoder:}
-    \begin{itemize}
-        \item \textbf{Static Intention Queries ($Q_I$) Proposing Actions:} $Q_{I,yield}$ (stop before crosswalk), $Q_{I,proceed}$ (pass through), $Q_{I,turn\_right}$ (if applicable).
-        \item \textbf{Dynamic Searching Queries ($Q_S^j$) and Dynamic Map Collection ($\alpha(M)$) Refining Actions:}
-        For "yield" hypothesis:
+    \item \textbf{Input and Encoding:} The model takes in the vehicle's past trajectory and the pedestrian's history, along with map polylines for the crosswalk and stop line. These are encoded into feature vectors.
+    \item \textbf{Contextualization:} The Transformer Encoder's local attention mechanism allows the vehicle's feature vector to be influenced by the nearby crosswalk and pedestrian features, creating a context-aware representation. An auxiliary task predicts the likely future motion of the pedestrian, further enriching the scene context.
+    \item \textbf{Decoding and Prediction:} The Motion Decoder begins its work. Static intention queries propose several plausible high-level actions, such as "yield before the crosswalk" and "proceed through".
         \begin{itemize}
-            \item Layer 1: $Q_{S,yield}^1$ (from $I_{yield}$) and $C_{sa,yield}^1$ query $A$ and $\alpha(M)$ (map around approach). Cross-attention incorporates vehicle state and predicted pedestrian state. Output $C_{yield}^1 \to Z_{yield,1:T}^1 \to Y_{yield,1:T}^1$ (rough stop).
-            \item Layer 2+: $Q_{S,yield}^2$ updated by $Y_{yield,1:T}^1$. $\alpha(M)$ collected based on $Y_{yield,1:T}^1$ (more focused on stop line). Iterative refinement.
+            \item The "yield" hypothesis is refined. Its dynamic query focuses attention on the stop line (via Dynamic Map Collection) and the pedestrian's state.
+            \item The "proceed" hypothesis is refined similarly.
         \end{itemize}
-        Similar refinement for "proceed" hypothesis.
-        \item \textbf{GMM Output ($Z_{1:T}^N$) Reflecting Probabilities ($p_k$):}
-        \begin{itemize}
-            \item If pedestrian predicted to cross: $p_{yield}$ high, $\mu_{yield}$ shows stop. $p_{proceed}$ low.
-            \item If crosswalk clear: $p_{proceed}$ high. $p_{yield}$ might be small non-zero.
-            \item Example: Figure 5(b) in \cite{Shi2022MTR} (V1 yields for P2).
-        \end{itemize}
-    \end{itemize}
+    \item \textbf{Final Output:} After iterative refinement across the decoder layers, the GMM output will reflect the context. Because the model has taken the pedestrian's presence and future path into account, the probability ($p_k$) associated with the "yield" trajectory will be high, while the "proceed" trajectory will have a low probability. This demonstrates how MTR generates contextually-aware, multimodal predictions. A visualization of this would show the vehicle's past path, the map features (lanes, crosswalk), and multiple predicted future paths, each with a different color and a displayed probability score.
 \end{enumerate}
 
-\begin{figure}[h!]
-    \centering
-    \begin{minipage}{0.48\textwidth}
-        \includegraphics[width=\textwidth]{placeholder_scenario_input.png}
-        \subcaption{Initial input: agent history, map context including crosswalk.}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \includegraphics[width=\textwidth]{placeholder_scenario_encoder.png}
-        \subcaption{Key attention patterns in encoder (conceptual).}
-    \end{minipage}
-    \vspace{0.5cm}
-    \begin{minipage}{0.48\textwidth}
-        \includegraphics[width=\textwidth]{placeholder_scenario_decoder.png}
-        \subcaption{Motion queries and interaction with crosswalk via dynamic map collection.}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \includegraphics[width=\textwidth]{placeholder_scenario_output.png}
-        \subcaption{Final multimodal predictions (paths with probabilities) overlaid on scene.}
-    \end{minipage}
-    \caption{Storyboard diagrams for the agent-at-crosswalk scenario.}
-    \label{fig:scenario_storyboard}
-\end{figure}
+\section{Key Scientific Challenges and Model Variants}
+
+The primary scientific challenge in motion prediction is managing the inherent uncertainty and multimodality of agent behavior in complex, interactive environments. MTR addresses this through its query-based decoder, but different versions of the model optimize for different goals.
+
+\begin{itemize}
+    \item \textbf{MTR (Standard):} The baseline model uses $K=64$ queries to generate a rich set of proposals, which are then filtered using NMS. This approach excels at capturing a wide variety of possible behaviors, leading to high performance on metrics like mean Average Precision (mAP).
+    \item \textbf{MTR-e2e:} This "end-to-end" variant uses only 6 motion queries and no NMS. It is designed for scenarios where a fixed, small number of predictions is required. It uses a different training strategy better suited to the small, adaptive query set.
+    \item \textbf{MTR++:} This extension tackles the more complex problem of simultaneous multi-agent prediction. It introduces a shared "Symmetric Scene Context" encoder and allows the intention queries of different agents to interact via "Mutually-Guided Intention Querying". This enables the model to produce more efficient and scene-compliant joint predictions for all agents at once.
+\end{itemize}
+
+These variants show the flexibility of the core MTR architecture in addressing the diverse challenges of motion forecasting.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-The Motion Transformer (MTR) architecture, through its innovative design, effectively addresses the intricate challenges of multimodal motion prediction. Its core strength lies in the joint optimization of global intention localization and local movement refinement, actualized via a sophisticated Transformer encoder-decoder framework. The introduction of static intention queries ($Q_I$) provides robust, mode-specific anchors derived from data-driven intention points, stabilizing training and ensuring diverse initial hypotheses. Complementing this, dynamic searching queries ($Q_S^j$), iteratively updated based on prior predictions and coupled with a dynamic map collection strategy ($\alpha(M)$), enable precise, context-aware refinement of these initial intentions.
+The Motion Transformer (MTR) architecture addresses the challenge of multimodal motion prediction through its innovative design. Its core strength is the joint optimization of global intention localization and local movement refinement, which is realized through a clear encoder-decoder structure.
 
-The architecture meticulously processes vectorized polyline inputs for agent histories and map features using PointNet-like encoders, feeding these into a Transformer encoder that leverages local self-attention to build a rich, contextualized scene understanding. Auxiliary mechanisms like Dense Future Prediction further enrich this context by modeling future interactions of all agents. The subsequent Motion Decoder, with its stacked layers, iteratively refines trajectories, culminating in a GMM-based prediction head that outputs multiple probabilistic future paths.
+The architecture processes vectorized polyline inputs for agent histories and map features with PointNet-like encoders. A Transformer encoder then uses local self-attention to build a rich, contextualized scene understanding. The subsequent Motion Decoder uses its key components to generate predictions. Static intention queries ($Q_I$) provide stable, mode-specific anchors based on data-driven intention points. Dynamic searching queries ($Q_S^j$) then perform precise, context-aware refinement of these intentions. This refinement is guided by prior predictions and a dynamic map collection strategy ($\alpha(M)$). The stacked decoder layers iteratively improve the trajectories, and a final prediction head produces a probabilistic set of future paths using a Gaussian Mixture Model (GMM).
 
-Variants like MTR-e2e demonstrate adaptability for end-to-end prediction with a fixed number of outputs, while the MTR++ extension significantly advances the field by enabling efficient and interactive simultaneous multi-agent prediction through symmetric scene context modeling and mutually-guided intention querying. These architectural choices and extensions underscore MTR's capacity to generate accurate, diverse, and scene-compliant trajectory forecasts, marking a substantial contribution to motion prediction for autonomous systems. The principles of query-based prediction, iterative refinement, and adaptive context utilization demonstrated by MTR offer valuable paradigms for future research in behavior modeling and autonomous navigation.
+Model variants show the architecture's flexibility. MTR-e2e adapts the model for end-to-end prediction with a fixed number of outputs, while the MTR++ extension enables efficient and interactive multi-agent prediction. These architectural choices allow MTR to generate accurate, diverse, and scene-compliant trajectory forecasts. The principles of query-based prediction, iterative refinement, and adaptive context utilization are valuable paradigms for future work in autonomous navigation.
