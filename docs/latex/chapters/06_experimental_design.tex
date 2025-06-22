@@ -36,6 +36,7 @@ The performance of the trajectory prediction model is assessed using a set of st
 \end{itemize}
 On the validation set, the trained MTR model achieved a \textbf{brier-minFDE} of 1.98, a \textbf{minFDE} of 1.6655, a \textbf{minADE} of 0.86294, and a \textbf{Miss Rate} of 0.30141. These results are comparable to baseline values from existing literature. The Brier-FDE of 1.98 shows a slight improvement over the 2.08 value reported in the MTR paper's appendix. Figure \ref{fig:validation_metrics} shows the progression of these metrics on the validation set over the course of training.
 
+% toDO(luroess): Split graphs for better vizualization?
 \begin{figure}[h!]
     \centering
     \includegraphics[width=\textwidth]{figures/performance_metrics_validation.png}
@@ -53,6 +54,7 @@ On the validation set, the trained MTR model achieved a \textbf{brier-minFDE} of
    % - Any specific strategies like hard assignment in MTR. 
 The primary learning objective is to train the model to accurately forecast multimodal trajectories. The training process, tracked over thousands of steps, shows a clear reduction in loss values for metrics including minFDE6, minADE6, and miss rate, indicating the model is learning from the data. Figure \ref{fig:training_metrics_grid} illustrates this by charting the decrease across multiple training metrics. The framework's design principle is to unify loss functions across different models, and the training objective is to minimize the selected loss function to achieve better performance on the evaluation metrics.
 
+% toDO(luroess): Split graphs for better vizualization?
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/performance_metrics_training.png}
