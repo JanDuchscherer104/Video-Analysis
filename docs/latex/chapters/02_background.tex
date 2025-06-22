@@ -40,7 +40,7 @@ While only \emph{agent-centric} coordinate systems allow for tractable applicati
 \subsection{Context-Aware Scene Prediction}
 \label{ssec:caspnet}
 
-This section distills the key ideas behind \emph{Context-Aware Scene Prediction Network} (CASPNet)~\cite{caspnetSchäfer2022} and its transformer successor \emph{CASPFormer}~\cite{caspformerYadav2024}. Both architectures perform \emph{joint multi-agent} trajectory forecasting from rasterized bird's-eye-view (BEV) inputs, yet they differ strongly in how they fuse context and decode trajectories. We summarize their core components, strengths, and limitations; mathematical derivations, equations, and detailed architectural diagrams can be found in the Appendix~\ref{app:caspnet_details}~\dots~\ref{app:caspformer_details}.
+This section distills the key ideas behind \emph{Context-Aware Scene Prediction Network} (CASPNet)~\cite{caspnetSchäfer2022} and its transformer successor \emph{CASPFormer}~\cite{caspformerYadav2024}. Both architectures perform \emph{joint multi-agent} trajectory forecasting from rasterized bird's-eye-view (BEV) inputs, yet they differ strongly in how they fuse context and decode trajectories. We summarize their core components, strengths, and limitations.
 
 \subsubsection*{CASPNet: Rasterized BEV Encoding with Dual FPN}
 
@@ -94,45 +94,44 @@ which are then concatenated with the static map features at each level:
 \boldsymbol{\mathcal{F}}=\{\mathbf{F}_\ell^{\mathrm{traj}}\oplus \mathbf{F}_\ell^{\mathrm{map}}\}_{\ell=0}^{L-1}.
 \end{equation}
 \( \boldsymbol{\mathcal{F}} \) is the resulting latent feature pyramid.
-%% Above is done %%
 
-\item[Pixel-adaptive attention.] The \emph{Attention Block} in the lateral skip connections in \autoref{fig:caspnet_overview} blends multiple \emph{dilated convolutions}\cite{dilatedConv21} per pixel, capturing short- and long-range interactions through learned per-pixel attention weights over different dilation rates. For each spatial location \((i,j) \in \{1,\dots,H^{\ell}\} \times \{1,\dots,W^{\ell}\}\), attention weights \(\alpha_{i,j}^{(r)}\) are computed over different dilation rates \( r \):
+\item[Pixel-adaptive attention.] The \emph{Attention Block} in the lateral skip connections in \autoref{fig:caspnet_overview} blends multiple \emph{dilated convolutions}\cite{dilatedConv21} per pixel, capturing short- and long-range interactions through learned per-pixel attention weights over different dilation rates. For each spatial location \((i,j) \in \{1,\dots,H^{\ell}\} \times \{1,\dots,W^{\ell}\}\), attention weights \(\alpha^{(i,j)}_{r}\) are computed over different dilation rates \( r \):
 \begin{equation}
 \label{eq:pixel_attention}
-\mathbf{F}_{att}^{(i,j)} = \sum_{r} \alpha_{i,j}^{(r)} \cdot \text{DilatedConv}_r(\boldsymbol{\mathcal{F}}_{i,j})
+\mathbf{F}_{\ell, att}^{(i,j)} = \sum_{r} \alpha^{(i,j)}_{r} \cdot \text{DilatedConv}_r(\mathbf{F}^{(i,j)}_{\ell}),
 \end{equation}
-where \(\alpha_{i,j}^{(r)} = \text{softmax}(\text{Conv}(\boldsymbol{\mathcal{F}}_{i,j}))\) are learned attention weights that allow the network to dynamically select appropriate receptive field sizes for each spatial location.
+where \(\alpha^{(i,j)}_{r} = \text{softmax}(\text{Conv}(\mathbf{F}^{(i,j)}_{\ell})))\) are learned attention weights that allow the network to dynamically select appropriate receptive field sizes for each spatial location.
 
 \item[Grid-based decoder.] The decoder employs a series of \emph{residual upsampling blocks} to progressively upsample the feature maps from the FPN to the original raster resolution. Each residual block consists of a parallel \emph{transposed convolution} and a \emph{linear interpolation} layer. The resulting feature maps of each upsampling block are concatenated with the corresponding feature maps the next level of the FPN.\\
 Finally, the decoder uses a \emph{ConvLSTM} layer to autoregressively generate future predictions. For each future timestep \(t \in \{T_p, \ldots, T_p + T_f - 1\}\), the decoder outputs occupancy probabilities and motion offsets.
 
-\textbf{Pros.} Inference time independent of agent count; inherent multi-modality via heat-map superposition.
-\textbf{Cons.} Metric accuracy capped by raster resolution; inference cost scales with grid size; vectorized outputs require post-processing.
+\paragraph{Pros.} Inference time independent of agent count; inherent multi-modality via heat-map superposition.\\
+\paragraph{Cons.} Metric accuracy capped by raster resolution; inference cost scales with grid size; vectorized outputs require post-processing; No multi-modal prediction; limited temporal modeling; No explicit relationship modeling between agents or between agents and map; No symmetries in the agent-centric coordinate system for all but the ego agent.
 
 %--------------------------------------------------------------------
-\subsection{CASPFormer: Trajectory Prediction with Deformable Attention}
+%% Above is done %%
+\subsubsection*{CASPFormer: Trajectory Prediction with Deformable Attention}
 \label{ssec:caspformer}
+
+retains CASPNet's multi-scale CNN backbone to encode rasterized BEV inputs into hierarchical feature maps. These are flattened into tokens at each scale and enriched with 2D sinusoidal position encodings before being passed into a \textbf{Deformable Self-Attention} layer that fuses multi-scale context at $\mathcal{O}(N)$ complexity~\cite{zhu2021deformabledetr}. The resulting fused tokens serve as the keys and values in the decoder, which autoregressively emits vectorized \((x,y)\) trajectories by employing a \textbf{Deformable Cross-Attention} module.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{figures/caspformer-overall-arch.jpg}
-  \caption{CASPFormer architecture: retains CASPNet's CNN backbone but replaces grid decoder with deformable attention transformer for direct vectorized trajectory output.}
+  \caption{CASPFormer architecture: retains CASPNet's CNN backbone but replaces grid decoder with deformable attention transformer for vectorized trajectory output.}
   \label{fig:caspformer_overall}
 \end{figure}
 
-\subsubsection*{CASPFormer: Hybrid CNN-Transformer Architecture}
-
-CASPFormer~\cite{caspformerYadav2024} preserves the proven CNN+FPN backbone from CASPNet but replaces grid decoding with a transformer that emits continuous \((x,y)\) trajectories. The architecture builds upon the \emph{deformable attention} mechanism from Deformable DETR~\cite{zhu2021deformable}, adapting it for trajectory prediction tasks.
 
 \begin{description}[leftmargin=1em,itemsep=2pt]
-\item[Multi-Scale Deformable Self-Attention (MSDA).] The FPN feature maps \(\boldsymbol{\mathcal{F}} = \{\mathbf{F}_\ell\}_{\ell=0}^{L-1}\) are first flattened and concatenated into a unified feature sequence. MSDA performs feature fusion across multiple scales with \(\mathcal{O}(N)\) complexity:
+\item[Deformable Self-Attention (DSA).] The FPN feature maps \(\boldsymbol{\mathcal{F}} = \{\mathbf{F}_\ell\}_{\ell=0}^{L-1}\) are flattened and concatenated into a unified feature sequence as well as enriched with non-learnable 2D sinusoidal encodings to retain spatial relationships. DSA then performs feature fusion across multiple scales with \(\mathcal{O}(N)\) complexity.
 \begin{equation}
 \label{eq:msda_fusion}
-\mathbf{Z} = \text{MSDA}(\text{Flatten}(\boldsymbol{\mathcal{F}}))
+\mathbf{Z} = \text{MSDA}(\text{Flatten}(\boldsymbol{\boldsymbol{\mathcal{F}} + \text{PE}})),
 \end{equation}
 where learned sampling offsets \(\boldsymbol{\Delta p}_{lkm}\) focus attention on the most informative spatial locations across pyramid levels. Each attention head \(m\) at level \(\ell\) samples \(K\) points around reference positions.
 
-\item[Recurrent deformable cross-attention.] The core innovation lies in the autoregressive decoding scheme. For each future timestep \(t\), dual queries attend to the fused features \(\mathbf{Z}\):
+\item[Recurrent deformable cross-attention.] The core innovation lies in the autoregressive decoding scheme. For each future timestep \(t \in \{T_p + 1, \ldots, T_p + T_f\}\), dual queries attend to the fused features \(\mathbf{Z}\):
 \begin{equation}
 \label{eq:dual_query_update}
 \begin{aligned}
@@ -163,7 +162,7 @@ yielding position means \(\hat{\boldsymbol{\mu}}_{t,m} \in \mathbb{R}^2\), uncer
 
 The key innovation lies in the dual-query architecture that addresses mode collapse while maintaining temporal consistency. Unlike single-query approaches that struggle with behavioral diversity, the separation of temporal and mode queries enables CASPFormer to generate distinct trajectory modes while preserving smooth temporal dynamics.
 
-\textbf{Pros.} Continuous, map-aligned trajectories; 30–40\% lower minFDE than CASPNet on nuScenes while training three times faster; complexity scales with prediction length \(\mathcal{O}(T_f)\), not grid size \(\mathcal{O}(HW)\); direct vectorized output without post-processing.
+\textbf{Pros.} Continuous, map-aligned trajectories; 30-40\% lower minFDE than CASPNet on nuScenes while training three times faster; complexity scales with prediction length \(\mathcal{O}(T_f)\), not grid size \(\mathcal{O}(HW)\); direct vectorized output without post-processing.
 \textbf{Cons.} Still inherits quantization artifacts from the rasterized backbone; deformable attention adds modest per-step latency versus pure CNNs; requires careful hyperparameter tuning for attention sampling.
 
 %--------------------------------------------------------------------
@@ -189,5 +188,4 @@ Both architectures demonstrate the evolution from grid-based to hybrid approache
 This section provided a comprehensive overview of two seminal works in rasterized trajectory prediction: CASPNet's grid-based joint prediction and CASPFormer's hybrid CNN-transformer architecture. While both methods process BEV inputs, their architectural choices reflect different trade-offs between computational efficiency, prediction accuracy, and deployment constraints. CASPNet prioritizes constant-time inference and edge compatibility, while CASPFormer emphasizes prediction quality and continuous output representation. These design principles continue to influence modern trajectory prediction systems, including the query-centric approaches discussed in subsequent sections.
 
 %--------------------------------------------------------------------
-\subsection*{Pointers to Appendix}
-Detailed mathematical formulations, Gabor filter steerability proofs, deformable attention mechanics, loss functions, layer-wise architectural diagrams, and complete ablation studies are provided in Appendix~\ref{app:caspnet_details}\dots\ref{app:caspformer_extra}.
+\newpage
