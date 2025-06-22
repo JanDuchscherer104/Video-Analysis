@@ -1,25 +1,25 @@
 % Appendix
 \appendix
-\section*{Appendix}
+\section{Appendix}
 
-\subsection*{The UniTraj Dataprocessing Pipeline}
+\subsection{The UniTraj Dataprocessing Pipeline}
 
 \textbf{Phase 1: Temporal Window Extraction}
 
-The first processing stage extracts \emph{uniformly sampled} windows containing historical context ($T_p$ steps) and future ground truth ($T_f$ steps) from raw agent trajectories. Frequency masking ensures consistent uniform temporal resolution with a sampling interval $\Delta t_{s}$ across datasets, and is combined with the original validity masks to indicate which observations are valid at each timestep. Validity masks indicate missing observations throughout the pipeline.
+The first processing stage extracts \emph{uniformly sampled} windows containing historical context (\(T_p\) steps) and future ground truth (\(T_f\) steps) from raw agent trajectories. Frequency masking ensures consistent uniform temporal resolution with a sampling interval \(\Delta t_{s}\) across datasets, and is combined with the original validity masks to indicate which observations are valid at each timestep. Validity masks indicate missing observations throughout the pipeline.
 
 \begin{algorithm}[H]
 \caption{Phase 1: Temporal Window Extraction}
 \label{alg:phase1_temporal}
 \begin{algorithmic}[1]
-\REQUIRE Raw scenario tracks $\mathcal{T}$, time horizons $T_p, T_f$, sampling interval $\Delta t_{s}$
+\REQUIRE Raw scenario tracks \(\mathcal{T}\), time horizons \(T_p, T_f\), sampling interval \(\Delta t_{s}\)
 \ENSURE Temporally windowed agent trajectories with validity masks
-\STATE $T_{total} \leftarrow T_p + T_f$ \COMMENT{Total time window length}
-\STATE $M_{freq} \leftarrow \text{generate\_mask}(T_p - 1, T_{total}, \Delta t_{s})$ \COMMENT{Temporal sampling mask}
-\FOR{each agent track $i \in \mathcal{T}$, timestep $t = 0$ to $T_{total}$}
-    \STATE Extract state vectors: $\boldsymbol{s}_i^{(t)} = [\boldsymbol{p}_i^{(t)}, l_i, w_i, h_i, \theta_i^{(t)}, \boldsymbol{v}_i^{(t)}, \text{valid}_i^{(t)}]^T$
-    \STATE Apply temporal windowing: $\boldsymbol{s}_i \leftarrow \boldsymbol{s}_i[t_{start} : t_{start} + T_{total}]$
-    \STATE Apply frequency masking: $\text{valid}_i^{(t)} \leftarrow \text{valid}_i^{(t)} \cdot M_{freq}[t]$
+\STATE \(T_{total} \leftarrow T_p + T_f\) \COMMENT{Total time window length}
+\STATE \(M_{freq} \leftarrow \text{generate\_mask}(T_p - 1, T_{total}, \Delta t_{s})\) \COMMENT{Temporal sampling mask}
+\FOR{each agent track \(i \in \mathcal{T}\), timestep \(t = 0\) to \(T_{total}\)}
+    \STATE Extract state vectors: \(\boldsymbol{s}_i^{(t)} = [\boldsymbol{p}_i^{(t)}, l_i, w_i, h_i, \theta_i^{(t)}, \boldsymbol{v}_i^{(t)}, \text{valid}_i^{(t)}]^T\)
+    \STATE Apply temporal windowing: \(\boldsymbol{s}_i \leftarrow \boldsymbol{s}_i[t_{start} : t_{start} + T_{total}]\)
+    \STATE Apply frequency masking: \(\text{valid}_i^{(t)} \leftarrow \text{valid}_i^{(t)} \cdot M_{freq}[t]\)
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
@@ -32,153 +32,149 @@ This phase converts heterogeneous map primitives (lanes, boundaries, signs, cros
 \caption{Phase 2: Map Feature Processing}
 \label{alg:phase2_map}
 \begin{algorithmic}[1]
-\REQUIRE Raw map features $\mathcal{M}$, allowed polyline types
-\ENSURE Processed polyline collection $\mathcal{P}$
-\STATE $\mathcal{P} \leftarrow \emptyset$ \COMMENT{Initialize polyline collection}
-\FOR{each map feature $f \in \mathcal{M}$}
-    \STATE $polyline\_type \leftarrow \text{classify\_polyline\_type}(f)$
-    \IF{$polyline\_type \in \text{allowed\_types}$}
-        \STATE $\boldsymbol{p}_{polyline} \leftarrow \text{interpolate\_polyline}(f.geometry)$
-        \STATE $\boldsymbol{d}_{polyline} \leftarrow \text{compute\_direction\_vectors}(\boldsymbol{p}_{polyline})$
-        \STATE $\boldsymbol{f}_{polyline} \leftarrow [\boldsymbol{p}_{polyline}, \boldsymbol{d}_{polyline}, polyline\_type]$
-        \STATE $\mathcal{P} \leftarrow \mathcal{P} \cup \{\boldsymbol{f}_{polyline}\}$
-    \ENDIF
+\REQUIRE Raw map data \(\mathcal{M}\), interpolation distance \(d_{interp}\)
+\ENSURE Standardized map polylines with geometric and semantic features
+\FOR{each map element \(m \in \mathcal{M}\)}
+    \STATE Interpolate polyline points with uniform spacing \(d_{interp}\)
+    \STATE Compute direction vectors: \(\boldsymbol{d}_{k,l} = \boldsymbol{p}_{k,l+1} - \boldsymbol{p}_{k,l}\)
+    \STATE Assign semantic type encoding: \(\boldsymbol{o}_{type} \in \{0,1\}^{20}\)
+    \STATE Store polyline: \(\boldsymbol{L}_k = [\boldsymbol{p}_{k,l}, \boldsymbol{d}_{k,l}, \boldsymbol{o}_{type}]_{l=1}^{L}\)
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
 \textbf{Phase 3: Agent Selection and Filtering}
 
-This phase applies multiple criteria to identify suitable center agents $\mathcal{A}_{c}$: agents must belong to relevant classes (vehicles, pedestrians, cyclists), maintain $\geq 50\%$ observability, demonstrate meaningful motion ($\geq 2$m movement for vehicles), and be present at prediction time.
+Agent filtering ensures that only relevant trajectories with sufficient motion and observation quality are retained for training. This phase applies distance-based motion thresholds, present-time validity requirements, and future continuity constraints to identify suitable center agents.
 
 \begin{algorithm}[H]
 \caption{Phase 3: Agent Selection and Filtering}
 \label{alg:phase3_filtering}
 \begin{algorithmic}[1]
-\REQUIRE Agent tracks $\mathcal{T}$, filtering criteria
-\ENSURE Filtered center agents $\mathcal{A}_{c}$
-\STATE $\mathcal{A}_{c} \leftarrow \emptyset$
-\FOR{each agent $c \in \mathcal{T}$}
-    \STATE Verify type constraint: $\text{type}_{c} \in \{\text{VEH}, \text{PED}, \text{CYC}\}$
-    \STATE Compute validity ratio: $\rho_c = \frac{\sum_{t=0}^{T_p-1} \text{valid}_c^{(t)}}{T_p}$
-    \STATE Compute movement distance: $\Delta d_c = \sum_{t=1}^{T_p-1} \|\boldsymbol{p}_c^{(t)} - \boldsymbol{p}_c^{(t-1)}\|_2$
-    \IF{$\rho_c \geq 0.5 \land \Delta d_c \geq 2.0 \land \text{valid}_c^{(T_p-1)} = 1$}
-        \STATE $\mathcal{A}_{c} \leftarrow \mathcal{A}_{c} \cup \{c\}$
+\REQUIRE Agent trajectories \(\mathcal{A}\), motion threshold \(d_{min} = 2.0\)m
+\ENSURE Filtered set of center agents \(\mathcal{A}_{center}\)
+\STATE \(\mathcal{A}_{center} \leftarrow \emptyset\)
+\FOR{each agent \(i \in \mathcal{A}\)}
+    \STATE Compute total motion: \(\Delta d_i = \sum_{t=1}^{T_p-1} \|\boldsymbol{p}_i^{(t)} - \boldsymbol{p}_i^{(t-1)}\|_2\)
+    \IF{\(\Delta d_i \geq d_{min}\) AND \(\text{valid}_i^{(T_p-1)} = 1\)}
+        \STATE Add to center agents: \(\mathcal{A}_{center} \leftarrow \mathcal{A}_{center} \cup \{i\}\)
     \ENDIF
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
-Each suitable center agent $c \in \mathcal{A}_{c}$ will subsequently yield a unique \texttt{DatasetItem} instance, containing all relevant data for that agent's prediction scenario.
+\textbf{Phase 4: Coordinate System Transformation}
 
-\textbf{Phase 4: Agent-Centric Coordinate Transformation}
-
-This phase transforms all \emph{scene-centric} spatial data to an \emph{agent-centric} coordinate frame by translating to the center agent's current position and rotating to align with its heading.
+For each center agent, the entire scene (including all other agents and map elements) is transformed to an agent-centric coordinate frame. This transformation consists of translation to center the agent's position at \(t = T_p - 1\) at the origin, followed by rotation to align the agent's heading with the positive \(x\)-axis.
 
 \begin{algorithm}[H]
-\caption{Phase 4: Agent-Centric Coordinate Transformation}
+\caption{Phase 4: Coordinate System Transformation}
 \label{alg:phase4_transform}
 \begin{algorithmic}[1]
-\REQUIRE Center agent $c$, all agent tracks, polylines $\mathcal{P}$
-\ENSURE Transformed agent trajectories and polylines in agent-centric frame
-\STATE $\boldsymbol{p}_{c,ref} \leftarrow \boldsymbol{p}_c^{(T_p-1)}$ \COMMENT{Reference position}
-\STATE $\theta_{c,ref} \leftarrow \theta_c^{(T_p-1)}$ \COMMENT{Reference heading}
-\STATE $\mathbf{R} \leftarrow \text{rotation\_matrix}(-\theta_{c,ref})$ \COMMENT{Inverse rotation matrix}
-\FOR{each agent $i$ in scenario}
-    \FOR{$t = 0$ to $T_p - 1$}
-        \STATE $\tilde{\boldsymbol{p}}_i^{(t)} \leftarrow \boldsymbol{p}_i^{(t)} - \boldsymbol{p}_{c,ref}$ \COMMENT{Translate}
-        \STATE $\boldsymbol{p}_i^{(t),a} \leftarrow \mathbf{R} \cdot \tilde{\boldsymbol{p}}_i^{(t)}$ \COMMENT{Rotate positions}
-        \STATE $\boldsymbol{v}_i^{(t),a} \leftarrow \mathbf{R} \cdot \boldsymbol{v}_i^{(t)}$ \COMMENT{Rotate velocities}
-        \STATE $\theta_i^{(t),a} \leftarrow \theta_i^{(t)} - \theta_{c,ref}$ \COMMENT{Normalize heading}
-    \ENDFOR
+\REQUIRE Center agent \(c\), all trajectories \(\mathcal{A}\), map polylines \(\mathcal{L}\)
+\ENSURE Agent-centric coordinates for all elements
+\STATE \(\boldsymbol{p}_c^{ref} \leftarrow \boldsymbol{p}_c^{(T_p-1)}\) \COMMENT{Reference position}
+\STATE \(\theta_c^{ref} \leftarrow \theta_c^{(T_p-1)}\) \COMMENT{Reference heading}
+\FOR{each agent \(i \in \mathcal{A}\), timestep \(t\)}
+    \STATE Translate: \(\boldsymbol{p}_i^{(t)} \leftarrow \boldsymbol{p}_i^{(t)} - \boldsymbol{p}_c^{ref}\)
+    \STATE Rotate: \(\boldsymbol{p}_i^{(t)} \leftarrow \mathbf{R}(-\theta_c^{ref}) \boldsymbol{p}_i^{(t)}\)
+    \STATE Transform heading: \(\theta_i^{(t)} \leftarrow \theta_i^{(t)} - \theta_c^{ref}\)
+    \STATE Rotate velocity: \(\boldsymbol{v}_i^{(t)} \leftarrow \mathbf{R}(-\theta_c^{ref}) \boldsymbol{v}_i^{(t)}\)
 \ENDFOR
-\FOR{each polyline $p \in \mathcal{P}$}
+\FOR{each polyline \(k \in \mathcal{L}\), point \(l\)}
     \STATE Apply same coordinate transformation to polyline points
-    \STATE Filter polylines within spatial range: $\|\boldsymbol{p}_{polyline}\|_2 \leq \text{map\_range}$
+    \STATE Filter polylines within spatial range: \(\|\boldsymbol{p}_{polyline}\|_2 \leq \text{map\_range}\)
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
-After this transformation, all spatial map features and agent states are expressed in a common reference frame, whose origin is the center agent's position at the last historical timestep $T_p-1$. This yields both \emph{translation} and \emph{rotation} invariance, when perceiving the scene from the center agent's perspective.
+After this transformation, all spatial map features and agent states are expressed in a common reference frame, whose origin is the center agent's position at the last historical timestep \(T_p-1\). This yields both \emph{translation} and \emph{rotation} invariance, when perceiving the scene from the center agent's perspective.
 
 \textbf{Phase 5: Feature Vector Assembly}
 
-This processing step constructs the final feature vectors for each agent by combining spatial attributes (position, dimensions), semantic information (object type, roles), temporal one-hot encoding, kinematic properties (velocity, acceleration), and geometric features (sinusoidal heading encoding). Finally, the resulting feature vectors $\boldsymbol{X}_{agent}^{(i,t)}$ are masked by the validity of each agent at each timestep, ensuring that only valid observations contribute to the model input.
+This phase constructs the full feature vectors for each agent by concatenating spatial state, agent type encoding, temporal step embedding, heading representation, and kinematic features. Invalid trajectory points are zeroed out according to the validity masks.
 
 \begin{algorithm}[H]
 \caption{Phase 5: Feature Vector Assembly}
 \label{alg:phase5_features}
 \begin{algorithmic}[1]
-\REQUIRE Transformed agent states, center agent $c$
-\ENSURE Assembled feature vectors $\boldsymbol{X}_{agent}^{(i,t)}$
-\FOR{each agent $i$, timestep $t$}
-    \STATE $\boldsymbol{f}_{spatial} \leftarrow [\boldsymbol{p}_i^{(t),a}, l_i, w_i, h_i]$
-    \STATE $\boldsymbol{o}_{type} \leftarrow \text{one\_hot\_encode}(\text{type}_i, \text{is\_center}, \text{is\_sdc})$
-    \STATE $\boldsymbol{e}_{time} \leftarrow \text{temporal\_embedding}(t, T_p)$ \COMMENT{One-hot encoding of timestep}
-    \STATE $\boldsymbol{h}_{embed} \leftarrow [\sin(\theta_i^{(t),a}), \cos(\theta_i^{(t),a})]$
-    \STATE $\boldsymbol{a}_i^{(t)} \leftarrow \frac{\boldsymbol{v}_i^{(t)} - \boldsymbol{v}_i^{(t-1)}}{\Delta t}$ \COMMENT{Compute acceleration}
-    \STATE $\boldsymbol{f}_{kinematic} \leftarrow [\boldsymbol{v}_i^{(t),a}, \boldsymbol{a}_i^{(t)}]$
-    \STATE $\boldsymbol{X}_{agent}^{(i,t)} \leftarrow [\boldsymbol{f}_{spatial}, \boldsymbol{o}_{type}, \boldsymbol{e}_{time}, \boldsymbol{h}_{embed}, \boldsymbol{f}_{kinematic}]$
-    \STATE Apply validity masking: $\boldsymbol{X}_{agent}^{(i,t)} \leftarrow \boldsymbol{X}_{agent}^{(i,t)} \cdot \text{valid}_i^{(t)}$
+\REQUIRE Transformed agent states, validity masks
+\ENSURE Complete agent feature vectors \(\boldsymbol{X}_d \in \mathbb{R}^{N_{\max} \times T_p \times F_{ap}}\)
+\FOR{each agent \(i\), timestep \(t\)}
+    \STATE Spatial features: \(\boldsymbol{f}_{spatial} = [\boldsymbol{p}_i^{(t)}, l_i, w_i, h_i] \in \mathbb{R}^6\)
+    \STATE Type encoding: \(\boldsymbol{o}_{type} \in \{0,1\}^5\)
+    \STATE Time embedding: \(\boldsymbol{e}_{time} \in \{0,1\}^{T_p+1}\)
+    \STATE Heading encoding: \(\boldsymbol{h}_{embed} = [\sin(\theta_i^{(t)}), \cos(\theta_i^{(t)})] \in \mathbb{R}^2\)
+    \STATE Kinematic features: \(\boldsymbol{f}_{kinematic} = [\boldsymbol{v}_i^{(t)}, \boldsymbol{a}_i^{(t)}] \in \mathbb{R}^4\)
+    \STATE Concatenate: \(\boldsymbol{X}_d^{(i,t)} = [\boldsymbol{f}_{spatial}, \boldsymbol{o}_{type}, \boldsymbol{e}_{time}, \boldsymbol{h}_{embed}, \boldsymbol{f}_{kinematic}]\)
+    \IF{\(\text{valid}_i^{(t)} = 0\)}
+        \STATE \(\boldsymbol{X}_d^{(i,t)} \leftarrow \boldsymbol{0}\)
+    \ENDIF
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
-\textbf{Phase 6: Proximity-Based Agent Selection}
+\textbf{Phase 6: Agent Proximity Filtering and Padding}
 
-Another handle to balance computational tractability and expressivity of the data representation is to select a fixed number of agents based on their proximity to the center agent at the last historical timestep $T_p-1$. This phase ranks agents by their distance to the center agent and retains only the closest $N_{max}$ agents. The agent tensor is padded to a fixed size, and a validity mask is created to indicate which agents are present in the padded tensor.
+To ensure computational tractability, the pipeline retains only the \(N_{\max}\) closest agents to each center agent, where proximity is measured by the Euclidean distance at the final historical timestep. Agent features are then zero-padded to the fixed dimension \(N_{\max}\) to enable efficient batch processing.
 
 \begin{algorithm}[H]
-\caption{Phase 6: Proximity-Based Agent Selection}
+\caption{Phase 6: Agent Proximity Filtering and Padding}
 \label{alg:phase6_proximity}
 \begin{algorithmic}[1]
-\REQUIRE Transformed agent positions, center agent $c$, $N_{max}$
-\ENSURE Padded agent tensor $\boldsymbol{X}_d$, validity mask $\boldsymbol{M}_d$
-\STATE Compute distances: $d_{ic} = \|\boldsymbol{p}_i^{(T_p-1),a}\|_2$ for all agents $i$
-\STATE Sort agents by distance and select top $N_{max}$ closest agents
-\STATE Pad agent tensor to fixed size: $\boldsymbol{X}_d \in \mathbb{R}^{N_{max} \times T_p \times F_{ap}}$
-\STATE Create validity mask: $\boldsymbol{M}_d \in \{0,1\}^{N_{max} \times T_p}$
+\REQUIRE Agent features \(\boldsymbol{X}_d\), maximum agents \(N_{\max} = 64\)
+\ENSURE Padded agent tensor \(\boldsymbol{X}_d \in \mathbb{R}^{N_{\max} \times T_p \times F_{ap}}\)
+\FOR{each center agent \(c\)}
+    \STATE Compute distances: \(d_{ic} = \|\boldsymbol{p}_i^{(T_p-1)} - \boldsymbol{p}_c^{(T_p-1)}\|_2\) for all agents \(i\)
+    \STATE Select top-\(N_{\max}\) closest agents by distance
+    \STATE Zero-pad features to dimension \(N_{\max} \times T_p \times F_{ap}\)
+    \STATE Create validity mask: \(\boldsymbol{M}_d \in \{0,1\}^{N_{\max} \times T_p}\)
+\ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
 \textbf{Phase 7: Map Feature Processing}
 
-The agent-centric map polylines are converted into a fixed-size tensor representations in a three-stage process: segmentation based on geometric discontinuities (gaps $>$ 1.0m), uniform resampling to exactly $L$ points per segment, and proximity-based selection of the top $K$ segments closest to the center agent. Each point is encoded with geometric context including position $\boldsymbol{p}_{k,l}^a$, direction vectors $\boldsymbol{d}_{k,l}^a$, previous point reference $\boldsymbol{p}_{k,l-1}^a$, and semantic type information $\boldsymbol{o}_{type\_onehot}$. The resulting map tensor $\boldsymbol{X}_s$ is padded to a fixed size of $K_{max}$ segments, each with $L$ points, and a validity mask $\boldsymbol{M}_s$ is created to indicate which segments are actually present.
+The agent-centric map polylines are converted into a fixed-size tensor representations in a three-stage process: segmentation based on geometric discontinuities (gaps \(>\) 1.0m), uniform resampling to exactly \(L\) points per segment, and proximity-based selection of the top \(K_{\max}\) segments closest to the center agent. Each point is encoded with geometric context including position, direction vectors, previous point reference, and semantic type information. The resulting map tensor \(\boldsymbol{X}_s\) is padded to a fixed size of \(K_{\max}\) segments, each with \(L\) points, and a validity mask \(\boldsymbol{M}_s\) is created to indicate which segments are actually present.
 
 \begin{algorithm}[H]
 \caption{Phase 7: Map Feature Processing}
 \label{alg:phase7_map_features}
 \begin{algorithmic}[1]
-\REQUIRE Transformed polylines $\mathcal{P}$, center agent $c$, $K_{max} = 256$, $L = 20$
-\ENSURE Padded map tensor $\boldsymbol{X}_s$, validity mask $\boldsymbol{M}_s$
-\STATE Sample points at interval $\Delta s$ and identify breaks where $\|\boldsymbol{p}_i - \boldsymbol{p}_{i-1}\|_2 > d_{break} = 1.0$m
-\STATE Split polylines at break points into segments
-\STATE Chunk each segment into pieces of max $L$ consecutive points
-\STATE Resample each chunk to exactly $L$ points via interpolation
-\STATE Compute segment centers and select top $K_{max}$ closest to agent
-\FOR{each selected segment $(k,l)$}
-    \STATE $\boldsymbol{X}_{map}^{(k,l)} \leftarrow [\boldsymbol{p}_{k,l}^a, \boldsymbol{d}_{k,l}^a, \boldsymbol{p}_{k,l-1}^a, \boldsymbol{o}_{type\_onehot}]$
+\REQUIRE Agent-centric polylines, max polylines \(K_{\max} = 256\), points per polyline \(L = 20\)
+\ENSURE Map tensor \(\boldsymbol{X}_s \in \mathbb{R}^{K_{\max} \times L \times F_{map}}\), validity mask \(\boldsymbol{M}_s\)
+\FOR{each polyline \(k\)}
+    \STATE Segment polyline at geometric discontinuities (gaps \(> 1.0\)m)
+    \STATE Resample each segment to exactly \(L\) uniform points
+    \STATE Compute geometric features: position, direction, previous point
+    \STATE Append semantic type encoding: \(\boldsymbol{o}_{type} \in \{0,1\}^{20}\)
+    \STATE Assemble: \(\boldsymbol{X}_s^{(k,l)} = [\text{position}, \text{direction}, \text{previous}, \boldsymbol{o}_{type}]\)
 \ENDFOR
-\STATE Pad map tensor: $\boldsymbol{X}_s \in \mathbb{R}^{K_{max} \times L \times F_{map}}$ where $F_{map} = 29$
-\STATE Create map validity mask: $\boldsymbol{M}_s \in \{0,1\}^{K_{max} \times L}$
+\STATE Select top-\(K_{\max}\) polylines by proximity to center agent
+\STATE Zero-pad to fixed dimensions and create validity mask
 \end{algorithmic}
 \end{algorithm}
 
-\textbf{Phase 8: Ground Truth Construction}
+\textbf{Phase 8: Future Trajectory Processing}
 
-The ground truth's are constructed by extracting future trajectory segments for the center agent in the agent-centric coordinate frame. This phase handles variable-length targets by creating a validity mask that indicates which future timesteps are valid, and computes the final valid index to ensure proper loss calculation during training. The future trajectory segments are extracted from the last historical timestep $T_p$ to the end of the prediction horizon $T_f$.
+This phase processes the future trajectory ground truth for each agent and creates the center agent's target trajectory. Future trajectories are extracted, transformed to agent-centric coordinates, and validity masks are created to handle variable-length future observations.
 
 \begin{algorithm}[H]
-\caption{Phase 8: Ground Truth Construction}
-\label{alg:phase8_ground_truth}
+\caption{Phase 8: Future Trajectory Processing}
+\label{alg:phase8_future}
 \begin{algorithmic}[1]
-\REQUIRE Center agent $c$, future horizon $T_f$
-\ENSURE Future trajectory targets $\boldsymbol{y}_c$, validity mask $\boldsymbol{M}_{future}$
-\FOR{$t = 0$ to $T_f - 1$}
-    \STATE Extract future trajectory: $\boldsymbol{y}_c^{(t)} = [\boldsymbol{p}_c^{(T_p+t),a}, \boldsymbol{v}_c^{(T_p+t),a}]$
+\REQUIRE Future trajectory data, center agent indices
+\ENSURE Center ground truth \(\boldsymbol{y}_c \in \mathbb{R}^{T_f \times 4}\), validity masks
+\FOR{each agent \(i\), future timestep \(t \in [T_p, T_p + T_f)\)}
+    \STATE Extract future state: \(\boldsymbol{s}_i^{(t)} = [\boldsymbol{p}_i^{(t)}, \boldsymbol{v}_i^{(t)}]\)
+    \STATE Apply agent-centric transformation
+    \STATE Store in future tensor: \(\tilde{\boldsymbol{X}}_d[i, t-T_p] = \boldsymbol{s}_i^{(t)}\)
 \ENDFOR
-\STATE Create future validity mask: $\boldsymbol{M}_{future} \in \{0,1\}^{T_f}$
-\STATE Compute final valid index: $idx_{final} = \max\{t : \boldsymbol{M}_{future}[t] = 1\}$
+\FOR{each center agent \(c\)}
+    \STATE Extract center ground truth: \(\boldsymbol{y}_c = \tilde{\boldsymbol{X}}_d[c, :, :]\)
+    \STATE Create future validity mask: \(\tilde{\boldsymbol{M}}_d \in \{0,1\}^{T_f}\)
+    \STATE Compute final valid index: \(idx_{final} = \max\{t : \tilde{\boldsymbol{M}}_d[t] = 1\}\)
+\ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
@@ -199,3 +195,152 @@ The final processing phase assembles all processed components into final \texttt
 \end{algorithm}
 
 The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training and evaluation. They include all agent tensors, map tensors, ground truth labels, and validity masks as \texttt{numpy} arrays in various formats for easy handling at different training, evaluation or visualization stages.
+
+\subsection{Notation and Symbol Reference}
+\label{app:notation}
+
+This section provides a comprehensive reference for all symbols and conventions used throughout this work, following UniTraj framework standards~\cite{unitrajFeng2024} and the \textsc{DatasetItem} type definitions. The following tables have been created using \cite{githubCopilot2021} and \cite{claude35Sonnet2024}, given the type and shape definitions in \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{unitraj/datasets/types.py}.
+
+\begin{table}[H]
+\caption{Temporal dimension symbols and definitions}
+\centering
+\begin{tabular}{p{3cm}p{10cm}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+\(T_p\) & Number of past timesteps (historical context) \\
+\(T_f\) & Number of future timesteps (prediction horizon) \\
+\(T\) & Total trajectory length: \(T = T_p + T_f\) \\
+\(\Delta t\) & Temporal sampling interval (i.e.\ 0.1s for 10Hz data) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{Spatial and agent dimension symbols}
+\label{tab:shape_symbols}
+\centering
+\begin{tabular}{p{3cm}p{10cm}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+\(N_{\max}\) & Maximum number of agents in scene (i.e.\ 64) \\
+\(N\) & Actual number of agents in a specific scenario \\
+\(N_c\) & Number of center agents (i.e.\ 1) \\
+\(K_{\max}\) & Maximum number of map polylines (i.e.\ 256) \\
+\(K\) & Actual number of map polylines in a specific scenario \\
+\(L\) & Number of points per map polyline (i.e.\ 20) \\
+\(F_{ap}\) & Agent feature dimension (i.e.\ 39) \\
+\(F_{af}\) & Agent future state dimension (4: \(x, y, v_x, v_y\)) \\
+\(F_{map}\) & Map feature dimension (i.e.\ 29) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{Primary data tensors and their shapes}
+\label{tab:data_tensors}
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Tensor} & \textbf{Shape and Description} \\
+\midrule
+\(\boldsymbol{X}_d\) & \([N_{\max}, T_p, F_{ap}]\) Agent trajectory features \\
+\(\boldsymbol{M}_d\) & \([N_{\max}, T_p]\) Agent trajectory validity mask \\
+\(\boldsymbol{X}_{d,pos}\) & \([N_{\max}, T_p, 3]\) Agent positions \((x, y, z)\) \\
+\(\boldsymbol{X}_{d,last}\) & \([N_{\max}, 3]\) Last observed agent positions \\
+\(\tilde{\boldsymbol{X}}_d\) & \([N_{\max}, T_f, F_{af}]\) Agent future states \\
+\(\tilde{\boldsymbol{M}}_d\) & \([N_{\max}, T_f]\) Agent future validity mask \\
+\(\boldsymbol{y}_c\) & \([T_f, F_{af}]\) Center agent ground truth trajectory \\
+\(\boldsymbol{M}_c\) & \([T_f]\) Center agent ground truth validity mask \\
+\(\boldsymbol{X}_s\) & \([K_{\max}, L, F_{map}]\) Map polyline features \\
+\(\boldsymbol{M}_s\) & \([K_{\max}, L]\) Map polyline validity mask \\
+\(\boldsymbol{C}_s\) & \([K_{\max}, 3]\) Map polyline centers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Here, \( \tilde{\bullet}_{\circ} \) denotes tensors, expressing future states, while \(\bullet_{\circ}\) denotes tensors for historical or static context. \( \bullet_{d} \) denotes all tensors, representing \emph{dynamic} agents, while \(\bullet_{s}\) denotes tensors for \emph{static} map elements. The center agent, whose trajectory is the target for prediction, is denoted by the subscript \(c\).
+
+\begin{table}[H]
+\caption{Agent feature components ($F_{ap} = 39$)}
+\centering
+\begin{tabular}{p{3cm}p{3cm}p{7cm}}
+\toprule
+\textbf{Component} & \textbf{Indices} & \textbf{Description} \\
+\midrule
+Spatial & [0:6] & Position \((x, y, z)\), bbox-dimensions \((l, w, h)\) \\
+Type & [6:11] & One-hot agent type encoding as per \ref{tab:agent_types}\\
+Temporal & [11:33] & One-hot time embedding (\(T_p + 1\) dimensions) \\
+Heading & [33:35] & Heading encoding \((\sin\theta, \cos\theta)\) \\
+Kinematic & [35:39] & Velocity \((v_x, v_y)\), acceleration \((a_x, a_y)\) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The utilized type encodings are reflecting the respective entity types, which are provided by ScenarioNet~\cite{scenarionetFeng2024}, which uses MetaDrive~\cite{metadriveLi2022} internally. It should be noted that the use of these type encodings comes at the loss of more fine-grained semantic annotations that are provided by the original Argoverse2 dataset.
+
+\begin{table}[H]
+\caption{Map feature components ($F_{map} = 29$)}
+\centering
+\begin{tabular}{p{3cm}p{3cm}p{7cm}}
+\toprule
+\textbf{Component} & \textbf{Indices} & \textbf{Description} \\
+\midrule
+Position & [0:3] & Current point coordinates \((x, y, z)\) \\
+Direction & [3:6] & Direction vector \((d_x, d_y, d_z)\) \\
+Previous & [6:9] & Previous point coordinates \((x_{prev}, y_{prev}, z_{prev})\) \\
+Lane Type & [9:29] & One-hot lane type encoding (20 categories) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+    \caption{Agent type encodings}
+    \label{tab:agent_types}
+\centering
+\begin{tabular}{p{3cm}p{2cm}p{8cm}}
+\toprule
+\textbf{Type} & \textbf{ID} & \textbf{Description} \\
+\midrule
+UNSET & 0 & Unknown or unclassified agent \\
+VEHICLE & 1 & Cars, trucks, buses, motorcycles \\
+PEDESTRIAN & 2 & Pedestrians, wheelchair users \\
+CYCLIST & 3 & Bicyclists, e-scooter riders \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The PolylineType enumeration defines the mapping from MetaDrive/ScenarioNet polyline types to integer labels used in the \(F_{\text{map}}\) feature encoding. This enumeration is derived from the MetaDrive simulation environment~\cite{metadriveLi2022} and ScenarioNet dataset format~\cite{scenarionetLi2023}.
+
+\begin{table}[H]
+\centering
+\caption{PolylineType Enumeration as per MetaDrive}
+\label{tab:polyline-types}
+\begin{tabular}{p{2cm}p{11cm}}
+\toprule
+\textbf{Integer} & \textbf{Description} \\
+\midrule
+0 & Default/unspecified polyline type \\
+1 & Highway or freeway lane \\
+2 & Surface street lane \\
+3 & Dedicated bicycle lane \\
+6 & Broken single white line \\
+7 & Solid single white line \\
+8 & Solid double white line \\
+9 & Broken single yellow line \\
+10 & Broken double yellow line \\
+11 & Solid single yellow line \\
+12 & Solid double yellow line \\
+13 & Passing zone double yellow line \\
+15 & Road boundary line \\
+16 & Median boundary \\
+17 & Stop sign location \\
+18 & Pedestrian crosswalk \\
+19 & Speed bump or traffic calming \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note that the conversion from AV2 \( \rightarrow \) ScenarioNet \( \rightarrow \) UniTraj causes many categories to collapse, and plenty of the categories as per \autoref{tab:polyline-types} and  \autoref{tab:agent_types} are actually used, and hence result in degenerate encodings.
