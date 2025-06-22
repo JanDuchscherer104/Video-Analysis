@@ -119,8 +119,8 @@
 \setlist[itemize]{leftmargin=*,labelsep=0.5em}
 \setlist[description]{leftmargin=*,labelsep=0.5em}
 
-% package for bibliography
-\usepackage[numbers,authoryear,round]{natbib}
+% package for bibliography - use numerical style to avoid compatibility issues
+\usepackage[numbers,round]{natbib}
 
 % package for header (using fancyhdr instead of scrpage2)
 \usepackage{fancyhdr}
@@ -205,6 +205,6 @@
 \clearpage
 \phantomsection
 \addcontentsline{toc}{section}{Bibliography}
-\bibliographystyle{natdin}
+\bibliographystyle{unsrt}  % Use unsrt instead of natdin for numerical citations
 \bibliography{references} % expects file "references.bib"
 \end{document}

@@ -243,7 +243,7 @@ We describe the process for converting a standard dataset item (with global or a
 \subsection*{Algorithm Details}
 The static context loop iterates over each polyline and its segments, computing length and attributes for each segment in its own local coordinate frame. The dynamic context loop processes each agent's historical trajectory, computes motion vectors, and rotates them into the agent's heading frame, producing polar features as described in QCNet~\cite{Zhou2023QueryCentric}. Additional attributes such as agent type, velocity, and acceleration may be concatenated to enhance the representation.
 
-Optionally, the origin and orientation for each element can be stored for later reconstruction of global coordinates during inference. Relative descriptors $d_{j \to i}$ (Eq.~\eqref{eq:relative_descriptor_v2}) are typically computed on-the-fly during model forward passes and embedded using learnable functions, not stored in the dataset.
+Optionally, the origin and orientation for each element can be stored for later reconstruction of global coordinates during inference. Relative descriptors $d_{j \to i}$ (similar to the concept in QCNet) are typically computed on-the-fly during model forward passes and embedded using learnable functions, not stored in the dataset.
 
 This conversion process is fundamental to enabling the query-centric paradigm's benefits, including permutation equivariance, streaming processing capabilities, and efficient multi-agent reasoning as demonstrated in both QCNet~\cite{Zhou2023QueryCentric} and its joint prediction extension QCNeXt~\cite{qcnextZhou2023}.
 

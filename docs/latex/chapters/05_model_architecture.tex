@@ -1,8 +1,8 @@
 % Chapter: Model Architecture and Functional Decomposition
-\chapter{Model Architecture and Functional Decomposition: MTR}
-\label{ch:model_architecture_mtr}
+\chapter{Model Architecture and Functional Decomposition}
+\label{ch:model_architecture}
 
-\section{Overview and Core Principles}
+\section{Overview and Core Principles MTR}
 \label{sec:overview}
 
 The Motion Transformer (MTR) framework represents a significant advancement in predicting the future movements of traffic participants, a critical capability for the safe and efficient operation of autonomous vehicles. This section outlines the fundamental problem MTR addresses, its central theoretical contributions, and a high-level overview of its operational workflow.
@@ -461,7 +461,7 @@ This strategy adaptively incorporates local map information within the Motion De
 Selects $L$ map polylines from $M$ closest to the current predicted trajectory $Y_{1:T}^j$ \cite{Shi2022MTR}. MTR-A report \cite{Shi2022MTR_A} specifies ranking by smallest distance of polyline center to all 80 predicted waypoints, then selecting $L=128$ closest. For the first decoder layer, collection is based on proximity to initial intention points \cite{Shi2022MTR_A}. $L=128$ typically \cite{Shi2022MTR, Shi2022MTR_A}. Output is $\alpha(M)$.
 
 \subsubsection{Utilization within Motion Decoder's Cross-Attention}
-$\alpha(M)$ and $PE_{\alpha(M)}$ are key and value in map-focused cross-attention \cite{Shi2022MTR}. Query is $$. Suggested in Figure 1(b) and Figure 3 of \cite{Shi2022MTR}.
+$\alpha(M)$ and $PE_{\alpha(M)}$ are key and value in map-focused cross-attention \cite{Shi2022MTR}. Query is $?$. Suggested in Figure 1(b) and Figure 3 of \cite{Shi2022MTR}.
 
 \subsubsection{Impact on Contextually Aware and Refined Predictions}
 Impacts include enhanced contextual awareness \cite{Shi2022MTR}, iterative refinement facilitation \cite{Shi2022MTR}, computational efficiency, and improved performance (mAP increases with $L$ from 32 to 128 \cite{Shi2022MTR}). MTR-A report also emphasizes this \cite{Shi2022MTR_A}.
@@ -712,47 +712,3 @@ The Motion Transformer (MTR) architecture, through its innovative design, effect
 The architecture meticulously processes vectorized polyline inputs for agent histories and map features using PointNet-like encoders, feeding these into a Transformer encoder that leverages local self-attention to build a rich, contextualized scene understanding. Auxiliary mechanisms like Dense Future Prediction further enrich this context by modeling future interactions of all agents. The subsequent Motion Decoder, with its stacked layers, iteratively refines trajectories, culminating in a GMM-based prediction head that outputs multiple probabilistic future paths.
 
 Variants like MTR-e2e demonstrate adaptability for end-to-end prediction with a fixed number of outputs, while the MTR++ extension significantly advances the field by enabling efficient and interactive simultaneous multi-agent prediction through symmetric scene context modeling and mutually-guided intention querying. These architectural choices and extensions underscore MTR's capacity to generate accurate, diverse, and scene-compliant trajectory forecasts, marking a substantial contribution to motion prediction for autonomous systems. The principles of query-based prediction, iterative refinement, and adaptive context utilization demonstrated by MTR offer valuable paradigms for future research in behavior modeling and autonomous navigation.
-
-\newpage
-
-\end{latex}
-
-\begin{thebibliography}{99}
-
-\bibitem{Shi2022MTR}
-Shi, S., Jiang, L., Dai, D., \& Schiele, B. (2022). Motion Transformer with Global Intention Localization and Local Movement Refinement. \textit{arXiv preprint arXiv:2209.13508v2}.
-
-\bibitem{Shi2022MTR_A}
-Shi, S., Jiang, L., Dai, D., \& Schiele, B. (2022). MTR-A: 1st Place Solution for 2022 Waymo Open Dataset Challenge - Motion Prediction. \textit{arXiv preprint arXiv:2209.10033v1}.
-
-\bibitem{Shi2023MTRplusplus}
-Shi, S., Jiang, L., Dai, D., \& Schiele, B. (2023). MTR++: Multi-Agent Motion Prediction with Symmetric Scene Modeling and Guided Intention Querying. \textit{arXiv preprint arXiv:2306.17770v2}.
-
-\bibitem{WOMD2021}
-Ettinger, S., Cheng, S., Caine, B., Liu, C., Zhao, H., Pradhan, S., Chai, Y., Sapp, B., Qi, C. R., Zhou, Y., et al. (2021). Large scale interactive motion forecasting for autonomous driving: The waymo open motion dataset. In \textit{Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)}.
-
-\bibitem{DenseTNT2021}
-Gu, J., Sun, C., \& Zhao, H. (2021). Densetnt: End-to-end trajectory prediction from dense goal sets. In \textit{Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)}.
-
-\bibitem{VectorNet2020}
-Gao, J., Sun, C., Zhao, H., Shen, Y., Anguelov, D., Li, C., \& Schmid, C. (2020). Vectornet: Encoding hd maps and agent dynamics from vectorized representation. In \textit{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}.
-
-\bibitem{PointNet2017}
-Qi, C. R., Su, H., Mo, K., \& Guibas, L. J. (2017). Pointnet: Deep learning on point sets for 3d classification and segmentation. In \textit{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}.
-
-\bibitem{Vaswani2017Attention}
-Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., \& Polosukhin, I. (2017). Attention is all you need. In \textit{Advances in Neural Information Processing Systems (NeurIPS)}.
-
-\bibitem{Chai2019MultiPath}
-Chai, Y., Sapp, B., Bansal, M., \& Anguelov, D. (2019). Multipath: Multiple probabilistic anchor trajectory hypotheses for behavior prediction. In \textit{Conference on Robot Learning (CoRL)}.
-
-\bibitem{SceneTransformer2022}
-Ngiam, J., Vasudevan, V., Caine, B., Zhang, Z., Chiang, H. L., Ling, J., Roelofs, R., Bewley, A., Liu, C., Venugopal, A., et al. (2022). Scene transformer: A unified architecture for predicting future trajectories of multiple agents. In \textit{International Conference on Learning Representations (ICLR)}.
-
-\bibitem{MultiPathPlusPlus2022}
-Varadarajan, B., Hefny, A., Srivastava, A., Refaat, K. S., Nayakanti, N., Cornman, A., Chen, K., Douillard, B., Lam, C. P., Anguelov, D., et al. (2022). Multipath++: Efficient information fusion and trajectory aggregation for behavior prediction. In \textit{IEEE International Conference on Robotics and Automation (ICRA)}.
-
-\bibitem{DETR2020}
-Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., \& Zagoruyko, S. (2020). End-to-end object detection with transformers. In \textit{European Conference on Computer Vision (ECCV)}.
-
-\end{thebibliography}

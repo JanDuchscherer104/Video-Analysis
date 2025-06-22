@@ -1,5 +1,5 @@
 \section{Related Work}
-\label{sec:review}
+\label{sec:background}
 
 This section provides a brief survey of salient forecasting architectures, from early rasterized and vectorized approaches to the current state-of-the-art transformer-based models.
 
@@ -16,14 +16,14 @@ This section provides a brief survey of salient forecasting architectures, from 
     \includegraphics[width=\textwidth]{figures/vectornet-2020-vector-repr.pdf}
     \label{fig:vectorized}
 \end{subfigure}
-\caption{Scene representation paradigms: (a) rasterized BEV encoding~\cite{caspnetSchäfer2022}, (b) vectorized polyline preservation~\cite{gao2020vectornet}.}
+\caption{Scene representation paradigms: (a) rasterized BEV encoding~\cite{caspnetSchaefer2022}, (b) vectorized polyline preservation~\cite{gao2020vectornet}.}
 \label{fig:scene_representations}
 \end{figure}
 
 \subsection{Rasterized Scene Representations}
 Early approaches rasterized scenes into bird's-eye-view (BEV) images, applying CNNs to learn scene-representations~\cite{cui2019multimodal,chai2019multipath}. Static context is encoded as \(\mathbf{I}_s \in \mathbb{R}^{C \times H \times W}\), while dynamic elements are expressed as stacks over \(T_p\) timesteps.
 
-\textbf{CASPNet}~\cite{caspnetSchäfer2022} processes rasterized \emph{dynamic} (BEV trajectory stack) and \emph{static} (RGB HD map) inputs through two symmetric encoder pyramids. The trajectory branch is a four-stage CNN down-sampling cascade, whereas the map encoder branch employs \emph{Gabor CNN blocks} in place of the first two regular convolutional filters. These Gabor blocks learn steerable filters parametrized by orientation, scale, and frequency, providing enhanced sensitivity to elongated lane markings and improving generalization to geometric ~\cite{Luan2018GCNN}. At every resolution level~\( \ell \in \{0, \ldots, 3 \} \) a ConvLSTM cell integrates the series of \( T_p \) feature maps, producing time-aggregated feature maps which are subsequently concatenated with their static counterparts.
+\textbf{CASPNet}~\cite{caspnetSchaefer2022} processes rasterized \emph{bird's-eye view} (BEV) images using convolutional encoders~\cite{Luan2018GCNN}. The trajectory branch is a four-stage CNN down-sampling cascade, whereas the map encoder branch employs \emph{Gabor CNN blocks} in place of the first two regular convolutional filters. These Gabor blocks learn steerable filters parametrized by orientation, scale, and frequency, providing enhanced sensitivity to elongated lane markings and improving generalization to geometric ~\cite{Luan2018GCNN}. At every resolution level~\( \ell \in \{0, \ldots, 3 \} \) a ConvLSTM cell integrates the series of \( T_p \) feature maps, producing time-aggregated feature maps which are subsequently concatenated with their static counterparts.
  The encoder therefore outputs the multi-scale scene representation:
 \begin{equation}
 \label{eq:caspnet_scene_repr}
