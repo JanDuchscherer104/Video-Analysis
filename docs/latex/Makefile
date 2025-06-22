@@ -1,12 +1,12 @@
 MAIN = SeminarReport
-BUILD_DIR = build
-TEX_FILES = $(wildcard chapters/*.tex)
+BUILD_DIR = .build
+TEX_FILES = $(wildcard *.tex)
 FIGURES = $(wildcard figures/*.png figures/*.pdf figures/*.jpg)
 
 .PHONY: all clean build-dir view watch pdf help debug
 
-# Default target
-all: build-dir $(BUILD_DIR)/$(MAIN).pdf
+# Default target - always clean first for fresh build
+all: clean build-dir $(BUILD_DIR)/$(MAIN).pdf
 
 # Create build directory
 build-dir:
