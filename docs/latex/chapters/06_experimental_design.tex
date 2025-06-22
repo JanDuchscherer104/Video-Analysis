@@ -24,3 +24,18 @@ Mathematical definitions and rationale for the selection of:
     \item Miss Rate (MR): $\text{MR}=\mathbb{E}_{k}[\mathbb{I}\{||\hat{y}_{T}^{(k)}-y_{T}||_{2}>d_{\text{thresh}}\}]$
     \item Brier Final Displacement Error (BrierFDE): $\text{BrierFDE}=\mathbb{E}_{k}[p_{k}\cdot||\hat{y}_{T}^{(k)}-y_{T}||_{2}^{2}]$
 \end{itemize}
+
+
+\section{Training Paradigm}
+\label{sec:model_training_paradigm}
+    \subsection{Learning Objective and Loss Function(s)}
+    \label{sec:model_loss_functions}
+    % - The overall objective the model is trained to optimize.
+    % - Specific loss components and their roles.
+    % - e.g., For MTR: Gaussian Regression Loss (NLL) and auxiliary L1 regression loss. 
+    % - Any specific strategies like hard assignment in MTR. 
+    \subsection{Optimization Strategy and Training Details}
+    \label{sec:model_optimization_details}
+    % - Optimizer used, learning rate, batch size, epochs etc. 
+    % - How iterative improvements are achieved during training (e.g. loss on intermediate decoder layers for MTR ).
+    
