@@ -4,6 +4,8 @@
 % packages for including graphics with figure-environment
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage[backend=biber,natbib=true,style=numeric,sorting=none]{biblatex}
+\addbibresource{references.bib}
 % Enhanced hyperref setup with professional colors
 \usepackage{hyperref}
 \hypersetup{
@@ -122,7 +124,7 @@
 
 
 % package for bibliography
-\usepackage[numbers]{natbib}
+% \usepackage[numbers]{natbib}
 % Enhanced headers and footers
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -208,6 +210,5 @@
 \clearpage
 \phantomsection
 \addcontentsline{toc}{section}{Bibliography}
-\bibliographystyle{natdin}
-\bibliography{references} % expects file "references.bib"
+\printbibliography
 \end{document}
