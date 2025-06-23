@@ -111,7 +111,7 @@ The follow-up work CASPNet++~\cite{caspnetppSchäfer2023} improves upon CASPNet 
 \subsubsection*{CASPFormer: Hybrid CNN-Transformer with Deformable Attention}
 \label{ssec:caspformer}
 
-\textbf{CASPFormer}~\cite{caspformerYadav2024} retains CASPNet's, FPN-CNN backbone while replacing its grid-based decoder with a transformer that emits vectorized \((x,y)\) trajectories, explicitly modeling the uncertainties of each mode as a \emph{parametrized Laplacian}. The core innovation lies in adapting \emph{deformable attention}~\cite{zhu2021deformabledetr} from object detection to trajectory prediction, enabling sparse, efficient attention over multi-scale feature representations. The overall architecture is illustrated in~\autoref{fig:caspformer_overall}, with the detailed decoder mechanism shown in~\autoref{fig:caspformer_decoder}.
+\textbf{CASPFormer}~\cite{caspformerYadav2024} retains CASPNet's, FPN-CNN backbone while replacing its grid-based decoder with a transformer that emits vectorized \((x,y)\) trajectories, explicitly modeling the uncertainties of each mode as a \emph{parametrized Laplacian}. The core innovation lies in adapting \emph{deformable attention}~\cite{zhu2021deformabledetr} from object detection to trajectory prediction, enabling sparse, efficient attention over multi-scale feature representations. The overall architecture is illustrated in~\autoref{fig:caspformer_overall}, with the detailed decoder mechanism shown in~\autoref{fig:caspformer_decoder}. The following section requires basic understanding of both regular and deformable attention mechanisms. While we are referring the reader to~\cite{vaswani2023attention} and~\cite{zhu2021deformabledetr} for a detailed introduction, a concise explanation of the key concepts is provided in \autoref{sec:deformable_attention}.
 
 \begin{figure}[ht]
   \centering
@@ -119,16 +119,6 @@ The follow-up work CASPNet++~\cite{caspnetppSchäfer2023} improves upon CASPNet 
   \caption{CASPFormer overall architecture: CNN+FPN backbone processes rasterized BEV inputs, deformable self-attention fuses multi-scale features, and recurrent deformable cross-attention autoregressively decodes vectorized trajectories~\cite{caspformerYadav2024}.}
   \label{fig:caspformer_overall}
 \end{figure}
-
-
-\paragraph{Deformable Attention.} Traditional self-attention in transformers~\cite{vaswani2023attention} scales quadratically with spatial resolution, making it computationally prohibitive for high-resolution feature maps. Deformable attention~\cite{zhu2021deformabledetr} addresses this by attending to a sparse set of sampling locations \(\{\mathbf{p}_q + \boldsymbol{\Delta p}_{mq}\}_{m=1}^{M}\) around each query position \(\mathbf{p}_q\), where \(\boldsymbol{\Delta p}_{mq}\) are learned offset vectors.
-
-For a query \(\mathbf{q}\) with reference point \(\mathbf{p}_q\), multi-head deformable attention computes:
-\begin{equation}
-  \label{eq:deformable_attention_general}
-  \text{DeformAttn}(\mathbf{q}, \mathbf{x}, \mathbf{p}_q) = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{mkq} \cdot \mathbf{x}(\mathbf{p}_q + \boldsymbol{\Delta p}_{mkq}) \right]
-\end{equation}
-where \(\mathbf{W}_m\) are learned projection matrices, \(A_{mkq}\) are attention weights derived from queries while keys and values remain, and \(\mathbf{x}(\cdot)\) represents bilinear sampling from the feature map. Both offsets \(\boldsymbol{\Delta p}_{mkq}\) and attention weights \(A_{mkq}\) are computed via linear projections of the query: \(\boldsymbol{\Delta p}_{mkq} = \text{Linear}_{\Delta p}(\mathbf{q})\) and \(A_{mkq} = \text{softmax}(\text{Linear}_{A}(\mathbf{q}))\).
 
 \begin{figure}[ht]
   \centering
@@ -140,14 +130,14 @@ where \(\mathbf{W}_m\) are learned projection matrices, \(A_{mkq}\) are attentio
 The CASPFormer as depicted in \autoref{fig:caspformer_decoder} decoder consists of the following key components:
 
 \begin{description}[leftmargin=1em,itemsep=2pt]
-\item[Multi-Scale Deformable Self-Attention (MSDA).] The FPN feature maps \(\boldsymbol{\mathcal{F}} = \{\mathbf{F}_\ell\}_{\ell=0}^{L-1}\) are first flattened and enriched with non-learnable 2D sinusoidal positional encodings as introduced in~\cite{vaswani2023attention} to preserve spatial relationships across different scales. MSDA performs feature fusion by allowing each spatial location to attend to relevant features across all pyramid levels:
+\item[Multi-Scale Deformable Self-Attention (MSDA).] The FPN feature maps \(\boldsymbol{\mathcal{F}} = \{\mathbf{F}_\ell\}_{\ell=0}^{L-1}\) as previously defined in \autoref{eq:fpn_fusion} are first flattened and enriched with non-learnable 2D sinusoidal positional encodings as introduced in~\cite{vaswani2023attention} to preserve spatial relationships across different scales. MSDA performs feature fusion by allowing each spatial location to attend to relevant features across all pyramid levels:
 
 \begin{equation}
 \label{eq:msda_operation}
-\text{MSDA}(\boldsymbol{\mathcal{F}}) = \sum_{\ell=0}^{L_{\text{FPN}}-1} \sum_{m=1}^{M} \mathbf{W}_{\ell m} \left[ \sum_{k=1}^{K_s} A_{\ell mkq} \cdot \mathbf{F}_\ell(\mathbf{p}_q + \boldsymbol{\Delta p}_{\ell mkq}) \right]
+\text{MSDA}(\boldsymbol{\mathcal{F}}) = \sum_{n=1}^{N_H} \mathbf{W}_{n} \left[\sum_{\ell=0}^{L_{\text{FPN}}-1} \sum_{k=1}^{K_s} A_{n\ell qk} \cdot \mathbf{F}_\ell(\phi_{\ell}(\mathbf{p}_q) + \boldsymbol{\Delta p}_{n\ell qk}) \right]
 \end{equation}
 
-Here, \emph{queries}, \emph{keys}, and \emph{values} are all derived from the same flattened feature maps: \(\mathbf{Q} = \mathbf{K} = \mathbf{V} = \text{Flatten}(\boldsymbol{\mathcal{F}} + \text{PE})\). The learned offsets \(\boldsymbol{\Delta p}_{\ell mkq}\) enable each query to attend to informative locations across multiple scales, achieving \(\mathcal{O}(M_h K_s C)\) complexity where \(M_h = 8\) is the number of attention heads, \(K_s = 4\) is the number of sampling points per head, \(C\) is the channel dimension, and \(L_{\text{FPN}} = 4\) is the number of pyramid levels.
+Here, \emph{queries} and \emph{keys} are derived from the same flattened feature maps \(\text{Flatten}(\boldsymbol{\mathcal{F}} + \textbf{PE})\). The learned offsets \(\boldsymbol{\Delta p}_{\ell nkq}\) enable each query to attend to informative locations across the entire feature pyramid, while being constrained to all features of the n-th attention head.
 
 \item[Recurrent Deformable Cross-Attention.] The fused features \(\mathbf{Z} = \text{MSDA}(\boldsymbol{\mathcal{F}})\) serve as \emph{keys} and \emph{values} for the cross-attention mechanism. The \emph{queries} employ a novel dual-query architecture (detailed in~\autoref{fig:caspformer_decoder}) that separates temporal coherence from mode diversity:
 
@@ -165,10 +155,10 @@ The temporal queries \(\mathbf{Q}_t^{temp}\) maintain sequential dependencies by
 For each timestep \(t\), the deformable cross-attention updates the reference point \(\mathbf{p}_{ref}\) based on previous predictions and computes:
 \begin{equation}
 \label{eq:cross_attention_operation}
-\text{CrossAttn}(\mathbf{Q}_t, \mathbf{Z}, \mathbf{p}_{ref}) = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{mkq} \cdot \mathbf{Z}(\mathbf{p}_{ref} + \boldsymbol{\Delta p}_{mkq}) \right]
+\text{CrossAttn}(\mathbf{Q}_t, \mathbf{Z}, \mathbf{p}_{ref}) = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{nkq} \cdot \mathbf{Z}(\mathbf{p}_{ref} + \boldsymbol{\Delta p}_{nkq}) \right]
 \end{equation}
 
-The attention weights \(A_{mkq} = \text{softmax}(\text{Linear}(\mathbf{Q}_t))\) and sampling offsets \(\boldsymbol{\Delta p}_{mkq} = \text{Linear}(\mathbf{Q}_t)\) are both derived from the dual queries, enabling adaptive focus around the reference trajectory.
+The attention weights \(A_{nkq} = \text{softmax}(\text{Linear}(\mathbf{Q}_t))\) and sampling offsets \(\boldsymbol{\Delta p}_{nkq} = \text{Linear}(\mathbf{Q}_t)\) are both derived from the dual queries, enabling adaptive focus around the reference trajectory.
 
 \item[Autoregressive Decoding with Mixture Outputs.] The cross-attention outputs are processed by an MLP to generate trajectory distributions as mixtures of Laplacian components:
 \begin{equation}
