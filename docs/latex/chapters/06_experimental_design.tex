@@ -1,31 +1,31 @@
-% 5. Training and Evaluation Paradigm
-\chapter{Training and Evaluation Paradigm}
+% 5. Section: Training and Evaluation Paradigm
+\section{Training and Evaluation Paradigm}
 \label{ch:experimental_design}
 
-\section{Training Environment and Hyperparameter Configuration}
+\subsection{Training Environment and Hyperparameter Configuration}
 \label{sec:exp_training_env}
 % Specification of the computational setup (PyTorch Lightning, WandB for experiment tracking and logging) and critical hyperparameters. Configuration management via Pydantic. List of hyperparameters (e.g., batch size, learning rate, number of epochs, etc.) and their respective values. Discussion of the rationale behind the selected configurations.
-The training and evaluation environment uses a robust and reproducible setup. The entire suite for training, evaluation, and logging is managed through PyTorch Lightning, with experiment tracking and visualization handled by Weights \& Biases (WandB). This setup allows for managed logging, checkpointing, and distributed training strategies. Pydantic manages all configuration and hyperparameters, which enables a "Config-as-Factory" pattern that makes it easy to swap different models, datasets, or loss functions. The data loading pipeline uses HDF5 for high throughput. For efficient processing, the framework randomly partitions the full sample index into 32 shards and assigns one shard to each DataLoader worker to ensure balanced and parallel prefetching. The provided documentation does not detail specific hyperparameters such as batch size and learning rate.
+The training and evaluation environment uses a robust and reproducible setup. The entire suite for training, evaluation, and logging is managed through PyTorch Lightning, with experiment tracking and visualization handled by Weights \& Biases (WandB). This setup allows for managed logging, checkpointing, and distributed training strategies. Pydantic manages all configuration and hyperparameters, which enables a ``Config-as-Factory'' pattern that makes it easy to swap different models, datasets, or loss functions. The data loading pipeline uses HDF5 for high throughput. For efficient processing, the framework randomly partitions the full sample index into 32 shards and assigns one shard to each DataLoader worker to ensure balanced and parallel prefetching. The provided documentation does not detail specific hyperparameters such as batch size and learning rate.
  
-\section{Optimization Strategy and Learning Objective}
+\subsection{Optimization Strategy and Learning Objective}
 \label{sec:exp_optimization}
-\subsection{Loss Function Formulation}
+\subsubsubsection{Loss Function Formulation}
 % Detailed specification of the loss function(s) employed for MTR training, including components for trajectory regression and mode probability classification. Discussion of how this objective function guides the model to learn multimodal distributions (e.g., relationship to Brier-FDE if incorporated).
 The UniTraj framework unifies loss functions for different models. The overall training objective is to minimize these functions to improve prediction accuracy. The training process specifically seeks to decrease metrics such as the minimum Final Displacement Error (FDE), as illustrated by the training graphs. A key component of the learning objective is the Brier Final Displacement Error, which evaluates both the accuracy of the trajectory's final point and the model's confidence in that prediction. Figure \ref{fig:mtr_prediction} shows an example of a multimodal prediction, where the model outputs several possible future paths with associated probabilities. The exact mathematical formulation of the loss function used for the Motion Transformer (MTR) training run is not specified in the source material.
  
 % toDO(luroess): Generate new visualization for MTR prediction, this looks awful
-\begin{figure}[h!]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/input_output_viz_ugly.png}
     \caption{A multimodal prediction from the MTR model for a right-turn scenario. The model generates multiple future trajectories, assigning a probability to each. The green line is the ground truth future path, while the colored lines are predictions, with one having a much higher probability (p=0.36) than another (p=0.02).}
     \label{fig:mtr_prediction}
 \end{figure}
  
-\subsection{Optimizer Selection}
+\subsubsubsection{Optimizer Selection}
 % e.g., Adam optimizer with specified learning rate and scheduling.
 The specific optimization algorithm, such as Adam or SGD, and its associated parameters like learning rate and scheduling, are not mentioned in the provided documentation.
  
-\section{Evaluation Metrics}
+\subsection{Evaluation Metrics}
 \label{sec:exp_metrics}
 The performance of the trajectory prediction model is assessed using a set of standard industry metrics. The mathematical definitions for these metrics are as follows:
 \begin{itemize}
@@ -37,16 +37,16 @@ The performance of the trajectory prediction model is assessed using a set of st
 On the validation set, the trained MTR model achieved a \textbf{brier-minFDE} of 1.98, a \textbf{minFDE} of 1.6655, a \textbf{minADE} of 0.86294, and a \textbf{Miss Rate} of 0.30141. These results are comparable to baseline values from existing literature. The Brier-FDE of 1.98 shows a slight improvement over the 2.08 value reported in the MTR paper's appendix. Figure \ref{fig:validation_metrics} shows the progression of these metrics on the validation set over the course of training.
 
 % toDO(luroess): Split graphs for better vizualization?
-\begin{figure}[h!]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/performance_metrics_validation.png}
     \caption{Performance metrics on the validation set during MTR training. The plots show a consistent decrease in error for miss rate, FDE, ADE, and Brier-FDE as training progresses. The final reported values are taken at step 31,295.}
     \label{fig:validation_metrics}
 \end{figure}
 
-\section{Training Paradigm}
+\subsection{Training Paradigm}
 \label{sec:model_training_paradigm}
-\subsection{Learning Objective and Loss Function(s)}
+\subsubsubsection{Learning Objective and Loss Function(s)}
 \label{sec:model_loss_functions}
    % - The overall objective the model is trained to optimize.
    % - Specific loss components and their roles.
@@ -62,7 +62,7 @@ The primary learning objective is to train the model to accurately forecast mult
     \label{fig:training_metrics_grid}
 \end{figure}
 
-\subsection{Optimization Strategy and Training Details}
+\subsubsubsection{Optimization Strategy and Training Details}
 \label{sec:model_optimization_details}
    % - Optimizer used, learning rate, batch size, epochs etc. 
    % - How iterative improvements are achieved during training (e.g. loss on intermediate decoder layers for MTR ).
