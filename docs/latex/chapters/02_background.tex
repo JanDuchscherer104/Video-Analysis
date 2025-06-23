@@ -3,7 +3,7 @@
 \section{Theoretical Background \& Related Work}
 \label{sec:background}
 
-\paragraph{Notation.} We denote \(T_p\) and \(T_f\) as the numbers of observed and predicted timesteps, respectively. Following UniTraj conventions~\cite{unitrajFeng2024}, agent trajectories are represented as \(\boldsymbol{X}_d \in \mathbb{R}^{N_{\max} \times T_p \times F_{ap}}\) and map polylines as \(\boldsymbol{X}_s \in \mathbb{R}^{K_{\max} \times L \times F_{map}}\), where \(N_{\max}\) is the maximum number of agents, \(K_{\max}\) is the maximum number of map polylines, \(L\) is the points per polyline, and \(F_{ap}, F_{map}\) are the respective feature dimensions. Ground truth trajectories for the center agent are denoted \(\boldsymbol{y}_c \in \mathbb{R}^{T_f \times 4}\). For rasterized approaches, BEV representations use \(H \times W\) spatial resolution with \(F_d, F_s\) channel dimensions for dynamic and static inputs, respectively. Transformer models employ \(M\) output modes, \(K\) sampling points per deformable attention query, and \(N\) attention heads. Feature pyramid networks utilize \(L\) levels indexed by \(\ell \in \{0,\dots,L-1\}\), with feature maps \(C_\ell \times H_\ell \times W_\ell\) at each level. A comprehensive symbol table is provided in Appendix~\ref{app:notation}.
+\paragraph{Notation.} We denote \(T_p\) and \(T_f\) as the numbers of observed and predicted timesteps, respectively. Following UniTraj conventions~\cite{unitrajFeng2024}, agent trajectories are represented as \(\boldsymbol{X}_d \in \R^{N_{\max} \times T_p \times F_{ap}}\) and map polylines as \(\boldsymbol{X}_s \in \R^{K_{\max} \times L \times F_{map}}\), where \(N_{\max}\) is the maximum number of agents, \(K_{\max}\) is the maximum number of map polylines, \(L\) is the points per polyline, and \(F_{ap}, F_{map}\) are the respective feature dimensions. Ground truth trajectories for the center agent are denoted \(\boldsymbol{y}_c \in \R^{T_f \times 4}\). For rasterized approaches, BEV representations use \(H \times W\) spatial resolution with \(F_d, F_s\) channel dimensions for dynamic and static inputs, respectively. Transformer models employ \(M\) output modes, \(K_s\) sampling points per deformable attention query, and \(N_h\) attention heads. Feature pyramid networks utilize \(L_{\text{FPN}}\) levels indexed by \(\ell \in \{0,\dots,L_{\text{FPN}}-1\}\), with feature maps \(C_\ell \times H_\ell \times W_\ell\) at each level. A comprehensive symbol table is provided in Appendix~\ref{app:notation}.
 
 %--------------------------------------------------------------------
 
@@ -44,12 +44,12 @@ This section distills the key ideas behind \emph{Context-Aware Scene Prediction 
 
 \subsubsection*{CASPNet: Rasterized BEV Encoding with Dual FPN}
 
-\textbf{CASPNet}~\cite{caspnetSchäfer2022} processes rasterized BEV inputs through a dual-encoder architecture that separately handles dynamic agent trajectories and static HD map information. Overall, it strongly resembles a \emph{fully convolutional network} as it employs no fully connected layers, meaning that the spatial representation of the scene is preserved throughout the network. Furthermore, it can be classified as a \emph{feature pyramid network} (FPN)~\cite{FPNLin2017} as it provides the decoder with latent representations at multiple spatial resolutions. Together, these architectural qualities starkly resemble the famous \emph{U-Net} architecture with \emph{lateral skip connections}~\cite{UNetLSRonneberger2015}. Considering CASPNet's usage of \emph{attention} mechanisms within the skip connections its closest relative in the field of image segmentation is the \emph{Attention U-Net}~\cite{AttentionUNetOktay2018}.
+\textbf{CASPNet}~\cite{caspnetSchäfer2022} processes rasterized BEV inputs through a dual-encoder architecture that separately handles dynamic agent trajectories and static HD map information. Overall, it strongly resembles a \emph{fully convolutional network} as it employs no fully connected layers, meaning that the spatial representation of the scene is preserved throughout the network. Furthermore, it can be classified as a \emph{feature pyramid network} (FPN)~\cite{FPNLin2017} as it provides the decoder with latent representations at multiple spatial resolutions. Together, these architectural qualities starkly resemble the famous \emph{U-Net} architecture with \emph{lateral skip connections}~\cite{UNetLSRonneberger2015}. Considering CASPNet's usage of \emph{attention} mechanisms within the skip connections its closest relative in the field of image segmentation is the \emph{Attention U-Net}~\cite{UNetAttnOktay2018}.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{figures/caspnet_arch.png}
-  \caption{CASPNet architecture overview: dual FPN encoders with Gabor filters, pixel-adaptive attention, and grid-based ConvLSTM decoder.}
+  \caption{CASPNet architecture overview: dual FPN encoders with Gabor filters, pixel-adaptive attention, and grid-based ConvLSTM decoder~\cite{caspnetSchäfer2022}.}
   \label{fig:caspnet_overview}
 \end{figure}
 
@@ -57,135 +57,151 @@ The CASPNet architecture is illustrated in~\autoref{fig:caspnet_overview} and co
 \begin{description}[leftmargin=1em,itemsep=2pt]
 \item[Dual FPN encoders.] Separate feature-pyramid networks process
 \begin{enumerate}[label=\roman*)]
-    \item a BEV stack of past agent trajectories \( \mathbf{I}_d\in\mathbb{R}^{T_p\times H\times W\times F_d} \)
-    \item a static HD-map raster \( \mathbf{I}_s\in\mathbb{R}^{H\times W\times F_s} \)
+    \item a BEV stack of past agent trajectories \( \mathbf{I}_d\in\R^{T_p\times H\times W\times F_d} \)
+    \item a static HD-map raster \( \mathbf{I}_s\in\R^{H\times W\times F_s} \)
 \end{enumerate}
-
-The map branch employs \emph{steerable Gabor filters}%
-\footnote{See~\autoref{ssec:gabor_filters} for further details.}
-in the first two convolutional blocks. These filters are particularly well-suited for processing structured environments like road networks, where lane markings, boundaries, and curbs exhibit strong orientation and scale-specific patterns. A Gabor filter combines a Gaussian envelope with a sinusoidal carrier wave, allowing it to simultaneously localize features in space and frequency. This makes it highly effective for detecting elongated and parallel structures across varying scales and rotations~\cite{steerableGaborFilters}.
 
 At each level \( \ell \), the trajectory branch produces:
 \begin{equation}
 \label{eq:fpn_traj}
-F^{\mathrm{traj}}_{\ell}(t) = \mathrm{CNN}_\ell\bigl(\mathbf{I}_{d}(t)\bigr)
+\mathbf{F}^{\mathrm{traj}}_{\ell}(t) = \mathrm{CNN}_\ell\bigl(\mathbf{I}_{d}(t)\bigr) \in \R^{T_p \times C_\ell \times H_\ell \times W_\ell}
 \end{equation}
-where all \( T_p \) BEV frames representing the agent trajectories are encoded independently by the same CNN, yielding a \emph{time-dependent} \emph{multi-scale feature map} \( F^{\mathrm{traj}}_{\ell}(t) \in \mathbb{R}^{C_\ell \times H_\ell \times W_\ell} \) at each pyramid level \(\ell\) and timestep \( t \in \{1,\dots,T_p\} \).\\
-The static map branch uses so-called \emph{Gabor CNN blocks}~\cite{Luan2018GCNN} in the first two convolutional blocks to extract orientation-sensitive features, yielding a static feature map \( F_{\ell}^{\mathrm{map}} \in \mathbb{R}^{C_\ell \times H_\ell \times W_\ell} \) at each pyramid level.\\
+where all \( T_p \) BEV frames representing the agent trajectories are encoded independently by the same CNN, yielding a \emph{time-dependent} \emph{multi-scale feature map} \( F^{\mathrm{traj}}_{\ell}(t) \in \R^{C_\ell \times H_\ell \times W_\ell} \) at each pyramid level \(\ell\) and timestep \( t \in \{0,\dots,T_p - 1\} \).\\
+
+The static map branch employs \emph{steerable Gabor filters}%
+\footnote{See~\autoref{ssec:gabor_filters} for further details.}
+in the first two convolutional blocks. These filters are particularly well-suited for capturing orientation and scale-sensitive features like road networks, where lane markings exhibit strong orientation and scale-specific patterns. A Gabor filter combines a Gaussian envelope with a sinusoidal carrier wave, allowing it to simultaneously localize features in space and frequency. This makes it highly effective for detecting elongated and parallel structures across varying scales and rotations~\cite{steerableGaborFilters}.\\
 The map features are computed as follows:
 \begin{equation}
 \label{eq:fpn_map}
 \mathbf{F}_{\ell}^{\mathrm{map}}
-= \mathrm{CNN}_\ell^{\circ}(\mathbf{I}_s) \quad \text{where } \circ = \begin{cases}
-\mathrm{Gabor} & \text{if } \ell < 2, \\
-\mathrm{Normal} & \text{otherwise }.
-\end{cases}
+= \mathrm{CNN}_\ell^{\circ}(\mathbf{I}_s) \in \R^{C_\ell \times H_\ell \times W_\ell},
 \end{equation}
 
-\item[Temporal fusion.] ConvLSTM cells at every pyramid level aggregate the temporal context across all \(T_p\) timesteps yielding a single feature map per level:
+\item[Temporal fusion.] ConvLSTM cells at every pyramid level aggregate the temporal context across all \(T_p\) timesteps yielding a single feature map per level~\cite{shi2015ConvLSTM}:
 \begin{equation}
 \label{eq:fpn_fusion_traj}
 \mathbf{F}_{\ell}^{\mathrm{traj}}
-= \mathrm{ConvLSTM}_\ell\Bigl\{\mathbf{F}^{\ell}_{d}(t)\Bigr\}_{t=1}^{T_p},
+= \mathrm{ConvLSTM}_\ell\Bigl\{\mathbf{F}^{\ell}_{d}(t)\Bigr\}_{t=1}^{T_p} \in \R^{C_\ell \times H_\ell \times W_\ell},
 \end{equation}
 which are then concatenated with the static map features at each level:
 \begin{equation}
 \label{eq:fpn_fusion}
-\boldsymbol{\mathcal{F}}=\{\mathbf{F}_\ell^{\mathrm{traj}}\oplus \mathbf{F}_\ell^{\mathrm{map}}\}_{\ell=0}^{L-1}.
+\boldsymbol{\mathcal{F}}=\{\mathbf{F}_\ell^{\mathrm{traj}}\oplus \mathbf{F}_\ell^{\mathrm{map}}\}_{\ell=0}^{L_{\text{FPN}}-1}, \quad \text{where } \mathbf{F}_\ell \in \R^{2 C_\ell \times H_\ell \times W_\ell}
 \end{equation}
 \( \boldsymbol{\mathcal{F}} \) is the resulting latent feature pyramid.
 
-\item[Pixel-adaptive attention.] The \emph{Attention Block} in the lateral skip connections in \autoref{fig:caspnet_overview} blends multiple \emph{dilated convolutions}\cite{dilatedConv21} per pixel, capturing short- and long-range interactions through learned per-pixel attention weights over different dilation rates. For each spatial location \((i,j) \in \{1,\dots,H^{\ell}\} \times \{1,\dots,W^{\ell}\}\), attention weights \(\alpha^{(i,j)}_{r}\) are computed over different dilation rates \( r \):
+\item[Pixel-adaptive attention.] The \emph{Attention Block} in the lateral skip connections (\autoref{fig:caspnet_overview}) adaptively blends the receptive fields of multiple \emph{dilated convolutions}~\cite{dilatedConv21} per spatial location, capturing multi-scale interactions through learned per-pixel attention weights over different dilation rates, similar to~\cite{UNetAttnOktay2018}. For each location \((i,j)\) at pyramid level \(\ell\), the mechanism computes:
 \begin{equation}
 \label{eq:pixel_attention}
-\mathbf{F}_{\ell, att}^{(i,j)} = \sum_{r} \alpha^{(i,j)}_{r} \cdot \text{DilatedConv}_r(\mathbf{F}^{(i,j)}_{\ell}),
+\mathbf{F}_{\ell}^{(i,j)} = \sum_{r} \alpha^{(i,j)}_{r} \cdot \text{DilatedConv}_r(\mathbf{F}^{(i,j)}_{\ell}),
 \end{equation}
-where \(\alpha^{(i,j)}_{r} = \text{softmax}(\text{Conv}(\mathbf{F}^{(i,j)}_{\ell})))\) are learned attention weights that allow the network to dynamically select appropriate receptive field sizes for each spatial location.
+where \(\alpha^{(i,j)}_{r} = \text{softmax}(\text{Conv}(\mathbf{F}^{(i,j)}_{\ell}))\) are learned attention weights that dynamically select appropriate receptive field sizes for each spatial location.
 
-\item[Grid-based decoder.] The decoder employs a series of \emph{residual upsampling blocks} to progressively upsample the feature maps from the FPN to the original raster resolution. Each residual block consists of a parallel \emph{transposed convolution} and a \emph{linear interpolation} layer. The resulting feature maps of each upsampling block are concatenated with the corresponding feature maps the next level of the FPN.\\
-Finally, the decoder uses a \emph{ConvLSTM} layer to autoregressively generate future predictions. For each future timestep \(t \in \{T_p, \ldots, T_p + T_f - 1\}\), the decoder outputs occupancy probabilities and motion offsets.
+\item[Grid-based decoder.] The decoder employs a series of \emph{residual up-sampling blocks} to progressively up-sample the feature maps from the FPN to the original raster resolution. Each residual block consists of a parallel \emph{transposed convolution} and a \emph{linear interpolation} layer. The resulting feature maps of each up-sampling block are concatenated with the corresponding feature maps the next level of the FPN.\\
+Finally, the decoder uses a \emph{ConvLSTM} layer to autoregressively generate future predictions. For each future timestep \(t \in \{T_p, \ldots, T_p + T_f - 1\}\), the decoder outputs a occupancy probabilities and motion offsets. The occupancy probabilities are represented as a categorical distribution over the possible agent classes at each pixel, while the motion offsets represent the displacement of each pixel with respect to the previous timestep~\cite{caspnetSchäfer2022}.
 
-\paragraph{Pros.} Inference time independent of agent count; inherent multi-modality via heat-map superposition.\\
-\paragraph{Cons.} Metric accuracy capped by raster resolution; inference cost scales with grid size; vectorized outputs require post-processing; No multi-modal prediction; limited temporal modeling; No explicit relationship modeling between agents or between agents and map; No symmetries in the agent-centric coordinate system for all but the ego agent.
+\paragraph{Pros.} Inference time independent of agent count; inherent multi-modality via heat-map superposition; good interpretability through adaptation of well-established motifs from the field of image segmentation.
+\paragraph{Cons.} Metric accuracy capped by raster resolution; inference cost scales with grid size; vectorized outputs require post-processing; no \emph{explicit} prediction of \( M \) multi-modal; doesn't respect identities of agents; limited temporal modeling; no explicit relationship modeling between agents or between agents and map; no symmetries in the agent-centric coordinate system for all but the ego agent; only suited for \emph{single-agent} motion forecasting.
+
+The follow-up work CASPNet++~\cite{caspnetppSchäfer2023} improves upon CASPNet by replacing its single heat-map head with a two-stage design to capture spatio-temporal occupancy grids for every actor, as well as an Agent decoder that transforms the grid cells of selected targets into explicit, multi-modal trajectory splines, thereby modelling interactions more richly and introducing the ability to predict \( M \) explicit multi-modal trajectories. However, while CASPNet++ improves upon the original architecture in terms of accuracy and interaction modeling and allows for \emph{true} joint multi-agent forecasts, we will not discuss it in detail.
 
 %--------------------------------------------------------------------
 %% Above is done %%
-\subsubsection*{CASPFormer: Trajectory Prediction with Deformable Attention}
+\subsubsection*{CASPFormer: Hybrid CNN-Transformer with Deformable Attention}
 \label{ssec:caspformer}
 
-retains CASPNet's multi-scale CNN backbone to encode rasterized BEV inputs into hierarchical feature maps. These are flattened into tokens at each scale and enriched with 2D sinusoidal position encodings before being passed into a \textbf{Deformable Self-Attention} layer that fuses multi-scale context at $\mathcal{O}(N)$ complexity~\cite{zhu2021deformabledetr}. The resulting fused tokens serve as the keys and values in the decoder, which autoregressively emits vectorized \((x,y)\) trajectories by employing a \textbf{Deformable Cross-Attention} module.
+\textbf{CASPFormer}~\cite{caspformerYadav2024} retains CASPNet's, FPN-CNN backbone while replacing its grid-based decoder with a transformer that emits vectorized \((x,y)\) trajectories, explicitly modeling the uncertainties of each mode as a \emph{parametrized Laplacian}. The core innovation lies in adapting \emph{deformable attention}~\cite{zhu2021deformabledetr} from object detection to trajectory prediction, enabling sparse, efficient attention over multi-scale feature representations. The overall architecture is illustrated in~\autoref{fig:caspformer_overall}, with the detailed decoder mechanism shown in~\autoref{fig:caspformer_decoder}.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{figures/caspformer-overall-arch.jpg}
-  \caption{CASPFormer architecture: retains CASPNet's CNN backbone but replaces grid decoder with deformable attention transformer for vectorized trajectory output.}
+  \caption{CASPFormer overall architecture: CNN+FPN backbone processes rasterized BEV inputs, deformable self-attention fuses multi-scale features, and recurrent deformable cross-attention autoregressively decodes vectorized trajectories~\cite{caspformerYadav2024}.}
   \label{fig:caspformer_overall}
 \end{figure}
 
 
+\paragraph{Deformable Attention.} Traditional self-attention in transformers~\cite{vaswani2023attention} scales quadratically with spatial resolution, making it computationally prohibitive for high-resolution feature maps. Deformable attention~\cite{zhu2021deformabledetr} addresses this by attending to a sparse set of sampling locations \(\{\mathbf{p}_q + \boldsymbol{\Delta p}_{mq}\}_{m=1}^{M}\) around each query position \(\mathbf{p}_q\), where \(\boldsymbol{\Delta p}_{mq}\) are learned offset vectors.
+
+For a query \(\mathbf{q}\) with reference point \(\mathbf{p}_q\), multi-head deformable attention computes:
+\begin{equation}
+  \label{eq:deformable_attention_general}
+  \text{DeformAttn}(\mathbf{q}, \mathbf{x}, \mathbf{p}_q) = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{mkq} \cdot \mathbf{x}(\mathbf{p}_q + \boldsymbol{\Delta p}_{mkq}) \right]
+\end{equation}
+where \(\mathbf{W}_m\) are learned projection matrices, \(A_{mkq}\) are attention weights derived from queries while keys and values remain, and \(\mathbf{x}(\cdot)\) represents bilinear sampling from the feature map. Both offsets \(\boldsymbol{\Delta p}_{mkq}\) and attention weights \(A_{mkq}\) are computed via linear projections of the query: \(\boldsymbol{\Delta p}_{mkq} = \text{Linear}_{\Delta p}(\mathbf{q})\) and \(A_{mkq} = \text{softmax}(\text{Linear}_{A}(\mathbf{q}))\).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/caspformer_decoder.jpg}
+  \caption{CASPFormer decoder architecture with temporal and mode queries, deformable cross-attention, and autoregressive trajectory generation~\cite{caspformerYadav2024}.}
+  \label{fig:caspformer_decoder}
+\end{figure}
+
+The CASPFormer as depicted in \autoref{fig:caspformer_decoder} decoder consists of the following key components:
+
 \begin{description}[leftmargin=1em,itemsep=2pt]
-\item[Deformable Self-Attention (DSA).] The FPN feature maps \(\boldsymbol{\mathcal{F}} = \{\mathbf{F}_\ell\}_{\ell=0}^{L-1}\) are flattened and concatenated into a unified feature sequence as well as enriched with non-learnable 2D sinusoidal encodings to retain spatial relationships. DSA then performs feature fusion across multiple scales with \(\mathcal{O}(N)\) complexity.
-\begin{equation}
-\label{eq:msda_fusion}
-\mathbf{Z} = \text{MSDA}(\text{Flatten}(\boldsymbol{\boldsymbol{\mathcal{F}} + \text{PE}})),
-\end{equation}
-where learned sampling offsets \(\boldsymbol{\Delta p}_{lkm}\) focus attention on the most informative spatial locations across pyramid levels. Each attention head \(m\) at level \(\ell\) samples \(K\) points around reference positions.
+\item[Multi-Scale Deformable Self-Attention (MSDA).] The FPN feature maps \(\boldsymbol{\mathcal{F}} = \{\mathbf{F}_\ell\}_{\ell=0}^{L-1}\) are first flattened and enriched with non-learnable 2D sinusoidal positional encodings as introduced in~\cite{vaswani2023attention} to preserve spatial relationships across different scales. MSDA performs feature fusion by allowing each spatial location to attend to relevant features across all pyramid levels:
 
-\item[Recurrent deformable cross-attention.] The core innovation lies in the autoregressive decoding scheme. For each future timestep \(t \in \{T_p + 1, \ldots, T_p + T_f\}\), dual queries attend to the fused features \(\mathbf{Z}\):
 \begin{equation}
-\label{eq:dual_query_update}
+\label{eq:msda_operation}
+\text{MSDA}(\boldsymbol{\mathcal{F}}) = \sum_{\ell=0}^{L_{\text{FPN}}-1} \sum_{m=1}^{M} \mathbf{W}_{\ell m} \left[ \sum_{k=1}^{K_s} A_{\ell mkq} \cdot \mathbf{F}_\ell(\mathbf{p}_q + \boldsymbol{\Delta p}_{\ell mkq}) \right]
+\end{equation}
+
+Here, \emph{queries}, \emph{keys}, and \emph{values} are all derived from the same flattened feature maps: \(\mathbf{Q} = \mathbf{K} = \mathbf{V} = \text{Flatten}(\boldsymbol{\mathcal{F}} + \text{PE})\). The learned offsets \(\boldsymbol{\Delta p}_{\ell mkq}\) enable each query to attend to informative locations across multiple scales, achieving \(\mathcal{O}(M_h K_s C)\) complexity where \(M_h = 8\) is the number of attention heads, \(K_s = 4\) is the number of sampling points per head, \(C\) is the channel dimension, and \(L_{\text{FPN}} = 4\) is the number of pyramid levels.
+
+\item[Recurrent Deformable Cross-Attention.] The fused features \(\mathbf{Z} = \text{MSDA}(\boldsymbol{\mathcal{F}})\) serve as \emph{keys} and \emph{values} for the cross-attention mechanism. The \emph{queries} employ a novel dual-query architecture (detailed in~\autoref{fig:caspformer_decoder}) that separates temporal coherence from mode diversity:
+
+\begin{equation}
+\label{eq:dual_query_construction}
 \begin{aligned}
-\mathbf{Q}_t^{temp} &= \mathbf{Q}_{t-1}^{temp} + \text{PE}(\hat{\mathbf{p}}_{t-1}) \\
-\mathbf{Q}_t^{mode} &= \text{Learnable}(\mathbb{R}^{M \times d}) \\
-\mathbf{Q}_t &= \mathbf{Q}_t^{temp} \oplus \mathbf{Q}_t^{mode}
+\mathbf{Q}_t^{temp} &= \mathbf{Q}_{t-1}^{temp} + \text{PE}(\hat{\mathbf{p}}_{t-1}) \quad \text{(temporal queries)} \\
+\mathbf{Q}_t^{mode} &\in \R^{M \times d} \quad \text{(learnable mode embeddings)} \\
+\mathbf{Q}_t &= \mathbf{Q}_t^{temp} \oplus \mathbf{Q}_t^{mode} \quad \text{(concatenated dual queries)}
 \end{aligned}
 \end{equation}
-where \(\mathbf{Q}_t^{temp}\) are temporal queries updated with positional encodings of previous predictions \(\hat{\mathbf{p}}_{t-1}\), and \(\mathbf{Q}_t^{mode} \in \mathbb{R}^{M \times d}\) are \(M\) learnable mode queries for multi-modal prediction.
 
-The deformable cross-attention computes:
+The temporal queries \(\mathbf{Q}_t^{temp}\) maintain sequential dependencies by incorporating positional encodings of the previous timestep's predictions \(\hat{\mathbf{p}}_{t-1}\), while mode queries \(\mathbf{Q}_t^{mode}\) are fixed learnable embeddings that encourage diverse behavioral patterns.
+
+For each timestep \(t\), the deformable cross-attention updates the reference point \(\mathbf{p}_{ref}\) based on previous predictions and computes:
 \begin{equation}
-\label{eq:deformable_cross_attention}
-\text{DeformAttn}(\mathbf{Q}_t, \mathbf{Z}) = \sum_{m=1}^{M} \mathbf{W}_m \sum_{k=1}^{K} A_{mkq} \cdot \mathbf{Z}(\phi(\mathbf{p}_q + \boldsymbol{\Delta p}_{mkq}))
+\label{eq:cross_attention_operation}
+\text{CrossAttn}(\mathbf{Q}_t, \mathbf{Z}, \mathbf{p}_{ref}) = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{mkq} \cdot \mathbf{Z}(\mathbf{p}_{ref} + \boldsymbol{\Delta p}_{mkq}) \right]
 \end{equation}
-where \(A_{mkq}\) are attention weights, \(\boldsymbol{\Delta p}_{mkq}\) are learnable offsets, and \(\phi\) denotes bilinear sampling.
 
-\item[Mixture-density head.] The final MLP outputs per-mode trajectory distributions as mixtures of Laplacian components:
+The attention weights \(A_{mkq} = \text{softmax}(\text{Linear}(\mathbf{Q}_t))\) and sampling offsets \(\boldsymbol{\Delta p}_{mkq} = \text{Linear}(\mathbf{Q}_t)\) are both derived from the dual queries, enabling adaptive focus around the reference trajectory.
+
+\item[Autoregressive Decoding with Mixture Outputs.] The cross-attention outputs are processed by an MLP to generate trajectory distributions as mixtures of Laplacian components:
 \begin{equation}
-\label{eq:mixture_output}
+\label{eq:mixture_trajectory_output}
 \begin{aligned}
-\hat{\boldsymbol{\mu}}_{t,m}, \hat{\boldsymbol{\sigma}}_{t,m} &= \text{MLP}(\mathbf{Q}_t^{mode}) \\
-\hat{\pi}_m &= \text{softmax}(\text{MLP}(\text{mean}(\mathbf{Q}_t^{mode})))
+\hat{\boldsymbol{\mu}}_{t,m}, \hat{\boldsymbol{\sigma}}_{t,m} &= \text{MLP}(\text{CrossAttn}(\mathbf{Q}_t)) \\
+\hat{\pi}_m &= \text{softmax}(\text{MLP}(\text{GlobalPool}(\mathbf{Q}_t^{mode})))
 \end{aligned}
 \end{equation}
-yielding position means \(\hat{\boldsymbol{\mu}}_{t,m} \in \mathbb{R}^2\), uncertainty scales \(\hat{\boldsymbol{\sigma}}_{t,m} \in \mathbb{R}^2\), and mode probabilities \(\hat{\pi}_m\) for each of \(M\) modes.
+where \(\hat{\boldsymbol{\mu}}_{t,m} \in \R^2\) are position means, \(\hat{\boldsymbol{\sigma}}_{t,m} \in \R^2\) are uncertainty scales, and \(\hat{\pi}_m\) are mode probabilities for each of the \(M\) trajectory modes.
+
+The recurrent architecture updates both the temporal queries and reference point at each timestep:
+\begin{equation}
+\label{eq:recurrent_updates}
+\begin{aligned}
+\mathbf{p}_{ref}^{(t+1)} &= \text{argmax}_m \hat{\pi}_m \cdot \hat{\boldsymbol{\mu}}_{t,m} \\
+\mathbf{Q}_{t+1}^{temp} &= \mathbf{Q}_t^{temp} + \text{PE}(\hat{\boldsymbol{\mu}}_{t,m^*})
+\end{aligned}
+\end{equation}
+where \(m^* = \text{argmax}_m \hat{\pi}_m\) selects the most probable mode for feedback.
 \end{description}
 
+\paragraph{Loss Formulation and Training Recipe.} CASPFormer adopts the HiVT loss formulation~\cite{zhou2022hivt}, combining regression and classification objectives to encourage trajectory diversity while avoiding mode collapse. The total loss \(\mathcal{L} = \mathcal{L}_{reg} + \mathcal{L}_{cls}\) optimizes only the best-matching mode based on minimum L2 distance to ground truth. The regression loss uses negative log-likelihood of the Laplacian distribution: \(\mathcal{L}_{reg} = -\frac{1}{T_f} \sum_{t=1}^{T_f} \log[\mathbb{L}(P_t \mid \mu_t, b_t)]\), where \(\mu_t\) and \(b_t\) are predicted position and uncertainty parameters. The classification loss applies cross-entropy weighting: \(\mathcal{L}_{cls} = -\frac{1}{M} \sum_{k=1}^{M} \log(\pi(k)) \mathbb{L}(P_{T_f, k} \mid \mu_{T_f, k}, b_{T_f, k})\). Training follows an iterative refinement schedule with \(K_s = 4\) sampling points and \(L = 4\) pyramid levels, inheriting Deformable DETR's two-stage approach for robust convergence.
+
+\paragraph{Pros.} Continuous, map-aligned trajectories; 30–40\% lower minFDE than CASPNet on nuScenes while training three times faster; complexity scales with prediction length \(\mathcal{O}(T_f)\), not grid size \(\mathcal{O}(HW)\); direct vectorized output without post-processing; explicit multi-modal prediction through mode queries; explainable mode queries represent diverse driver behavioral intents.\\
+\paragraph{Cons.} Still inherits quantization artifacts from the rasterized backbone; deformable attention adds modest per-step latency versus pure CNNs; requires careful hyperparameter tuning for attention sampling; limited to agent-centric coordinate systems; BEV raster discretization artifacts in crowded intersections; memory overhead for large \(H \times W\) grids; reliance on accurate perception stacks.
+\end{description}
+
+\paragraph{Empirical Performance and Limitations.} On nuScenes validation, CASPFormer achieves 1.23m minFDE and 2.85m minADE, representing 30--40\% improvement over CASPNet while maintaining real-time inference at \(\sim\)20 FPS on V100 GPUs. The deformable attention mechanism reduces computational complexity from \(\mathcal{O}(H \cdot W \cdot T_f)\) for grid-based approaches to \(\mathcal{O}(M K_s \cdot T_f)\) where \(M K_s \ll H \cdot W\) represents the decoder complexity with \(M = 5\) modes and \(K_s = 4\) sampling points per query.
+
+However, CASPFormer inherits certain limitations from its rasterized backbone. The BEV rasterization process can introduce sparse artifacts in regions with limited map coverage, affecting prediction quality in complex intersections or areas with irregular geometry. Additionally, failure cases include scenarios with highly dynamic pedestrians in dense crowds and abrupt lane-change maneuvers that exceed the temporal modeling capacity of the recurrent decoder. Unlike CASPNet, which outputs discrete grid-based likelihood distributions that can be directly interpreted as trajectory modes, CASPFormer generates continuous trajectory coordinates through mixture distributions but does not provide explicit trajectory mode probabilities in the same interpretable format.
+
 The key innovation lies in the dual-query architecture that addresses mode collapse while maintaining temporal consistency. Unlike single-query approaches that struggle with behavioral diversity, the separation of temporal and mode queries enables CASPFormer to generate distinct trajectory modes while preserving smooth temporal dynamics.
-
-\textbf{Pros.} Continuous, map-aligned trajectories; 30-40\% lower minFDE than CASPNet on nuScenes while training three times faster; complexity scales with prediction length \(\mathcal{O}(T_f)\), not grid size \(\mathcal{O}(HW)\); direct vectorized output without post-processing.
-\textbf{Cons.} Still inherits quantization artifacts from the rasterized backbone; deformable attention adds modest per-step latency versus pure CNNs; requires careful hyperparameter tuning for attention sampling.
-
-%--------------------------------------------------------------------
-\subsection{Architectural Analysis and Comparison}
-\label{ssec:comparison}
-
-The evolution from CASPNet to CASPFormer illustrates key trade-offs in trajectory prediction architectures. We analyze these trade-offs across four critical dimensions:
-
-\textbf{Representation paradigms.} CASPNet's fully rasterized approach treats trajectory prediction as a dense spatial problem, analogous to semantic segmentation. Every pixel potentially contains trajectory information, enabling inherent multi-agent modeling but limiting precision to grid resolution. CASPFormer's hybrid design preserves spatial reasoning in the encoder while switching to sparse, continuous decoding—combining the best of both paradigms.
-
-\textbf{Computational complexity.} CASPNet's grid-based decoder scales as \(\mathcal{O}(HW \cdot T_f)\), making it suitable for edge deployment but memory-intensive for high-resolution scenes. CASPFormer's deformable attention achieves \(\mathcal{O}(N \cdot K \cdot T_f)\) complexity, where \(N\) is the number of query tokens and \(K\) is the sampling points per query (\(K \ll HW\)). This linear scaling with prediction horizon rather than spatial resolution makes CASPFormer more suitable for long-term prediction.
-
-\textbf{Multi-modality mechanisms.} CASPNet achieves multi-modality through \emph{implicit} spatial distributions—multiple peaks in the occupancy heat-maps naturally represent different trajectory modes. However, this approach can suffer from mode blending and requires careful post-processing to extract clean trajectories. CASPFormer's \emph{explicit} mode queries provide cleaner mode separation and eliminate the need for trajectory extraction algorithms.
-
-\textbf{Attention mechanisms.} Both architectures employ attention, but with different philosophies. CASPNet's pixel-adaptive attention operates densely across the entire spatial grid, learning local interaction patterns through dilated convolutions. CASPFormer's deformable attention is sparse and adaptive, focusing computational resources on relevant spatial locations through learned sampling offsets. This selective attention proves more efficient for capturing long-range dependencies while maintaining spatial precision.
-
-\textbf{Future directions.} The progression from CASPNet to CASPFormer suggests several promising research directions: (1) \emph{End-to-end learning} that jointly optimizes perception and prediction modules, eliminating the rasterization bottleneck entirely; (2) \emph{Adaptive resolution} schemes that dynamically adjust spatial granularity based on scene complexity; (3) \emph{Temporal attention} mechanisms that model long-term dependencies more effectively than recurrent approaches; and (4) \emph{Multi-scale deformable attention} that operates directly on vectorized scene representations.
-
-Both architectures demonstrate the evolution from grid-based to hybrid approaches in trajectory prediction, with CASPFormer representing a crucial stepping stone toward fully vectorized methods while maintaining the computational advantages of CNN backbones. The success of this hybrid approach validates the principle that combining proven architectural components (CNNs for spatial reasoning, transformers for sequential modeling) often outperforms end-to-end novel designs.
-
-%--------------------------------------------------------------------
-\subsection*{Summary}
-This section provided a comprehensive overview of two seminal works in rasterized trajectory prediction: CASPNet's grid-based joint prediction and CASPFormer's hybrid CNN-transformer architecture. While both methods process BEV inputs, their architectural choices reflect different trade-offs between computational efficiency, prediction accuracy, and deployment constraints. CASPNet prioritizes constant-time inference and edge compatibility, while CASPFormer emphasizes prediction quality and continuous output representation. These design principles continue to influence modern trajectory prediction systems, including the query-centric approaches discussed in subsequent sections.
 
 %--------------------------------------------------------------------
 \newpage
