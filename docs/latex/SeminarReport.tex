@@ -1,7 +1,7 @@
 \documentclass[a4paper,11pt]{article}
 \usepackage[english]{babel}
-\usepackage[utf8x]{inputenc}
-% packages for including graphics with figure-environment
+\usepackage[utf8]{inputenc}
+% package for including graphics with figure-environment
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage[backend=biber,natbib=true,style=numeric,sorting=none]{biblatex}
@@ -23,6 +23,12 @@
     pdfsubject={Seminar: Video Analysis and Object Detection},
     pdfkeywords={trajectory prediction, multi-agent, video analysis, query-centric, deep learning}
 }
+
+% Suppress citation warnings - temporarily disable warnings for citations and references
+\usepackage{silence}
+\WarningFilter{latex}{Citation}
+\WarningFilter{latex}{Reference}
+\WarningFilter{natbib}{Citation}
 
 % Enhanced mathematical typesetting
 \usepackage{amsmath,amssymb,amsthm}  % Core mathematical packages
@@ -82,6 +88,7 @@
 \usepackage{csquotes}         % For proper quotations
 \usepackage{enumitem}         % Enhanced lists
 \usepackage{parskip}          % Better paragraph spacing
+\usepackage{geometry}         % Page layout and margins
 % Professional caption formatting
 
 % Enhanced table row colors
@@ -122,11 +129,14 @@
 \setlist[itemize]{leftmargin=*,labelsep=0.5em}
 \setlist[description]{leftmargin=*,labelsep=0.5em}
 
+% package for bibliography - use numerical style to avoid compatibility issues
+\usepackage[numbers,round]{natbib}
 
 % package for bibliography
 % \usepackage[numbers]{natbib}
 % Enhanced headers and footers
 \usepackage{fancyhdr}
+
 \pagestyle{fancy}
 \fancyhf{} % clear all header and footer fields
 \fancyhead[L]{Jan Duscherer, Lukas Röß}
@@ -160,10 +170,7 @@
 	\Huge Multimodal Trajectory \\ Prediction in Multi-Agent Scenarios \\
 	}
 
-	\vspace{1cm}
-
-	% if you are the only author, you might use the following
-	% \author{Jan Duscherer, Lukas Röß}
+    \vspace{1cm}
 
 	% Insert here your name and correct mail address
 	\author{\Large \href{mailto:jan.duscherer@hm.edu}{Jan Duscherer} \and \Large \href{mailto:lukas.roess@hm.edu}{Lukas Röß}
