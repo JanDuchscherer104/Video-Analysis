@@ -134,64 +134,75 @@ The CASPFormer as depicted in \autoref{fig:caspformer_decoder} decoder consists 
 
 \begin{equation}
 \label{eq:msda_operation}
-\text{MSDA}(\boldsymbol{\mathcal{F}}) = \sum_{n=1}^{N_H} \mathbf{W}_{n} \left[\sum_{\ell=0}^{L_{\text{FPN}}-1} \sum_{k=1}^{K_s} A_{n\ell qk} \cdot \mathbf{F}_\ell(\phi_{\ell}(\mathbf{p}_q) + \boldsymbol{\Delta p}_{n\ell qk}) \right]
+\mathbf{Z}^{\text{SA}} = \sum_{n=1}^{N_H} \mathbf{W}_{n} \left[\sum_{\ell=0}^{L_{\text{FPN}}-1} \sum_{k=1}^{K_s} A_{n\ell qk} \cdot \mathbf{F}_\ell(\phi_{\ell}(\mathbf{p}_q) + \boldsymbol{\Delta p}_{n\ell qk}) \right]
 \end{equation}
 
-Here, \emph{queries} and \emph{keys} are derived from the same flattened feature maps \(\text{Flatten}(\boldsymbol{\mathcal{F}} + \textbf{PE})\). The learned offsets \(\boldsymbol{\Delta p}_{\ell nkq}\) enable each query to attend to informative locations across the entire feature pyramid, while being constrained to all features of the n-th attention head.
+Here, \emph{queries} and \emph{keys} are derived from the same flattened feature maps \(\text{Flatten}(\boldsymbol{\mathcal{F}} + \textbf{PE})\). The learned offsets \(\boldsymbol{\Delta p}_{\ell nkq} \in \R^2\) enable each query to attend to informative locations across the entire feature pyramid, while being constrained to all features of the n-th attention head. \( \phi_{\ell} \) re-scales the normalized coordinates \( \mathbf{p}_q \in [0,1]^2\) to the spatial dimensions of the feature map at level \(\ell\).\\
+  The output of the MSDA is a latent representation of the entire scene, encoding all spatio-temproal and social dynamics of the agents and the map. Hence, this module should be seen as part of the scene-encoder, rather than the decoder.
 
-\item[Recurrent Deformable Cross-Attention.] The fused features \(\mathbf{Z} = \text{MSDA}(\boldsymbol{\mathcal{F}})\) serve as \emph{keys} and \emph{values} for the cross-attention mechanism. The \emph{queries} employ a novel dual-query architecture (detailed in~\autoref{fig:caspformer_decoder}) that separates temporal coherence from mode diversity:
+\item[Recurrent Deformable Cross-Attention.] The fused features \(\mathbf{Z}^{\text{SA}}\) serve as \emph{keys} and \emph{values} for the cross-attention mechanism. CASPFormer employs a dual-query approach that combines \emph{temporal queries} and \emph{mode queries} to capture both temporal dependencies and facilitate mode diversity. The query construction is defined as:
 
 \begin{equation}
 \label{eq:dual_query_construction}
 \begin{aligned}
-\mathbf{Q}_t^{temp} &= \mathbf{Q}_{t-1}^{temp} + \text{PE}(\hat{\mathbf{p}}_{t-1}) \quad \text{(temporal queries)} \\
-\mathbf{Q}_t^{mode} &\in \R^{M \times d} \quad \text{(learnable mode embeddings)} \\
-\mathbf{Q}_t &= \mathbf{Q}_t^{temp} \oplus \mathbf{Q}_t^{mode} \quad \text{(concatenated dual queries)}
+\mathbf{Q}_t^{\text{temp}} &= \mathbbm{1}(t=T_p) \cdot \mathbf{E}_{\text{init}} + \mathbbm{1}(t>T_p) \cdot \mathbf{Z}^{\text{CA}}_{t-1} \\
+\mathbf{Q}^{mode} &\in \R^{M \times d} \quad \text{(learnable mode embeddings)} \\
+\mathbf{Q}_t &= \mathbf{Q}_t^{temp} \oplus \mathbf{Q}^{mode} \quad \text{(concatenated dual queries)}
 \end{aligned}
 \end{equation}
 
-The temporal queries \(\mathbf{Q}_t^{temp}\) maintain sequential dependencies by incorporating positional encodings of the previous timestep's predictions \(\hat{\mathbf{p}}_{t-1}\), while mode queries \(\mathbf{Q}_t^{mode}\) are fixed learnable embeddings that encourage diverse behavioral patterns.
+The temporal queries maintain temporal coherence across timesteps, while mode queries provide fixed embeddings to promote behavioral diversity and mitigate mode collapse.
 
-For each timestep \(t\), the deformable cross-attention updates the reference point \(\mathbf{p}_{ref}\) based on previous predictions and computes:
+For each timestep \(t\), the deformable cross-attention decoder updates the reference point \(\mathbf{p}^{ref}\) as the last position of the ego-vehicle \( \hat{\boldsymbol{\mu}}_{t-1}\) based on previous predictions and computes:
 \begin{equation}
 \label{eq:cross_attention_operation}
-\text{CrossAttn}(\mathbf{Q}_t, \mathbf{Z}, \mathbf{p}_{ref}) = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{nkq} \cdot \mathbf{Z}(\mathbf{p}_{ref} + \boldsymbol{\Delta p}_{nkq}) \right]
+\mathbf{Z}^{\text{CA}}_t = \sum_{m=1}^{M} \mathbf{W}_m \left[ \sum_{k=1}^{K_s} A_{nkq} \cdot \mathbf{Z}^{\text{CA}}(\mathbf{p}^{ref} + \boldsymbol{\Delta p}_{nkq}) \right]
 \end{equation}
 
-The attention weights \(A_{nkq} = \text{softmax}(\text{Linear}(\mathbf{Q}_t))\) and sampling offsets \(\boldsymbol{\Delta p}_{nkq} = \text{Linear}(\mathbf{Q}_t)\) are both derived from the dual queries, enabling adaptive focus around the reference trajectory.
+where both the attention weights and offsets are computed as delineated in~\autoref{sec:deformable_attention}. The DCA block depicted in~\autoref{fig:caspformer_decoder} stacks three deformable cross-attention layers, each with its own set of learnable parameters, to refine the predictions iteratively. This allows the model to capture complex interactions and dependencies across multiple timesteps and modes.
 
-\item[Autoregressive Decoding with Mixture Outputs.] The cross-attention outputs are processed by an MLP to generate trajectory distributions as mixtures of Laplacian components:
+\item[Autoregressive Decoding with Mixture Outputs.] The outputs of the final cross-attention layer are processed by an MLP to generate trajectory distributions as mixtures of Laplacian components:
 \begin{equation}
 \label{eq:mixture_trajectory_output}
 \begin{aligned}
-\hat{\boldsymbol{\mu}}_{t,m}, \hat{\boldsymbol{\sigma}}_{t,m} &= \text{MLP}(\text{CrossAttn}(\mathbf{Q}_t)) \\
-\hat{\pi}_m &= \text{softmax}(\text{MLP}(\text{GlobalPool}(\mathbf{Q}_t^{mode})))
+\hat{\boldsymbol{\mu}}_{t}, \hat{\mathbf{b}}_{t} &= \text{MLP}(\mathbf{Z}^{\text{CA}}_t)\\
+\hat{\boldsymbol{\pi}} &= \text{softmax}(\text{MLP}(\mathbf{Z}^{\text{CA}}_t)) \\
 \end{aligned}
 \end{equation}
-where \(\hat{\boldsymbol{\mu}}_{t,m} \in \R^2\) are position means, \(\hat{\boldsymbol{\sigma}}_{t,m} \in \R^2\) are uncertainty scales, and \(\hat{\pi}_m\) are mode probabilities for each of the \(M\) trajectory modes.
+where \(\hat{\boldsymbol{\mu}}_{t} \in \R^{N_c \times M \times 2}\) are Cartesian position means, \(\hat{\mathbf{b}}_{t} \in \R^{N_c \times M \times 2}\) are uncertainty scales, and \(\hat{\boldsymbol{\pi}}_t \in \R^{N_c \times M}\) are mode probabilities for each of the \(M\) trajectory modes and each agent of interest; \( N_c \) being the number of agents in the scene, whose trajectories are to be predicted.
 
 The recurrent architecture updates both the temporal queries and reference point at each timestep:
 \begin{equation}
 \label{eq:recurrent_updates}
 \begin{aligned}
-\mathbf{p}_{ref}^{(t+1)} &= \text{argmax}_m \hat{\pi}_m \cdot \hat{\boldsymbol{\mu}}_{t,m} \\
-\mathbf{Q}_{t+1}^{temp} &= \mathbf{Q}_t^{temp} + \text{PE}(\hat{\boldsymbol{\mu}}_{t,m^*})
+\mathbf{p}^{ref}_{(t+1)} &= \text{argmax}_m \hat{\boldsymbol{\pi}}_{t,ego} \cdot \hat{\boldsymbol{\mu}}_{t,m^{ego}} \\
 \end{aligned}
 \end{equation}
-where \(m^* = \text{argmax}_m \hat{\pi}_m\) selects the most probable mode for feedback.
+where \(m^* = \text{argmax}_m \hat{\boldsymbol{\pi}}_{t,ego}\) yields the index of the ego agent's most probable mode, hence the next reference point is set the likeliest predicted position of the ego vehicle (which must be one of the \( N_c \) agents of interest).
 \end{description}
 
-\paragraph{Loss Formulation and Training Recipe.} CASPFormer adopts the HiVT loss formulation~\cite{zhou2022hivt}, combining regression and classification objectives to encourage trajectory diversity while avoiding mode collapse. The total loss \(\mathcal{L} = \mathcal{L}_{reg} + \mathcal{L}_{cls}\) optimizes only the best-matching mode based on minimum L2 distance to ground truth. The regression loss uses negative log-likelihood of the Laplacian distribution: \(\mathcal{L}_{reg} = -\frac{1}{T_f} \sum_{t=1}^{T_f} \log[\mathbb{L}(P_t \mid \mu_t, b_t)]\), where \(\mu_t\) and \(b_t\) are predicted position and uncertainty parameters. The classification loss applies cross-entropy weighting: \(\mathcal{L}_{cls} = -\frac{1}{M} \sum_{k=1}^{M} \log(\pi(k)) \mathbb{L}(P_{T_f, k} \mid \mu_{T_f, k}, b_{T_f, k})\). Training follows an iterative refinement schedule with \(K_s = 4\) sampling points and \(L = 4\) pyramid levels, inheriting Deformable DETR's two-stage approach for robust convergence.
-
-\paragraph{Pros.} Continuous, map-aligned trajectories; 30–40\% lower minFDE than CASPNet on nuScenes while training three times faster; complexity scales with prediction length \(\mathcal{O}(T_f)\), not grid size \(\mathcal{O}(HW)\); direct vectorized output without post-processing; explicit multi-modal prediction through mode queries; explainable mode queries represent diverse driver behavioral intents.\\
-\paragraph{Cons.} Still inherits quantization artifacts from the rasterized backbone; deformable attention adds modest per-step latency versus pure CNNs; requires careful hyperparameter tuning for attention sampling; limited to agent-centric coordinate systems; BEV raster discretization artifacts in crowded intersections; memory overhead for large \(H \times W\) grids; reliance on accurate perception stacks.
+\paragraph{Loss Formulation and Training Recipe.} CASPFormer adopts the HiVT loss formulation~\cite{zhou2022hivt}, combining regression and classification objectives \(\mathcal{L} = \mathcal{L}_{reg} + \mathcal{L}_{cls}\).\\
+The regression loss optimizes the mode with the lowest Euclidean distance to the ground truth trajectory of each agent, to encourage diverse trajectory predictions:
+\begin{equation}
+  \label{eq:caspformer_regression_loss}
+  \mathcal{L}_{reg} = -\frac{1}{T_f} \sum_{t=1}^{T_f} \log[\mathbb{L}(P_t \mid \mu_t, b_t)]
+\end{equation}
+The influence of all other modes and the predicted categorical distribution is captured by a cross-entropy classification loss:
+\begin{equation}
+  \label{eq:caspformer_classification_loss}
+  \mathcal{L}_{cls} = -\frac{1}{M} \sum_{k=1}^{M} \log(\pi_k) \mathbb{L}(P_{T_f, k} \mid \mu_{T_f, k}, b_{T_f, k})
+\end{equation}
 \end{description}
 
-\paragraph{Empirical Performance and Limitations.} On nuScenes validation, CASPFormer achieves 1.23m minFDE and 2.85m minADE, representing 30--40\% improvement over CASPNet while maintaining real-time inference at \(\sim\)20 FPS on V100 GPUs. The deformable attention mechanism reduces computational complexity from \(\mathcal{O}(H \cdot W \cdot T_f)\) for grid-based approaches to \(\mathcal{O}(M K_s \cdot T_f)\) where \(M K_s \ll H \cdot W\) represents the decoder complexity with \(M = 5\) modes and \(K_s = 4\) sampling points per query.
+\paragraph{Pros.} Direct vectorized output without post-processing; explicit multi-modal prediction and uncertainty estimates; deformable attention enables efficient Transformer decoding; Using the past-predictions as temporal queries introduces grounding and interpretability; complexity scales with the number of agents \( N_c \), not grid size \(\mathcal{O}(HW)\); mode-queries mitigate mode collapse.
 
-However, CASPFormer inherits certain limitations from its rasterized backbone. The BEV rasterization process can introduce sparse artifacts in regions with limited map coverage, affecting prediction quality in complex intersections or areas with irregular geometry. Additionally, failure cases include scenarios with highly dynamic pedestrians in dense crowds and abrupt lane-change maneuvers that exceed the temporal modeling capacity of the recurrent decoder. Unlike CASPNet, which outputs discrete grid-based likelihood distributions that can be directly interpreted as trajectory modes, CASPFormer generates continuous trajectory coordinates through mixture distributions but does not provide explicit trajectory mode probabilities in the same interpretable format.
+\paragraph{Cons.} Still inherits quantization artifacts from the rasterized backbone; limited to ego-agent-centric coordinate systems; BEV raster discretization artifacts in crowded intersections; memory overhead for large \(H \times W\) grids.
 
-The key innovation lies in the dual-query architecture that addresses mode collapse while maintaining temporal consistency. Unlike single-query approaches that struggle with behavioral diversity, the separation of temporal and mode queries enables CASPFormer to generate distinct trajectory modes while preserving smooth temporal dynamics.
+% \paragraph{Empirical Performance and Limitations.} On nuScenes validation, CASPFormer achieves 1.23m minFDE and 2.85m minADE, representing 30--40\% improvement over CASPNet while maintaining real-time inference at \(\sim\)20 FPS on V100 GPUs. The deformable attention mechanism reduces computational complexity from \(\mathcal{O}(H \cdot W \cdot T_f)\) for grid-based approaches to \(\mathcal{O}(M K_s \cdot T_f)\) where \(M K_s \ll H \cdot W\) represents the decoder complexity with \(M = 5\) modes and \(K_s = 4\) sampling points per query.
+
+% However, CASPFormer inherits certain limitations from its rasterized backbone. The BEV rasterization process can introduce sparse artifacts in regions with limited map coverage, affecting prediction quality in complex intersections or areas with irregular geometry. Additionally, failure cases include scenarios with highly dynamic pedestrians in dense crowds and abrupt lane-change maneuvers that exceed the temporal modeling capacity of the recurrent decoder. Unlike CASPNet, which outputs discrete grid-based likelihood distributions that can be directly interpreted as trajectory modes, CASPFormer generates continuous trajectory coordinates through mixture distributions but does not provide explicit trajectory mode probabilities in the same interpretable format.
+
+% The key innovation lies in the dual-query architecture that addresses mode collapse while maintaining temporal consistency. Unlike single-query approaches that struggle with behavioral diversity, the separation of temporal and mode queries enables CASPFormer to generate distinct trajectory modes while preserving smooth temporal dynamics.
 
 %--------------------------------------------------------------------
 \newpage
