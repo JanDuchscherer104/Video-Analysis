@@ -142,8 +142,8 @@ The recurrent architecture updates both the temporal queries and reference point
 where \(m^* = \text{argmax}_m \hat{\boldsymbol{\pi}}_{t,ego}\) yields the index of the ego agent's most probable mode, hence the next reference point is set the likeliest predicted position of the ego vehicle (which must be one of the \( N_c \) agents of interest).
 \end{description}
 
-\paragraph{Loss Formulation and Training Recipe.} CASPFormer adopts the HiVT loss formulation~\cite{zhou2022hivt}, combining regression and classification objectives \(\mathcal{L} = \mathcal{L}_{reg} + \mathcal{L}_{cls}\).\\
-The regression loss optimizes the mode with the lowest Euclidean distance to the ground truth trajectory of each agent, to encourage diverse trajectory predictions:
+\paragraph{Loss Formulation and Training Recipe.} CASPFormer adopts the HiVT loss formulation~\cite{zhou2022hivt}, combining regression and classification objectives \(\mathcal{L} = \mathcal{L}_{reg} + \mathcal{L}_{cls}\) to optimize the predicted mixture of Laplacians.
+To avoid numerical instability and mode collapse in mixture model optimization~\cite{rupprecht2017learning}, the regression loss adopts winner-takes-all (WTA) strategy, where only the mode with the lowest Euclidean distance to the ground truth trajectory is considered:
 \begin{equation}
   \label{eq:caspformer_regression_loss}
   \mathcal{L}_{reg} = -\frac{1}{T_f} \sum_{t=1}^{T_f} \log[\mathbb{L}(P_t \mid \mu_t, b_t)]

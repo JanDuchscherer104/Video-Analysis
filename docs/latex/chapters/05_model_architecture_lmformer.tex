@@ -1,0 +1,15 @@
+\subsection{LMFormer}
+\label{ssec:lmformer}
+
+\paragraph{Polyline Representations} motion vectors: $\mathcal{T}_{out}^{a,m} = [(V_1^{a,m}, S_1^{a,m}), (V_2^{a,m}, S_2^{a,m}), ..., (V_{T'}^{a,m}, S_{T'}^{a,m})]$, where $V_t^{a,m} = [P_{t-1}^{a,m}, P_t^{a,m}]$ represents the motion vector for agent $a$, mode $m$, and time step $t$, with associated variance $S_t^{a,m}$.
+
+
+\subsubsection{Recurrent Temporal Decoding}
+Following successful applications in CASPFormer~\cite{caspformerYadav2024} and QCNet~\cite{Zhou2023QueryCentric}, LMFormer incorporates recurrent temporal decoding ($\times T_{out}$) in cross-attention modules. Each recurrent loop updates both the query position and the query itself, enabling progressive refinement of trajectory predictions.
+
+The decoder employs three specialized cross-attention mechanisms:
+\begin{itemize}
+    \item \textbf{Mode2Temporal Cross Attention:} Aggregates temporal information from Agent Encodings (keys/values) to mode queries
+    \item \textbf{Mode2Agent Cross Attention:} Enables each mode of an agent to attend to corresponding modes of other agents, modeling future social interactions
+    \item \textbf{Mode2Lane Cross Attention:} Incorporates static context information from Lane Encodings into mode queries
+\end{itemize}
