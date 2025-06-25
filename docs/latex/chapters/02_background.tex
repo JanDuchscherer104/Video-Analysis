@@ -1,4 +1,4 @@
-% 02_background.tex  – concise (≤ 3 pp.), details in Appendix A
+% 02_background.tex  - concise (≤ 3 pp.), details in Appendix A
 % ------------------------------------------------------------------
 \section{Theoretical Background \& Related Work}
 \label{sec:background}
@@ -64,25 +64,29 @@ Agent trajectories use analogous representations:
 Vectorized approaches employ either \emph{agent-centric} coordinate systems (all scene elements normalized to a single ego-centric frame) or \emph{query-centric} paradigms. The choice fundamentally affects computational efficiency, invariance properties, and multi-agent reasoning capabilities, with query-centric approaches offering significant advantages for streaming applications and parallel multi-agent prediction~\cite{qcnetZhou2023}. % TODO: introduce the Vector Based Representation by saying that they are more compact and preserve more geometric fidelity, they are more appropriate for the use in transformer or graph based approaches and allow to model complex spatio-temporal and social relationships between scene elements more explicitly. % TODO: elaborate more closely what agent-centric means: i.e. a single ego-centric coordinate system for all agents.
 \end{description}
 %% FINISHED UNTIL HERE %%
-UniTraj~\cite{unitrajFeng2024} employs a vectorized and agent-centric representation, representing both agent trajectories as vertex lists and map polyines as uniformly sampled list of vertices.
+UniTraj~\cite{unitrajFeng2024} employs a vectorized and agent-centric representation, representing both agent trajectories as vertex lists and map polylines as uniformly sampled list of vertices.
 
 % This so-called \emph{query-centric} approach will be discussed in greater detail in~\autoref{ssec:qc_paradigm}. CASPNet embodies the \emph{raster} philosophy; CASPFormer adopts a hybrid strategy—retaining a CNN backbone for perception compatibility, but switching to a vectorized transformer decoder for output precision.
 
-\subsubsection{The Query-Centric Paradigm}
-\label{ssec:qc_paradigm}
+%<unstructured-collection-of-information-to-include>
+% <include:1>\cite{lmformerYadav2025} into Local frame construction
 % TODO: define how each local coodinate frame is defined:
 % agents: motion vector's start position as its origin, x axis is instantaneous direction of travel
 % map polylines: very lane segment is characterized by its start and end positions in global coordinates. The query-centric coordinate frame for a lane segment is set as follows: we designate the segment's start position as its origin and align the segment's vector direction with its x-axis. As a result, the only feature preserved in this query-centric coordinate frame is the segment's length, which we use as its sole feature in the query-centric embedding generation.
 % BOTH of these conventions stem from \cite{lmformerYadav2025}
-% TODO: where to have a qualitative discussion of the advantages and disadvantages of the query-centric vs the agent-centric paradigm?
+% </include:1>
+% <include:2> in Agent-centric vs. query-centric comparison
 % Parallel decoding Usually one-agent-at-a-time for agent centric. Multi-agent parallel: same invariant scene tensor is shared by all target agents for query-centric.
 % Latent scene representations are \( SE(2) \rtimes \R \) invariant (What about the impact of the relative descriptors?).
 % Memory reuse Agent-Centric:% None → recompute full BEV / agent tokens each step. QC: Cache & reuse: when the window slides, the T-1 overlapping steps' embeddings are identical and can be reused. This makes the implementation in \cite{qcnetZhou2023} efficient in terms of its time complexity but it comes at a hughe memory cost, eg The training process consumes ~160G GPU memory.
+% </nclude:2>
 % 	1.	Local spacetime frame construction
+% <include:1>
 % •	Each agent state (p^t_i,\theta^t_i,v^t_i) and each map polygon has its own 3-DOF coordinate frame: origin = current position, x-axis = heading, time axis = current step.
+% </include:1>
 % 	4.	QC allows for Factorised attention with query-centric keys/values. What are the advantages.
-	% •	Three axes: Temporal, Agent–Map, Social (Agent–Agent).
-	% •	Because queries/keys include relative embeddings, all outputs remain invariant → can be cached. (Page 3–4) _Query-Centric_Trajectory_Prediction_CVPR_2023_paper-2.pdf](file-service://file-MYr4iwPvX6YAGHzdpzXMma)
+	% •	Three axes: Temporal, Agent-Map, Social (Agent-Agent).
+	% •	Because queries/keys include relative embeddings, all outputs remain invariant → can be cached. (Page 3-4) _Query-Centric_Trajectory_Prediction_CVPR_2023_paper-2.pdf](file-service://file-MYr4iwPvX6YAGHzdpzXMma)
 
 % \subsubsection*{The Agent-Centric Paradigm: Progress and Limitations}
 
@@ -95,6 +99,7 @@ UniTraj~\cite{unitrajFeng2024} employs a vectorized and agent-centric representa
 %     \item \textbf{Consistent Scale:} Bounded coordinate values improve training stability. In query centric encodigngs the range of possible values is more strongly bounded.
 %     \item \textbf{Ego-View:} Mirrors the vehicle's own perspective (all vehicles live in fibers that are quite similar to each other), hence the same features are to be expected for all agents independent of their position. This dramatically shrinks the global manifold of possible scene encodings, making it easier for the model to learn efficient representations through *strong inductive biases* % TODO: how is this redundant from the first two points (translation and rotation invariance)
 % \end{itemize} % TODO: mention the symmetries only briefly here and add a new \begin{describe} subsequently $[isomorphisms] to discuss the symmetries in more detail.
+% <include:3> shortcomings of agent-centric encoding
 % Despite these advantages, agent-centric encoding introduces new challenges:
 % \begin{itemize}
 %     \item \textbf{Computational Redundancy:} Every change in the prediction target or sliding time window requires re-normalizing and re-encoding the entire scene.
@@ -102,16 +107,19 @@ UniTraj~\cite{unitrajFeng2024} employs a vectorized and agent-centric representa
 %     \item \textbf{Temporal Inconsistency:} Streaming applications incur unnecessary reprocessing of static map elements as the reference frame shifts.
 %     \item \textbf{Multi-Agent Inefficiency:} Parallel prediction for multiple agents multiplies encoding costs linearly with the number of agents.
 % \end{itemize}
+% </include:3> shortcomings of agent-centric encoding
 
-% These points should be expressed both as advantages and disadvantages of the agent-centric vs the query centric paradigm in the same itemize list, the complementary advantages are:
+% <include:2> in Agent-centric vs. query-centric comparison
 % \begin{itemize}
 %     \item \textbf{Efficient reuse:} Encodings are independent of prediction target and can be shared across agents and time steps.
 %     \item \textbf{Permutation symmetry:} No agent is privileged; all elements are represented equally.
 %     \item \textbf{Multi-agent and streaming:} The same scene encoding can be used for parallel prediction of all agents and for streaming updates.
 %     \item \textbf{Joint prediction capability:} Unlike marginal prediction approaches, query-centric models can effectively capture future social interactions among agents.
 % \end{itemize}
+% </include:2>
 
 % %$[isomorphisms]
+% <include:4> in Symmetry group actions -> rename A Geometric Perspective on Scene Representations
 % here we need to cite~\cite{bronstein2021geometric}
 % \begin{itemize}
 %     \item \textbf{Permutation symmetry:} The set of agents and map elements is unordered. The model should be equivariant to permutations of the input.
@@ -120,10 +128,11 @@ UniTraj~\cite{unitrajFeng2024} employs a vectorized and agent-centric representa
 % \end{itemize}
 % we want to use this perspective of fiber bundels to explain the symmetries - i.e. the sub manifold of all the agents (where spatial and kinematic properties are represented) are quite similar - hence smaller, hence easier to learn. This is the key inductive bias of the query-centric paradigm, which is not present in the agent-centric paradigm. Same goes for the static map elements.
 % And the part of the part of the latent scene representation that encodes the relative spatio-temporal relationships between scene elements is in total much smaller and hence also doesn't require as much representative capacity in the model.
+% </include:4> Symmetry group actions -> rename A Geometric Perspective on Scene Representations
 
 
 
-% The use of \emph{query-centric} scene encodings~\cite{qcnetZhou2023} represents a paradigm shift in trajectory prediction for autonomous driving, fundamentally altering how the spatio-temporal attributes of both static (agents) and dynamic (map polylines) scene elements are represented. The query-centric paradigm is grounded in the concept of relative spacetime manifolds, drawing inspiration from Einstein's theory of relativity, where the coordinates of scene elements are not expressed in a \emph{global} or \emph{agent-centric} coordinate system, but rather in \emph{local} frames defined by each element itself. This approach introduces various symmetries, that can be explored through the lens of differential geometry and geometric deep learning~\cite{bronstein2021geometric}, allowing for the design of models leveraging these inductive biases, resulting in more robust and efficient model architectures. This chapter outlines the limitations of traditional agent-centric encoding schemes and provides a comprehensive overview of the query-centric paradigm, including its mathematical foundations, encoding strategies, and architectural innovations.
+% The use of \emph{query-centric} scene encodings~\cite{qcnetZhou2023} represents a paradigm shift in trajectory prediction for autonomous driving, fundamentally altering how the spatio-temporal attributes of both static (agents) and dynamic (map polylines) scene elements are represented. <include:introduction>The query-centric paradigm is grounded in the concept of relative spacetime manifolds, drawing inspiration from Einstein's theory of relativity, where the coordinates of scene elements are not expressed in a \emph{global} or \emph{agent-centric} coordinate system</include:introduction>, but rather in \emph{local} frames defined by each element itself. This approach introduces various symmetries, that can be explored through the lens of differential geometry and geometric deep learning~\cite{bronstein2021geometric}, allowing for the design of models leveraging these inductive biases, resulting in more robust and efficient model architectures. This chapter outlines the limitations of traditional agent-centric encoding schemes and provides a comprehensive overview of the query-centric paradigm, including its mathematical foundations, encoding strategies, and architectural innovations.
 
 
 % QCNet generalizes vector-based encoders by abandoning a single ego-centric grid in favor of local `fibers' for every map polygon or agent-state, yielding strict roto-translation and temporal invariance while enabling streaming-time reuse~\cite{qcnetZhou2023}. Each map polygon and each agent \emph{state} owns a local spacetime frame \((p,\theta,t)\) (Fig.~\ref{fig:polar-frames-three}). All geometry is expressed in these frames; relative descriptors \([\lvert\lvert p_j-p_i\rvert\rvert_2,\;\Delta\theta_{\text{dir}},\;\Delta\theta_{\text{ori}},\;\Delta t]\) are Fourier-MLP embedded and concatenated to keys/values in factorised attention. Consequently the scene tensor is \textbf{roto-translation \& time invariant}, can be \textbf{cached across sliding windows}, and is \textbf{shared by every target agent}, lowering online complexity from \(O(AT^2)\) to \(O(AT)\)~\cite{qcnetZhou2023}.
@@ -171,86 +180,140 @@ UniTraj~\cite{unitrajFeng2024} employs a vectorized and agent-centric representa
 
 
 % In summary, the query-centric paradigm provides a principled, symmetry-respecting, and efficient foundation for trajectory forecasting. The combination of local polar encodings and relative descriptors yields a flexible and lossless representation, underpinning the success of recent state-of-the-art models. This approach has fundamentally changed how the community thinks about scene representation for autonomous driving, moving from agent-centric to truly democratic, multi-agent reasoning systems.
+%</unstructured-collection-of-information-to-include>
+%
+\subsubsection{The Query-Centric Paradigm}
+\label{ssec:qc_paradigm}
+
+\paragraph{The short-comings of agent-centric approaches.}
+
+While the agent-centric paradigm is a conceptually simple solution that aligns well with the historical focus on single-agent prediction, where the entire scene is expressed in a global frame centered on the ego vehicle, it is not well-suited for the emerging task of \emph{multi-agent} motion forecasting as it yields roto-translation and time-invariance for only the center agent~\cite{lmformerYadav2025}. \\
+Furthermore, this approach becomes computationally infeasible when utilized within the framework of \emph{factorized attention}. While typical encoding strategies, such as those employed in the CASPNet family, squeeze the entire temporal dimension, and subsequently apply agent-map and agent-agent fusion on this time-invariant representation, factorized attention maintains separate spatio-temporal latent representation of all entities in the scene, allowing the model to capture more complex spatio-temporal relationships, such as the interactions between mutliple agents over the course of multiple timesteps. However, this implies cubic complexity for each fusion step:
+\begin{equation}
+  \begin{aligned}
+    \text{Temporal:}      & \quad \mathcal{O}\!\bigl(N_{\max}T^{2}\bigr) \\
+    \text{Agent\(\leftrightarrow\)Map Fusion @ $t$:}    & \quad \mathcal{O}\!\bigl(N_{\max}T K\bigr)  \\
+    \text{Agent\(\leftrightarrow\)Agent Fusion @ $t$:}  & \quad \mathcal{O}\!\bigl(N_{\max}^{2}T\bigr)
+  \end{aligned}
+\end{equation}
+where \(N_{\max}\) is the maximum number of agents, \(T = T_p + T_f\) the number of total timesteps, and \(K\) is the number of map polylines. This cubic complexity arises from the need to compute pairwise interactions between all agents and map elements at each timestep, leading to significant computational overhead in dense traffic scenarios. \\
+
+\paragraph{Query-centric encodings}
+The query-centric paradigm aims to maintain the representational capacity of factorized attention, while reducing the inference latency. The most significant downside of the agent-centric paradigm in this context is that it requires the entire scene to be re-encoded at every timestep, as the location and heading of the target agent change. This means that the model must recompute the entire scene representation for each target agent at \emph{each timestep}, leading to a significant incr6ase in computational complexity and latency, especially in scenarios with many agents and long observation windows~\cite{qcnetZhou2023}.\\
+
+\begin{figure}[H]
+  \centering
+  \label{fig:qc_reference_frame}
+  \includegraphics[width=0.5\textwidth]{figures/qc_reference_frame.png}
+  \caption{\cite{qcnetZhou2023}~Query-centric encoding: each scene spatio-temporal entity lives in its own local coordinate system}
+\end{figure}
+
+Instead of expressing the scene in a single, temporally-evolving global frame, the query-centric paradigm establishes a \emph{local coordinate system} (or \emph{fiber}) for each scene element, in which all spatio-temporal and kinematic properties are expressed. This becomes especially handy, when considering that motion forecasting is inherently a \emph{streaming} task during inference: whenever a new observation arrives, the oldest observation is dropped and the newest one is added to the queue. Hence, two temporally adjacent scene representations share \(T{-}1\) overlapping timesteps, which can be cached and reused in the next step.\\
+
+%% DONE until HERE %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{A geometric perspective.}
+
+The query-centric paradigm exploits three fundamental symmetries that reflect the underlying physics of trajectory prediction. By placing each scene element (agent or map polygon) in its own local \(\SE{2}\) coordinate frame, this approach dramatically simplifies the learning problem compared to agent-centric methods by theoretically allowing a decomposition of the global scene manifold into a composition of local fibers, each representing a standardized set of spatial and kinematic properties or relatively simple connections between different fibers.
+
+\begin{description}[style=nextline,leftmargin=*]
+\item[Permutation invariance.] % TODO: equivariance or invariance?
+    Agents and map elements form an unordered set—no element should be  privileged. Query-centric approaches preserve this natural symmetry by treating all elements identically through local frames, while agent-centric methods break symmetry by choosing one agent as the global origin. Formally, for any permutation \(\sigma\) of scene elements, the encoding remains equivariant: \(f(\sigma \cdot S) = \rho(\sigma) f(S)\).
+
+\item[SE(2) invariance.]
+    Physical laws are invariant under rigid transformations—translating or rotating the entire scene should not change predictions. For any transformation \(g\in SE(2)\), we require \(f(g\cdot S)=\phi(g)f(S)\) with \(\phi:SE(2)\to GL(d)\) a linear representation. Query-centric encodings achieve this naturally through relative descriptors between local frames, eliminating global coordinate dependence. Agent-centric approaches require explicit re-normalization whenever the reference frame changes, demanding costly re-computation.
+
+\item[Temporal translation invariance.]
+    Motion forecasting uses sliding time windows—shifting the time origin should not affect predictions. For any time shift \(\tau\in\mathbb{R}\), the representation satisfies \(f(S(t+\tau))=f(S(t))\). Query-centric methods enable efficient caching since relative temporal descriptors remain unchanged as windows slide. Agent-centric approaches violate this property because their global reference frame evolves with the target agent, requiring full re-encoding at each timestep.
+\end{description}
+
+This fiber bundle structure provides the key insight: rather than learning on the high-dimensional manifold of all possible global scene configurations, networks should be able to operate on a factored space where each local fiber encodes standardized spatial and kinematic properties. Since all agents experience similar kinematic constraints and exhibit similar behavioral pattern and all map segments share geometric primitives, the sub-manifolds within individual fibers are remarkably similar across scene elements. This similarity dramatically reduces the required representational capacity—the network primarily learns relationships \emph{between} fibers rather than within them. The relative descriptors connecting all fibers live in a much simpler manifold, further constraining the learning problem. This geometric structure constitutes the key inductive bias distinguishing query-centric from agent-centric paradigms: instead of being forced to model the full complexity of the of global scene variations as a single manifold, the network exploits the underlying symmetries to learn decomposable, fundamentally simpler, more structured representations.
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% % Furthermore, the entire scene needs to be re-encoded at every timestep as the location and heading of the target agent change
+% \paragraph{Local frame construction}
+% \begin{description}[style=nextline,leftmargin=*]
+%   \item[Agent states.]
+%         For agent\(a\) at timestep \(t\) we take the motion vector's \emph{start position} as the origin and align the instantaneous heading with the positive \(x\)-axis\cite{lmformerYadav2025}.
+%         The transformation to this frame is
+%         \begin{equation}
+%             \mathbf x^{(a,t)}_{\text{local}}
+%             =\mathbf T_{a,t}^{-1}\,\mathbf x_{\text{global}},
+%             \qquad\mathbf T_{a,t}\in SE(2).
+%             \label{eq:agent_frame}
+%         \end{equation}
+%   \item[Map polylines.]
+%         Lanes are stored either as \emph{points}
+%         \(L_p^i=[P_1^i,\dots,P_K^i]\) or as \emph{segments}
+%         \(L_v^i=[V_1^i,\dots,V_{K-1}^i]\) with
+%         \(V_k^i=[P_k^i,P_{k+1}^i]\).
+%         Each segment's start point acts as the origin and the segment vector defines the \(x\)-axis, leaving only the (normalized) length as an explicit feature.
+% \end{description}
+
+% \paragraph{Relative descriptors and embeddings.}
+% For any pair \((e_i,t)\), \((e_j,s)\) of scene elements, the query-centric paradigm computes a 4-D descriptor that fully preserves their spatial-temporal offset:
+% \[
+% r_{j\to i}^{s\to t}=
+% \bigl[
+%     \|p_j^s-p_i^t\|_2,\;
+%     \mathrm{atan2}(p_{j,y}^s-p_{i,y}^t,p_{j,x}^s-p_{i,x}^t)-\theta_i^t,\;
+%     \theta_j^s-\theta_i^t,\;
+%     s-t
+% \bigr].
+% \]
+% Each component encodes a crucial geometric relationship: \textbf{(i)} The Euclidean distance \(\|p_j^s-p_i^t\|_2\) captures the spatial separation between elements; \textbf{(ii)} The angular offset \(\mathrm{atan2}(\cdot)-\theta_i^t\) represents the bearing from element \(i\) to element \(j\) in \(i\)'s local coordinate frame; \textbf{(iii)} The orientation difference \(\theta_j^s-\theta_i^t\) encodes the relative heading between elements; \textbf{(iv)} The temporal offset \(s-t\) preserves the time relationship between observations.
+
+% This descriptor is embedded via Fourier features and \emph{concatenated} to keys and values inside factorized attention layers. Because both elements live in local frames, \(r_{j\to i}^{s\to t}\) is itself \(SE(2)\)- and time-translation invariant, ensuring the entire representation respects the fundamental symmetries of the physical world.
+
+% \paragraph{Scene element embedding and processing}
+% For each spatial-temporal element (agent state or map point), we compute polar coordinates of its geometric attributes (velocity, motion vector, or sampled map-point positions) \emph{relative} to its local frame.
+% Each polar tuple is lifted into a high-frequency representation via Fourier features~\cite{qcnetZhou2023}, concatenated with semantic tags (e.g., agent type), and passed through an MLP to yield an embedding.
+% For map polygons, we pool their sampled-point embeddings via attention, producing
+% \[
+% \text{agent embeddings: }[A,T,D],\quad
+% \text{map embeddings: }[M,D],
+% \]
+% where \(D\) is the hidden dimension.
+% Since each element's embedding is tied only to its own frame, it can be reused across windows, unlike agent-centric methods that must re-encode everything per agent per step.
+
+% Map polygons undergo self-attention where query from polygon \(i\) attends to neighbors \(\{\mathbf{m}_j\}_{j\in\mathcal N_i}\), with key/value formed by \([\mathbf{m}_j;\mathbf{r}_{j\to i}]\).
+% Since all components are query-centric, the output encodings are roto-translation invariant and can be shared across agents or pre-computed offline.
+
+% For agent encoding, factorized attention enables the \(i\)-th agent at time \(t\) to attend: (1)~temporally to past \(\tau\) steps \(\{[\mathbf{a}_i^s;\mathbf{r}_{i\to i}^{s\to t}]\}_{s=t-\tau}^{t-1}\), (2)~spatially to map elements \(\{[\mathbf{m}'_j;\mathbf{r}_{j\to i}]\}_{j\in\mathcal N_i}\), and (3)~socially to neighboring agents \(\{[\mathbf{a}_j^t;\mathbf{r}_{j\to i}^{t\to t}]\}_{j\in\mathcal N_i}\).
+% This enables the crucial complexity reduction:
+% \[
+% \underbrace{\mathcal{O}(AT^2)+\mathcal{O}(ATM)+\mathcal{O}(A^2T)}_{\text{standard factorized attention}}
+% \quad\longrightarrow\quad
+% \underbrace{\mathcal{O}(AT)+\mathcal{O}(AM)+\mathcal{O}(A^2)}_{\text{query-centric streaming}}.
+% \]
 
 
 
-% \newpage
+% \paragraph{Agent-centric vs.\ query-centric comparison.}
 
-\section{Approach}
-\label{sec:approach}
+% \begin{description}[style=nextline,leftmargin=*]
+%   \item[Computational efficiency and reuse.]
+%         Agent-centric: None—recompute full BEV/agent tokens each step (\(O(A T^2)\)); query-centric: Cache and reuse—when the window slides, the \(T-1\) overlapping steps' embeddings are identical and can be reused, reducing cost to \(O(A T)\) and enabling \(<\!10\)ms latency in dense scenes. However, this efficiency comes at a memory cost, as QCNet training consumes approximately 160GB GPU memory~\cite{qcnetZhou2023}.
+%         Encodings are independent of prediction target and can be shared across agents and time steps.
+%   \item[Symmetry preservation and multi-agent reasoning.]
+%         Agent-centric breaks permutation symmetry by privileging one agent; query-centric treats all elements equally, preserving the natural symmetry among multiple agents and enabling true joint prediction rather than marginal approaches.
+%         Parallel decoding: Usually one-agent-at-a-time for agent-centric; multi-agent parallel with the same invariant scene tensor shared by all target agents for query-centric.
+%   \item[Streaming and invariance properties.]
+%         Query-centric caches invariant tensors across sliding windows and supports parallel prediction for all agents using the same scene encoding; agent-centric re-normalizes each step and requires separate encodings per agent.
+%         Latent scene representations are \(SE(2) \rtimes \R\) invariant through the relative descriptors.
+%   \item[Memory vs.\ computation trade-off.]
+%         QCNet's tensors are shared by all targets but grow linearly with scene size; large-scene training can hit GPU limits.
+%         Agent-centric stores fewer per-element relations but recomputes them repeatedly.
+%   \item[Inductive bias and learning efficiency.]
+%         Efficient reuse: Encodings are independent of prediction target and can be shared across agents and time steps.
+%         Local fibres (all isomorphic to \(SE(2)\)) mean the network only learns relations \emph{between} fibres; the sub-manifold to model is smaller, requiring less representational capacity~\cite{bronstein2017geometric}.
+%         This dramatically shrinks the global manifold of possible scene encodings compared to agent-centric approaches.
+%         Joint prediction capability: Unlike marginal prediction approaches, query-centric models can effectively capture future social interactions among agents.
+% \end{description}
 
-\subsection{Input and Output Formulation}
-Consider a scenario with $A$ agents surrounding the autonomous vehicle.  During online running, the perception module supplies a stream of agent states to the prediction module at a fixed interval, where each agent state is associated with its spatial-temporal position and geometric attributes.  For example, the $i$-th agent's state at time step $t$ comprises the spatial position
-\[
-\mathbf{p}_i^t = \bigl(p_{i,x}^t,\;p_{i,y}^t\bigr),
-\]
-the angular position $\theta_i^t$ (i.e., the yaw angle), the temporal position $t$ (i.e., the time step), and the velocity $\mathbf{v}_i^t$.  We also add the motion vector
-\[
-\mathbf{p}_i^t - \mathbf{p}_i^{t-1}
-\]
-to the geometric attributes, similar to some baselines~\cite{LaneGCN,HiVT}.  Besides, the prediction module has access to $M$ polygons on the high-definition map (e.g., lanes and crosswalks), where each map polygon is annotated with sampled points and semantic attributes (e.g., the user-type of a lane).  Given the map information and the agent states within an observation window of $T$ time steps, the prediction module is tasked with forecasting $K$ future trajectories for each target agent over a horizon of $T'$ time steps and assigning a probability score for each forecast.
-
-\subsection{Query-Centric Scene Context Encoding}
-The first step of trajectory prediction is to encode the scene input.  Recent research has found factorized attention incredibly effective for scene encoding~\cite{SceneTransformer,Wayformer,HiVT}.  These approaches let a query element attend to key/value elements along one axis at a time, which results in temporal attention, agent–map attention, and social attention (i.e., agent–agent attention) with the complexity of
-\[
-\mathcal{O}(AT^2),\quad
-\mathcal{O}(ATM),\quad
-\mathcal{O}(A^2T),
-\]
-respectively.  Unlike typical encoding strategies that first apply a temporal network to squeeze the time dimension and then perform agent–map and agent–agent fusions at the current time step only, factorized attention conducts fusions at \emph{every} past time step within the observation window.  As a result, it can capture how relations evolve over time.  However, its scalability is limited by the cubic complexity of each fusion.  In extreme scenes with hundreds of agents and map elements, such models may fail to emit predictions promptly.  We ask:
-\begin{quote}
-  \emph{Is it possible to reduce inference latency during online prediction while enjoying the representational power of factorized attention?}
-\end{quote}
-
-Before diving into our solution, recall that trajectory prediction is a streaming task: when a new data frame arrives, we enqueue it and drop the oldest one.  Thus, the latest observation window overlaps its predecessor by $T-1$ steps, suggesting potential reuse of past encodings.  Unfortunately, this is infeasible under existing \emph{agent-centric} paradigms, which enforce spatially roto-translation invariance by re-normalizing \emph{every} element against the \emph{current} agent's position and heading~\cite{RotoTrans,AgentCentric}.  Each slide of the window shifts the “current” frame, forcing re-encoding of all $T$ steps.
-
-Based on the above, we identify that the \emph{evolving} spacetime coordinate systems hinder reuse of encodings.  To address this, we introduce a \emph{query-centric} encoding paradigm that learns representations \emph{independent} of any global frame.  Concretely, we build a local spacetime coordinate system for \emph{each} scene element and process query features in their own reference frames.  Relative positions are then injected into keys and values during attention.  Details follow.
-
-\paragraph{Local Spacetime Coordinate System.}
-Figure~\ref{fig:framework} shows an example of local frames.  For the $i$-th agent at time $t$, the local frame is defined by the reference spatial-temporal position $(\mathbf{p}_i^t,\,\theta_i^t)$, where $\mathbf{p}_i^t$ and $\theta_i^t$ are its spatial and angular positions.  For lanes/crosswalks, we pick the entry-point of the centerline for both position and orientation.  This yields one dedicated frame per map polygon and $T$ frames per agent over the observation window.
-
-\paragraph{Scene Element Embedding.}
-For each spatial-temporal element (agent state or map point), we compute polar coordinates of its geometric attributes (e.g.\ velocity, motion vector, or sampled map-point positions) \emph{relative} to its local frame.  Each polar tuple is lifted into a high-frequency representation via Fourier features~\cite{TancikFourier,Nerf,Perceiver}, concatenated with semantic tags (e.g.\ agent type), and passed through an MLP to yield an embedding.  For map polygons, we then pool their sampled-point embeddings via attention, producing
-\[
-\text{agent embeddings: }[A,T,D],\quad
-\text{map embeddings: }[M,D],
-\]
-where $D$ is the hidden dimension.  Since each element's embedding is tied only to its own frame, it can be reused across windows.  In contrast, agent-centric methods must duplicate and re-encode everything per agent per step.
-
-\paragraph{Relative Spatial-Temporal Positional Embedding.}
-To encode relations between two elements with absolute tuples $(\mathbf{p}_i^t,\theta_i^t,t)$ and $(\mathbf{p}_j^s,\theta_j^s,s)$, we form a 4D descriptor:
-\[
-\bigl\|\mathbf{p}_j^s - \mathbf{p}_i^t\bigr\|_2,\quad
-\mathrm{atan2}(p_{j,y}^s - p_{i,y}^t,\;p_{j,x}^s - p_{i,x}^t) - \theta_i^t,\quad
-\theta_j^s - \theta_i^t,\quad
-s - t.
-\]
-This fully preserves their spatial-temporal offset and is again Fourier-encoded and MLP-projected to a relative-positional embedding $\mathbf{r}_{\,j\to i}^{\,s\to t}$.  If either element is static, we omit superscripts and write simply $\mathbf{r}_{j\to i}$.
-
-\paragraph{Self-Attention for Map Encoding.}
-We next employ self-attention among map polygons.  For the $i$-th polygon, query from $\mathbf{m}_i$ attends to neighbors $\{\mathbf{m}_j\}_{j\in\mathcal N_i}$, with key/value formed by
-\[
-[\mathbf{m}_j \;;\; \mathbf{r}_{j\to i}].
-\]
-Since $(\mathbf{m}_i,\mathbf{m}_j,\mathbf{r}_{j\to i})$ are all query-centric, the output encodings $\{\mathbf{m}'_i\}_{i=1}^M$ are invariant under any global roto-translation.  They can thus be shared across agents, time steps, or even pre-computed offline.
-
-\paragraph{Factorized Attention for Agent Encoding.}
-Finally, for the $i$-th agent at time $t$, query from its embedding $\mathbf{a}_i^t$ attends (1) temporally to
-\[
-\bigl\{[\mathbf{a}_i^s;\,\mathbf{r}_{\,i\to i}^{\,s\to t}]\bigr\}_{s=t-\tau}^{t-1}
-\]
-over the past $\tau$ steps, (2) to map via
-\[
-\bigl\{[\mathbf{m}'_j;\,\mathbf{r}_{\,j\to i}]\bigr\}_{j\in\mathcal N_i},
-\]
-and (3) socially to neighbors via
-\[
-\bigl\{[\mathbf{a}_j^t;\,\mathbf{r}_{\,j\to i}^{\,t\to t}]\bigr\}_{j\in\mathcal N_i}.
-\]
-Stacking these three attentions as one fusion block and repeating it $L_{\mathrm{enc}}$ times yields the final agent embeddings.  Thanks to query-centric frames, these embeddings are fixed and reusable, enabling a \emph{streaming} update:
-\[
-\underbrace{\mathcal{O}(AT^2)+\mathcal{O}(ATM)+\mathcal{O}(A^2T)}_{\text{standard factorized attention}}
-\quad\longrightarrow\quad
-\underbrace{\mathcal{O}(AT)+\mathcal{O}(AM)+\mathcal{O}(A^2)}_{\text{query-centric streaming}}.
-\]
-Each incoming frame only requires fusing the $A$ new agent states, yielding a one-order reduction in complexity.
+% \paragraph{Take-away.}
+% By framing scene elements as fibres over \(SE(2)\) and encoding only \emph{relative} pose/time, query-centric representations furnish strong geometric inductive biases, enable massive computation reuse, and support truly parallel multi-agent decoding. These qualities underlie QCNet~\cite{qcnetZhou2023}, LMFormer~\cite{lmformerYadav2025}, and related trajectory prediction models that leverage this paradigm.
