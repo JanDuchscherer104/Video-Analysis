@@ -303,7 +303,8 @@ Query-centric (QC) models trade \emph{compute} for \emph{memory}.
 Because every agent state and map segment owns a persistent token for \emph{each} timestep and because all pairwise keys/values are cached to enable streaming reuse, the scene tensor grows linearly with $N_{\max}T$ and can reach hundreds of megabytes for a single batch.
 QCNet's public implementation reports\footnote{\url{https://github.com/ZikangZhou/QCNet}\label{fn:qcnet_repo}} that training a \emph{single} model on Argoverse2 requires \(\sim\!160\text{GB}\) of GPU VRAM, typically split across 8 RTX 3090\,24 GB cards.
 Even on inference, caching the key-value memory for a 10 s sliding window with 128 agents can exceed 10 GB.
-However, this can be dealt with by not caching the fully embedded key-value tensors, but rather the raw relative descriptors a
+However, this can be dealt with by not caching the fully embedded key-value tensors, but rather the raw relative descriptors and local frames and computing the embeddings on-the-fly during training and inference as done in~\cite{lmformerYadav2025}. Furthermore, the QC paradigm can be combined with sparse attention mechanisms, such as \emph{deformable attention} as explored in \autoref{ssec:caspformer} to further reduce the memory footprint.\\
+We can safely conclude that the huge memory cost in \cite{qcnetZhou2023} mostly stems from their complex architecture and the caching rather than the query centric paradigm.
 
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
