@@ -112,10 +112,10 @@ To understand how the components work together, consider a vehicle approaching a
     \item \textbf{Input and Encoding:} The model takes in the vehicle's past trajectory and the pedestrian's history, along with map polylines for the crosswalk and stop line. These are encoded into feature vectors.
     \item \textbf{Contextualization:} The Transformer Encoder's local attention mechanism allows the vehicle's feature vector to be influenced by the nearby crosswalk and pedestrian features, creating a context-aware representation. An auxiliary task predicts the likely future motion of the pedestrian, further enriching the scene context.
     \item \textbf{Decoding and Prediction:} The Motion Decoder begins its work. Static intention queries propose several plausible high-level actions, such as ``yield before the crosswalk'' and ``proceed through''.
-        \begin{itemize}″
-            \item The ``yield'' hypothesis is refined. Its dynamic query focuses attention on the stop line (via Dynamic Map Collection) and the pedestrian's state.
-            \item The ``proceed'' hypothesis is refined similarly.
-        \end{itemize}
+    \begin{itemize}
+        \item The ``yield'' hypothesis is refined. Its dynamic query focuses attention on the stop line (via Dynamic Map Collection) and the pedestrian's state.
+        \item The ``proceed'' hypothesis is refined similarly.
+    \end{itemize}
     \item \textbf{Final Output:} After iterative refinement across the decoder layers, the GMM output will reflect the context. Because the model has taken the pedestrian's presence and future path into account, the probability ($p_k$) associated with the ``yield'' trajectory will be high, while the ``proceed'' trajectory will have a low probability. This demonstrates how MTR generates contextually-aware, multimodal predictions. A visualization of this would show the vehicle's past path, the map features (lanes, crosswalk), and multiple predicted future paths, each with a different color and a displayed probability score.
 \end{enumerate}
 
