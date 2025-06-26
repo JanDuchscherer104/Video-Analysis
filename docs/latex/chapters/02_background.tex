@@ -105,6 +105,7 @@ Instead of expressing the scene in a single, temporally-evolving global frame, t
 
 
 \subsubsection*{Local frame construction}
+\label{sssec:qc_local_frames}
 The query-centric paradigm builds a local spacetime frame for each scene element, creating what is commonly referred to as \emph{fibres}, which can be seen as slices through the global scene manifold. The concept of fibres and more generally \emph{fiber bundles} is borrowed from differential geometry, where a fiber bundle is a structure that consists of a base space and fibers above each point in the base space, allowing for local coordinate systems to be defined independently at each point\cite{bronstein2021geometric}.
 
 % \textbf{Geometric structure:} The scene forms a fiber bundle where the base space \(\mathcal{E}=\{e_1,\dots,e_N\}\) parameterizes scene elements, and each fiber \(F_i \cong SE(2)\) above element \(e_i\) represents the manifold of possible coordinate systems at that location. The total space is \(\mathcal{B} = \bigcup_{i=1}^N \{e_i\} \times F_i\), with projection \(\pi: \mathcal{B} \to \mathcal{E}\).
@@ -277,6 +278,7 @@ Following QCNet~\cite{qcnetZhou2023}, this 4D descriptor is lifted into a high-f
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsubsection*{A geometric perspective.}
+\label{sssec:qc_geometric_perspective}
 
 The query-centric paradigm exploits three fundamental symmetries that reflect the underlying physics of trajectory prediction. By placing each scene element (agent or map polygon) in its own local \(SE(2)\) coordinate frame, this approach dramatically simplifies the learning problem compared to agent-centric methods by theoretically allowing a decomposition of the global scene manifold into a composition of local fibres, each representing a standardized set of spatial and kinematic properties or relatively simple connections between different fibres.
 
