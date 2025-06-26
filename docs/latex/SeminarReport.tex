@@ -1,6 +1,6 @@
 \documentclass[a4paper,11pt]{article}
 \usepackage[english]{babel}
-\usepackage[utf8x]{inputenc}
+\usepackage[utf8]{inputenc}
 % package for including graphics with figure-environment
 \usepackage{graphicx}
 \usepackage{float}
@@ -107,7 +107,7 @@
 \newcommand{\argmax}{\operatorname{argmax}}
 
 % Enhanced TikZ and PGFPlots settings
-\usetikzlibrary{arrows.meta, positioning, shapes.geometric, decorations.pathreplacing, calc, backgrounds}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, decorations.pathreplacing, calc, backgrounds, angles, quotes}
 \pgfplotsset{
     compat=1.18,
     width=10cm,
@@ -155,6 +155,7 @@
   {\normalfont\normalsize\bfseries\color{blue!60!black}}
   {}{0em}{}
 
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
 
 \begin{document}
 	\title{
@@ -201,9 +202,9 @@
 \input{chapters/02_background.tex}
 \input{chapters/03_data_methodology.tex}
 \input{chapters/04_query.tex}
-\input{chapters/05_model_architecture.tex}
-\input{chapters/06_experimental_design.tex}
-\input{chapters/07_results_evaluation.tex}
+\input{chapters/05_model_architecture_casp.tex}
+\input{chapters/05_model_architecture_mtr.tex}
+\input{chapters/06_design_and_performance_analysis.tex}
 \input{chapters/08_conclusion.tex}
 
 % Include appendix
