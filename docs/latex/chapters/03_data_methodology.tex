@@ -130,45 +130,21 @@ The framework utilizes extensive metadata for stratified analysis and model eval
 
 This metadata enables fine-grained performance analysis and helps identify model strengths and weaknesses across different scenario types, supporting comprehensive evaluation protocols~\cite{unitrajFeng2024}.
 
-\section{Challenges in Data Curation and Representational Fidelity within UniTraj}
+\section{Framework Implementation Challenges and Limitations}
 \label{sec:data_challenges}
 
-Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability. These challenges align with known issues in autonomous driving dataset integration~\cite{metadriveLi2022, scenarionetLi2023}.
+Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability, aligning with known issues in autonomous driving dataset integration~\cite{metadriveLi2022, scenarionetLi2023}.
 
-\subsection{Dataset-Specific Limitations}
-\label{ssec:dataset_limitations}
+\subsection{Data Integration and Representational Limitations}
+\label{ssec:data_limitations}
 
-Critical data limitations emerged during integration, reflecting broader challenges in autonomous driving data standardization~\cite{hu2023planning}. Argoverse2 lacks 3D bounding box data, limiting spatial reasoning capabilities compared to Waymo and NuScenes. This absence forces models to rely on point-based trajectory representations rather than full spatial extents, potentially reducing collision awareness and spatial interaction modeling.
-Agent type availability varies inconsistently across datasets, affecting multi-modal training approaches. While Waymo provides comprehensive pedestrian and cyclist annotations, Argoverse2 focuses primarily on vehicle trajectories. This imbalance creates domain-specific biases that limit model generalization across different traffic participant types.
-Temporal sampling variations present another challenge. Different datasets employ varying sampling rates (10Hz vs 20Hz), requiring interpolation or downsampling that potentially loses behavioral nuances. High-frequency maneuvers and rapid decision-making patterns may disappear during temporal alignment processes.
-Map representation heterogeneity complicates unified processing pipelines. Each dataset employs different semantic annotation schemes and geometric detail levels. Waymo provides rich lane connectivity information, while Argoverse2 emphasizes geometric precision. These differences necessitate careful consideration of model architectures and evaluation protocols to ensure fair comparison across datasets~\cite{unitrajFeng2024}.
+Critical limitations emerged during dataset integration, reflecting broader challenges in autonomous driving data standardization~\cite{hu2023planning}. Dataset heterogeneity manifests through inconsistent feature availability: Argoverse2 lacks 3D bounding box data compared to Waymo and NuScenes, forcing models to rely on point-based representations that potentially reduce collision awareness. Agent type availability varies inconsistently—while Waymo provides comprehensive pedestrian and cyclist annotations, Argoverse2 focuses primarily on vehicle trajectories, creating domain-specific biases~\cite{unitrajFeng2024}.
+Temporal and spatial standardization introduces information loss, highlighting trade-offs between unification and data fidelity~\cite{bronstein2021geometric}. Varying sampling rates (10Hz vs 20Hz) require interpolation that potentially loses behavioral nuances. Agent-centric coordinate transformations enhance invariance but obscure global spatial relationships relevant for scene understanding. Feature quantization for computational efficiency reduces predictive accuracy, while fixed scene radii exclude relevant distant objects affecting long-range interactions.
 
-\subsection{Framework Implementation Issues}
-\label{ssec:implementation_issues}
+\subsection{Framework Implementation Issues and Mitigation Strategies}
+\label{ssec:framework_issues}
 
-Several technical challenges were identified in the original UniTraj implementation, reflecting common issues in large-scale machine learning frameworks. Data integrity problems manifested through inconsistencies in training and validation splits, affecting reproducibility across different experimental runs. The original framework lacked proper split validation mechanisms, leading to potential data leakage between training and evaluation sets.
-Configuration management presented substantial difficulties due to inadequate parameter validation. Silent failures occurred when invalid parameters were passed to preprocessing functions, causing downstream errors that were difficult to trace. The absence of type checking and configuration validation led to debugging sessions that consumed significant development time.
-Memory efficiency issues emerged from suboptimal data loading strategies. The original implementation loaded entire datasets into memory simultaneously, causing bottlenecks during training on resource-constrained systems. Batch loading mechanisms were not properly optimized for the variable-length nature of trajectory data, leading to memory fragmentation and reduced training throughput.
-Error handling mechanisms proved insufficient for robust operation. The framework lacked graceful degradation capabilities when encountering corrupted or missing data files. Processing pipelines would terminate entirely rather than skipping problematic samples, reducing the effective dataset size and complicating large-scale experiments.
-
-\subsection{Representational Fidelity Concerns}
-\label{ssec:representational_fidelity}
-
-The standardization process introduces information loss, highlighting trade-offs between unification and data fidelity~\cite{bronstein2021geometric}. Agent-centric coordinate transformations lose global spatial relationships relevant for scene understanding. While these transformations enhance translation and rotation invariance, they obscure contextual information about absolute positioning within the road network.
-Feature quantization for computational efficiency reduces predictive accuracy. Continuous variables undergo discretization to fit standardized tensor formats, introducing artifacts that affect model learning for fine-grained motion prediction tasks. Context limitation through fixed scene radii excludes relevant distant objects affecting long-range interactions. Important contextual elements beyond these boundaries - traffic lights, distant vehicles, or approaching pedestrians - might influence prediction outcomes despite being outside the defined observation radius.
-Temporal resolution standardization misses behavioral nuances captured at higher frequencies. The framework normalizes all datasets to common time steps, but rapid decision-making processes or emergency maneuvers occurring between these intervals disappear from the processed data.
-
-\subsection{Impact on Model Generalizability}
-\label{ssec:generalizability_impact}
-
-These challenges affect model performance and generalization across different domains and datasets~\cite{metadriveLi2022}. Cross-dataset evaluation reveals significant performance drops due to domain shift effects. Models trained on one dataset fail to maintain accuracy when evaluated on others, indicating that unified preprocessing cannot eliminate underlying data distribution differences.
-Models trained on vehicle-centric data struggle with pedestrian and cyclist prediction tasks. The imbalanced representation creates learning biases that favor vehicle behavior modeling. Limited map information constrains topology-aware model development. Inconsistent semantic annotations prevent models from learning robust relationships between agent behavior and road infrastructure.
-Temporal misalignment affects learning of dynamic behavioral patterns. The standardization process blurs temporal signatures of different maneuver types, making it difficult for models to distinguish between gradual lane changes and sudden evasive actions.
-
-\subsection{Mitigation Strategies}
-\label{ssec:mitigation_strategies}
-
-Several mitigation strategies address identified challenges, following software engineering best practices. Enhanced data validation pipelines include comprehensive error checking at multiple processing stages. These pipelines verify data integrity, validate tensor dimensions, and ensure consistency between related data elements.
-Improved configuration management employs type-safe parameter specifications using Pydantic models. This approach catches configuration errors at startup rather than during training, reducing debugging time and improving experimental reliability. Adaptive data loading strategies improve memory efficiency through streaming data loaders that process samples on-demand rather than loading entire datasets into memory.
-Graceful degradation mechanisms handle missing or corrupted data files without terminating processing pipelines. The framework logs problematic samples and continues processing, maintaining larger effective dataset sizes and improving experimental robustness. These improvements enhance framework robustness while maintaining the unified approach essential for reproducible trajectory prediction research~\cite{unitrajFeng2024, scenarionetLi2023}.
+The original UniTraj implementation suffered from critical software quality deficiencies that significantly impacted model performance and generalization across domains~\cite{metadriveLi2022}. The most significant limitation was the absence of PyTorch Lightning integration, forcing manual implementation of training infrastructure that modern ML frameworks provide standardized~\cite{falcon2019pytorch}. Additional problems included poor code organization with tight coupling between components, lack of modular design patterns, and insufficient testing frameworks, making the system difficult to maintain, extend, or debug effectively.
+The training infrastructure lacked essential deep learning capabilities: automatic mixed precision training, gradient accumulation, learning rate scheduling, and distributed computing support. Manual implementation of these features resulted in suboptimal performance, excessive memory usage, and limited scalability. The framework also lacked integrated experiment tracking with tools like Weights \& Biases or TensorBoard, hampering reproducibility and systematic model development workflows.
+Mitigation strategies follow modern ML engineering best practices, with PyTorch Lightning migration as the primary solution. This architectural change provides structured training loops, automatic optimization, distributed computing support, and seamless experiment tracking integration~\cite{falcon2019pytorch}. Additional improvements include codebase refactoring into modular components, comprehensive unit and integration testing implementation, continuous integration adoption, and enhanced logging capabilities through Lightning's callback system for better visibility into training dynamics across datasets~\cite{unitrajFeng2024, scenarionetLi2023}.
 
