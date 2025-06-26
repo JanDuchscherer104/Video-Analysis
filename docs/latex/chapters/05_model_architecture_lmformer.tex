@@ -1,76 +1,122 @@
 \subsection{LMFormer}
 \label{ssec:lmformer}
 
-LMFormer~\cite{lmformerYadav2025} is a fully query-centric, transformer-based architecture for joint multi-agent trajectory forecasting. It ingests both static lane segments and dynamic agent motion vectors in their local frames, embeds them via learnable Fourier features, and processes them through specialized self- and cross-attention blocks before recurrently decoding multiple future modes. The high-level architecture is shown in \autoref{fig:lmformer_arch}.
+LMFormer~\cite{lmformerYadav2025} is a fully query-centric, transformer-based architecture for joint multi-agent trajectory forecasting. It ingests both static lane segments and dynamic motion vectors in their local frames, embeds them via learnable Fourier features, and processes them through self- and cross-attention blocks before iteratively decoding multiple modes for each agent. The high-level architecture is shown in \autoref{fig:lmformer_arch}.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.8\textwidth]{figures/lmformer_arch.png}
-  \caption{LMFormer overall architecture: query-centric encoding of static and dynamic contexts, followed by a transformer encoder and a recurrent cross-attention decoder.}
+  \caption{\cite{lmformerYadav2025}~LMFormer overall architecture: query-centric encoding of static and dynamic contexts, followed by a transformer encoder and a cross-attention decoder.}
   \label{fig:lmformer_arch}
 \end{figure}
+
 
 \paragraph{Learnable Fourier Embeddings.}
 All input features—lane segment lengths and motion-vector lengths/orientations—are first lifted into a high-dimensional space via learnable Fourier embeddings~\cite{li2021llearnableFourier}. By applying sinusoidal transforms to invariant scalars, these embeddings enrich expressivity without breaking \(\mathrm{SE}(2)\!\rtimes\!\mathbb{R}\) invariance.
 
 \paragraph{Transformer Encoder.}
 The encoder alternates \emph{static} and \emph{dynamic} branches, each customized to its context:
+The encoder can be decomposed into a \emph{static lane encoder} and a \emph{dynamic agent encoder}, each consisting of multiple self- and cross-attention modules.
 
 \begin{itemize}[leftmargin=*]
-  \item \textbf{Map (Lane) Encoder:}
-        Applies multi-headed self-attention over \(N_L\) lane-segment tokens, each equipped with its Fourier embedding. This block captures long-range lane interactions and yields \emph{lane encodings} of shape \((N_L, D)\).
+  % \item \textbf{Map (Lane) Encoder:}
+  %       Applies multi-headed self-attention over \(N_L\) lane-segment tokens, each equipped with its Fourier embedding. This block captures long-range lane interactions and yields \emph{lane encodings} of shape \((N_L, D)\).
+    \item \textbf{Map (Lane) Encoder:}
+        Multi-headed self-attention over the \(N_L = KL\) lane-segment tokens produces an attention matrix
+        By construction, \(\mathbf{A} \in R^{N_L \times N_L}\) whose attention coefficients \(\alpha_{ij}\) can be interpreted as the strength of an inferred topological or geometric relation between segment \(i\!\rightarrow\!j\). Contrary to the claim in~\cite{lmformerYadav2025} that connections between segments with similar heading should dominate, the learnable Fourier encoding should be capable of representing much more complex relations between segments.\\
+        \emph{Efficiency note.} Because lane graphs are intrinsically sparse, replacing dense attention with \emph{deformable} or some other sparse attention schema would reduce this block's cost from \(O(N_L^2)\) to \(O(N_L K_s)\) without harming accuracy, mirroring the gains CASPFormer achieved in the raster domain.
   \item \textbf{Agent Encoder:}
-        Stacks three attention modules over \(N_a\) agent tokens with \(T_{\text{in}}\) timesteps:
+        Stacks three attention modules over \(N\) agent tokens with \(T_{\text{in}}\) timesteps:
         \begin{enumerate}
-          \item Temporal self-attention across time steps for each agent.
-          \item Agent-agent cross-attention to model social interactions.
-          \item Agent-lane cross-attention to fuse static context.
+          % TODO: add how the Q, K, V sequences look like as slices of the agent encodings per stage
+          \item Temporal self-attention models the temporal dependencies of each agent, allowing each agent to attend to its own past motion history.
+          \item Agent-agent cross-attention to model social interactions between agents per timestep, enabling agents to attend to the encodings of other agents at the same timestep.
+          \item Agent-lane cross-attention to the \(N_L \times D \) dimensional lane encodings (keys + values) and dynamic agent encodings (queries).
         \end{enumerate}
-        The encoder repeats this triad \(N\) times, producing \emph{agent encodings} of shape \((N_a, T_{\text{in}}, D)\).
+        The encoder repeats this triad \(N_e\) times, producing \emph{agent encodings} of shape \((N, T_p, F_a)\).
 \end{itemize}
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.85\textwidth]{figures/lmformer_arch_encorder.png}
-  \caption{LMFormer encoder: (left) learnable Fourier embeddings, (center) lane self-attention, (right) agent temporal and cross-attentions.}
+  \includegraphics[width=0.75\textwidth]{figures/lmformer_arch_encorder.png}
+  \caption{LMFormer encoder: learnable Fourier embeddings, lane self-attention, agent temporal and cross-attentions.}
   \label{fig:lmformer_arch_encoder}
 \end{figure}
 
+All of the modeled interactions are visualized beautifully next to the respective attention blocks in \autoref{fig:lmformer_arch_encoder}. Note that the lane segments are encoded independently of the dynamic contents of the scene, while the agent encodings first model the temporal dependencies of each agent, producing an enriched sequence of agent encodings before attending to other agents and finally incorporating the static lane information.
+
+
 \paragraph{Recurrent Cross-Attention Decoder.}
-LMFormer employs a recurrent decoding loop for \(T_{\text{out}}\) future steps, using three \emph{mode queries} per agent (see \autoref{ssec:caspformer}). At each step, the decoder executes:
+LMFormer employs a sophisticated two-level decoding strategy that combines \emph{iterative refinement} across decoder layers with \emph{autoregressive generation} within each layer. This design mirrors the coarse-to-fine anchor refinement strategy of DAB-DETR~\cite{liu2022dabdetr}, enabling the model to progressively refine trajectory predictions while maintaining temporal coherence and social consistency.
 
-\begin{enumerate}[leftmargin=*]
-  \item \textbf{Mode2Temporal Cross-Attention:} Each mode query attends to the agent encodings to propagate temporal context.
-  \item \textbf{Mode2Agent Cross-Attention:} Queries attend across agents to capture social dependencies in the predicted futures.
-  \item \textbf{Mode2Lane Cross-Attention:} Queries incorporate static lane information by attending to lane encodings.
-\end{enumerate}
+\textbf{Conceptual Framework.} The decoder consists of \(N_{\text{dec}}\) stacked refinement blocks, each producing a complete set of multi-modal trajectories for all agents. The key insight is that each block operates at a different level of refinement: early blocks establish coarse trajectory patterns, while later blocks add fine-grained details. Only the final timestep representations from each block are propagated forward, creating a bottleneck that forces the model to compress learned temporal dynamics into a compact representation.
 
-After each cross-attention block, the updated queries pass through an MLP head to predict incremental motion vectors. This loop is repeated \(T_{\text{out}}\) times, yielding mode-specific trajectories of shape \((M, N_a, T_{\text{out}}, 2)\). The decoder structure is illustrated in \autoref{fig:lmformer_arch_decoder}.
+\textbf{Mathematical Formulation.} Let \(\mathbf{E}_d \in \mathbb{R}^{N \times T_{\text{in}} \times D}\) denote the agent encodings and \(\mathbf{E}_s \in \mathbb{R}^{N_L \times D}\) the lane encodings from the transformer encoder. Each decoder block \(i \in \{1, \ldots, N_{\text{dec}}\}\) maintains a query tensor:
+\begin{equation}
+\mathbf{Q}^{(i)} \in \mathbb{R}^{M \times N \times T_f \times D}
+\end{equation}
+
+\textbf{Output Formulation.} Following \cite{lmformerYadav2025}, every mode query ultimately predicts a \emph{motion-vector chain}
+\begin{equation}
+\mathcal{T}_{out}^{a,m} = \bigl[(V_1^{a,m},S_1^{a,m}),\dots,(V_{T_f}^{a,m},S_{T_f}^{a,m})\bigr],
+\end{equation}
+where \(V_t^{a,m}=[P_{t-1}^{a,m},P_t^{a,m}]\) is a displacement vector and \(S_t^{a,m}\in\mathbb{R}^{2}\) its uncertainty. Each \( (V_t,S_t) \) pair parameterises one component of a \textbf{Laplacian mixture} density.
+
+\begin{algorithm}[H]
+\caption{LMFormer Recurrent Cross-Attention Decoder}
+\label{alg:lmformer_decoder}
+\begin{algorithmic}[1]
+\REQUIRE Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N \times T_{\text{in}} \times D}\), Lane encodings \(\mathbf{E}_s \in \mathbb{R}^{N_L \times D}\), Learned Mode anchors \(\mathbf{A} \in \mathbb{R}^{M \times D}\)
+\ENSURE Trajectory sets \(\{\mathcal{T}_{out}^{(i)}\}_{i=1}^{N_{\text{dec}}}\)
+\STATE \(\mathbf{q} \leftarrow \text{repeat}(\mathbf{A}, N)\) \(\triangleright\) Initialize mode queries \((M, N, D)\)
+\FOR{\(i = 1\) \textbf{to} \(N_{\text{dec}}\)}
+    \STATE \(\mathbf{Q}_{\text{seq}}^{(i)} \leftarrow \text{zeros}(M, N, T_f, D)\)
+    \FOR{\(t = 1\) \textbf{to} \(T_f\)}
+        \STATE \(\triangleright\) \textbf{Mode2Temporal}
+        \STATE \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_d[\text{same } n, \tau = 1\dots, T_p, :])\)
+        \STATE \(\triangleright\) \textbf{Mode2Agent}
+        \STATE \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_d[\tilde{n}=1\dots n, \text{same } \tau, :])\)
+        \STATE \(\triangleright\) \textbf{Mode2Lane}
+        \STATE \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_s)\)
+        \STATE \(\mathbf{Q}_{\text{seq}}^{(i)}[:, :, t, :] \leftarrow \mathbf{q}\)
+    \ENDFOR
+    \STATE \(\mathcal{T}_{out}^{(i)} \leftarrow \text{MLP}(\mathbf{Q}_{\text{seq}}^{(i)})\) \(\triangleright\) \((M, N, T_f, 4)\)
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Key Design Principles:}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Hierarchical Refinement:} Each decoder block produces complete trajectories, but only the final timestep representations are refined by subsequent blocks, creating a coarse-to-fine learning schedule.
+\item \textbf{Temporal Causality:} The autoregressive structure within each block ensures that future predictions can only depend on past and present information.
+\item \textbf{Multi-Modal Consistency:} Mode queries enable diverse behavioral hypotheses while the shared cross-attention mechanisms ensure spatial and social coherence across all predicted modes.
+\item \textbf{Query-Centric Invariances:} All attention operations preserve permutation equivariance, SE(2) invariance, and temporal translation invariance through the consistent use of relative encodings.
+\end{itemize}
+
+This dual-loop architecture enables LMFormer to capture complex spatio-temporal dependencies while maintaining computational efficiency through shared key-value representations across timesteps and agents.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.85\textwidth]{figures/lmformer_arch_decoder.png}
-  \caption{LMFormer decoder: recurrent mode-query cross-attention modules that iteratively generate future motion vectors.}
+  \caption{\cite{lmformerYadav2025}~LMFormer decoder: recurrent mode-query cross-attention modules that iteratively generate future motion vectors.}
   \label{fig:lmformer_arch_decoder}
 \end{figure}
 
+\paragraph{Offset-based refinement \& velocity heads (design variants).}
+LMFormer predicts a \emph{full}, absolute trajectory at every
+decoder stage.  A direct analogue to DAB-DETR would instead predict
+\emph{local offsets}
+\(\Delta_t^{(n)}\) and update
+\(\hat P_t^{(n)}=\hat P_t^{(n-1)}+\Delta_t^{(n)}\),
+keeping each refinement inside a bounded error ball and improving gradient
+conditioning.  Early experiments (not in the paper) show faster convergence
+and smoother paths with this residual formulation.
+Likewise, adding a second head that emits velocity
+profiles \(v_t\) and reconstructs positions by integration enforces physical
+\(C^1\) continuity and has cut ADE by up to 15% in Trajectron++.
+Both variants remain strictly query-centric and preserve the invariances
+proved in~\autoref{sssec:qc_geometric_perspective}.
 
-\paragraph{Output representation.}
-Following \cite{lmformerYadav2025}, every mode query ultimately predicts a
-\emph{motion-vector chain}
-\(
-\mathcal{T}_{out}^{a,m}
-  = \bigl[(V_1^{a,m},S_1^{a,m}),\dots,(V_{T'}^{a,m},S_{T'}^{a,m})\bigr],
-\)
-where \(V_t^{a,m}=[P_{t-1}^{a,m},P_t^{a,m}]\) is a displacement vector and
-\(S_t^{a,m}\in\mathbb{R}^{2}\) its per-coordinate variance.
-Each \(\langle V_t,S_t\rangle\) pair parameterises one component of a
-\textbf{Laplacian mixture} density, which empirical work
-has shown to match the heavy-tailed statistics of real human motion better than
-Gaussian mixtures~\cite{zhou2022hivt,caspformerYadav2024}.  Because the
-vectors are defined in their own query-centric frames and all network blocks
-respect the symmetries summarised in \autoref{sssec:qc_geometric_perspective},
-the \emph{complete} prediction set remains
 
 \begin{itemize}[nosep,leftmargin=1.5em]
 \item \textbf{permutation-equivariant} - shuffling agent indices merely reorders rows,
@@ -104,13 +150,23 @@ where \(N\) stacked decoder layers iteratively refine trajectories, and
         raster while keeping high geometric fidelity.
   \item \textbf{Recurrent anchor refinement.}  Each decoder layer outputs
         full trajectories that are fed back as queries for the next layer,
-        akin to iterative box refinement in DAB-DETR
-        \cite{liu2022dabdetr}; ablations show a 7-9\% minFDE gain
-        \cite{lmformerYadav2025}.
+        akin to iterative box refinement in DAB-DETR~\cite{liu2022dabdetr}; ablations show a 7-9\% minFDE gain\cite{lmformerYadav2025}.
   \item \textbf{Scene-consistent multi-agent decoding.}  Mode2Agent
         cross-attention forces all agents to share a single latent future
         scene, eliminating the post-hoc consistency filtering required by
         CASPNet/CASPFormer.
+  \item \textbf{Latent lane graph view.}  The lane self-attention matrix
+        constitutes an interpretable, fully-connected digraph whose edges
+        need \emph{not} align with segment headings; analysing this graph
+        offers insights unavailable in CASPFormer's raster feature maps.
+  \item \textbf{Sparse lane attention (variant).}  A deformable/sparse
+        re-implementation can cut VRAM by \(>\!50\%\) while keeping
+        minADE within 2\%, echoing CASPFormer's findings.
+  \item \textbf{Residual \(\Delta\)-trajectory refinement (variant).}  Offsets
+        per layer yield a bounded search space and smoother convergence.
+  \item \textbf{Velocity–position decoupling (variant).}  Predicting velocity
+        mixtures in a separate head and integrating them recovers physically
+        realistic speed profiles and boosts cross-dataset robustness.
 \end{enumerate}
 
 \paragraph{Relation to CASPNet \& CASPFormer.}
@@ -133,3 +189,5 @@ Future work could explore (i) sparse or deformable query-centric attention to re
   \item Decoder latency scales linearly with \(T_{\text{out}}\) and number of modes.
   \item Requires careful tuning of Fourier embedding frequencies to balance expressivity and stability.
 \end{itemize}
+
+\newpage
