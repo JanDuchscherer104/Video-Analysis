@@ -46,7 +46,7 @@ Some of the most significant limitations of the original UniTraj framework, that
 Despite utilizing modern frameworks like PyTorch Lightning, the implementation failed to follow recommended practices:
 
 \begin{itemize}[leftmargin=*]
-    \item \textbf{PyTorch Lightning Misuse:} Improper integration lacking \texttt{LightningDataModule} usage, inadequate logging functionality, no easy configuration of the components of this framework and improper integration with Weights \& Biases.
+    \item \textbf{PyTorch Lightning Misuse:} Improper integration lacking \linebreak\texttt{LightningDataModule} usage, inadequate logging functionality, no easy configuration of the components of this framework and improper integration with Weights \& Biases.
     \item \textbf{Path Management Deficiencies:} Poor filesystem path handling without clear control over data sources, destinations, model checkpoints, and logs.
     \item \textbf{Missing Training Capabilities:} Absence of essential deep learning features including automatic mixed precision, gradient accumulation, learning rate scheduling, distributed computing support, and essential callbacks (learning rate monitors, early stopping, model checkpointing), all of which are relatively easy to use if PyTorch Lightning is used properly.
 \end{itemize}
