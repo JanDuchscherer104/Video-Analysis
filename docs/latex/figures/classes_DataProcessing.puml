@@ -1,0 +1,25 @@
+@startuml classes_DataProcessing
+set namespaceSeparator none
+class "LitDatamodule" as unitraj.lightning.lit_datamodule.LitDatamodule {
+  config
+  test_dataset : Optional[BaseDataset]
+  train_dataset : Optional[BaseDataset]
+  val_dataset : Optional[BaseDataset]
+  collate_fn(batch: List[Optional[DatasetItem]]) -> Optional[BatchDict]
+  setup(stage: Optional[Union[Stage, str]])
+  teardown(stage: Optional[str]) -> 
+  test_dataloader() -> DataLoader
+  train_dataloader() -> DataLoader
+  val_dataloader() -> DataLoader
+}
+class "LitDatamoduleConfig" as unitraj.lightning.lit_datamodule.LitDatamoduleConfig {
+  batch_size : int
+  dataset_config
+  is_debug : bool
+  num_workers : int
+  pin_memory : bool
+  target : Type['LitDatamodule']
+  validate() -> Self
+}
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --* unitraj.lightning.lit_datamodule.LitDatamodule : config
+@enduml

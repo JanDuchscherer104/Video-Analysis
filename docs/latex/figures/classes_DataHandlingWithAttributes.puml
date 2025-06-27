@@ -1,0 +1,154 @@
+@startuml classes_CustomUnitaj_data_handling
+set namespaceSeparator none
+
+' Data Types and Dictionaries (only those with relationships)
+class "Stage" as unitraj.datasets.types.Stage {
+  name
+  from_str(cls: Optional[str], value) -> Optional['Stage']
+}
+
+' Base Data Classes
+class "BaseDataParser" as unitraj.datasets.base_dataparser.BaseDataParser {
+  config : str
+  paths
+  sample_metadata : Optional[pd.DataFrame]
+  sample_metadata : Optional[pd.DataFrame]
+  starting_frame
+  get_sample_metadata(split: Optional[Stage]) -> 
+  load_data() -> Self
+  postprocess(output: List[DatasetItem]) -> Optional[List[DatasetItem]]
+  preprocess(scenario: RawScenarioDict) -> Optional[ProcessedDataDict]
+  process(internal_format: InternalFormatDict) -> Optional[List[DatasetItem]]
+  process_data_chunk(worker_idx: int, data_root: Path, mapping: Dict[Any, str], ids: List[str]) -> Dict[Stage, Dict[str, Dict[str, Any]]]
+}
+class "BaseDataset" as unitraj.datasets.base_dataset.BaseDataset {
+  config
+  data_samples
+  close_files()
+  sample_from_distribution(original_array, m)
+}
+class "DatasetConfig" as unitraj.datasets.base_dataset.DatasetConfig {
+  is_debug : bool
+  parser
+  paths
+  stage
+  target : Type['BaseDataset']
+  setup_target() -> 
+}
+
+' Data Parsers
+class "DataParser" as unitraj.datasets.dataparser.DataParser {
+  get_agent_data(center_objects, obj_trajs_past, obj_trajs_future, track_index_to_predict, sdc_track_index: int, timestamps, obj_types) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+  get_interested_agents(track_index_to_predict, obj_trajs_full, current_time_index: int, obj_types, scene_id: str) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]
+  get_manually_split_map_data(center_objects, map_infos: MapInfosDict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]
+  get_map_data(center_objects, map_infos: MapInfosDict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]
+  postprocess(output: List[DatasetItem]) -> List[DatasetItem]
+  preprocess(scenario: RawScenarioDict) -> Optional[InternalFormatDict]
+  process(internal_format: InternalFormatDict) -> Optional[List[DatasetItem]]
+  trajectory_filter(data: InternalFormatDict) -> Dict[str, Any]
+  transform_trajs_to_center_coords(obj_trajs, center_xyz, center_heading, heading_index: int, rot_vel_index: Optional[List[int]]) -> 
+}
+class "DataParserConfig" as unitraj.datasets.dataparser.DataParserConfig {
+  agent_types_to_predict : List[ObjectType]
+  allowed_line_types : List[str]
+  center_offset_of_map : List[float]
+  crop_agents : bool
+  future_len : int
+  is_debug : bool
+  manually_split_lane : bool
+  map_range : float
+  masked_attributes : List[str]
+  max_data_num : List[Optional[int]]
+  max_num_agents : int
+  max_num_roads : int
+  max_points_per_lane : int
+  num_debug_samples : Optional[int]
+  num_points_each_polyline : int
+  num_workers : int
+  num_workers : int
+  only_train_on_ego : bool
+  past_len : int
+  paths
+  point_sampled_interval : int
+  predict_specified_agents : bool
+  rebuild_dataset : bool
+  stage
+  starting_frame : List[int]
+  take_debug_samples_front : bool
+  target : Type['DataParser']
+  trajectory_sample_interval : int
+  vector_break_dist_thresh : float
+  get_num_workers() -> int
+  setup_target() -> 
+}
+
+' Lightning Data Module
+class "LitDatamodule" as unitraj.lightning.lit_datamodule.LitDatamodule {
+  config
+  test_dataset : Optional[BaseDataset]
+  train_dataset : Optional[BaseDataset]
+  val_dataset : Optional[BaseDataset]
+  collate_fn(batch: List[Optional[DatasetItem]]) -> Optional[BatchDict]
+  setup(stage: Optional[Union[Stage, str]])
+  teardown(stage: Optional[str]) -> 
+  test_dataloader() -> DataLoader
+  train_dataloader() -> DataLoader
+  val_dataloader() -> DataLoader
+}
+class "LitDatamoduleConfig" as unitraj.lightning.lit_datamodule.LitDatamoduleConfig {
+  batch_size : int
+  dataset_config
+  is_debug : bool
+  num_workers : int
+  pin_memory : bool
+  target : Type['LitDatamodule']
+  validate() -> Self
+}
+
+' Configuration Base Classes
+class "BaseConfig" as unitraj.utils.base_config.BaseConfig {
+  model_config
+  propagated_fields : Dict[str, Any]
+  target : Callable[['BaseConfig[TargetType]'], TargetType]
+  dump_toml(toml_path: Path)
+  from_hydra(cls: DictConfig, cfg) -> 
+  from_toml(cls: Path, toml_path) -> 
+  inspect(show_docs: bool) -> 
+  setup_target() -> TargetType
+  to_toml(toml_path: Path, exclude_none: bool) -> 
+}
+class "PathConfig" as unitraj.configs.path_config.PathConfig {
+  argoverse2_dir : Annotated[Path, Field(default='argoverse2/motion-forecasting')]
+  checkpoints : Annotated[Path, Field(default='.logs/checkpoints')]
+  configs : Annotated[Path, Field(default='.configs')]
+  data_root : Annotated[Path, Field(default='/work/share/traj-pred-data')]
+  dataset_dest_dir : Annotated[Path, Field(default='av2_sn_processed')]
+  root : Path
+  scenarionet_dirs : Annotated[List[Path], Field(default_factory=lambda: ['argoverse2_scenarionet/av2_scenarionet'])]
+  wandb : Annotated[Path, Field(default='.logs/wandb')]
+  convert_dataset_dest_dir(cls: str, v: ValidationInfo, info) -> Path
+  convert_dir_rel_data(cls: str, v: ValidationInfo, info) -> Path
+  convert_scenarionet_dirs(cls: List[str], v: ValidationInfo, info) -> List[Path]
+  convert_to_path(cls: Union[str, Path], v: ValidationInfo, info) -> Path
+  find_av2_split(scenario_id: str) -> Optional[Stage]
+  get_sample_metadata_path(stage: Stage) -> Path
+}
+
+' Inheritance relationships
+unitraj.datasets.base_dataset.DatasetConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.datasets.dataparser.DataParser --|> unitraj.datasets.base_dataparser.BaseDataParser
+unitraj.datasets.dataparser.DataParserConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --|> unitraj.utils.base_config.BaseConfig
+
+' Composition relationships
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.base_dataparser.BaseDataParser : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.base_dataset.DatasetConfig : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.dataparser.DataParserConfig : paths
+unitraj.datasets.base_dataset.DatasetConfig --* unitraj.datasets.base_dataset.BaseDataset : config
+unitraj.datasets.base_dataset.DatasetConfig --* unitraj.lightning.lit_datamodule.LitDatamoduleConfig : dataset_config
+unitraj.datasets.dataparser.DataParserConfig --* unitraj.datasets.base_dataset.DatasetConfig : parser
+unitraj.datasets.types.Stage --* unitraj.datasets.base_dataset.DatasetConfig : stage
+unitraj.datasets.types.Stage --* unitraj.datasets.dataparser.DataParserConfig : stage
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --* unitraj.lightning.lit_datamodule.LitDatamodule : config
+
+@enduml
