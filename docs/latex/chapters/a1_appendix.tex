@@ -5,7 +5,7 @@
 \subsection{Notation and Symbol Reference}
 \label{app:notation}
 
-This section provides a comprehensive reference for all symbols and conventions used throughout this work, following UniTraj framework standards~\cite{unitrajFeng2024} and the \textsc{DatasetItem} type definitions. The following tables have been created using \cite{copilotSonnet}, given the type and shape definitions in \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{unitraj/datasets/types.py}.
+This section provides a comprehensive reference for all symbols and conventions used throughout this work, following UniTraj framework standards~\cite{unitrajFeng2024} and the \textsc{DatasetItem} type definitions. The following tables have been created using~\cite{copilotSonnet}, given the type and shape definitions in \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{unitraj/datasets/types.py}.
 
 \begin{table}[H]
 \caption{Temporal dimension symbols and definitions}
@@ -153,6 +153,34 @@ The PolylineType enumeration defines the mapping from MetaDrive/ScenarioNet poly
 
 Note that the conversion from AV2 \( \rightarrow \) ScenarioNet \( \rightarrow \) UniTraj causes many categories to collapse, and plenty of the categories as per \autoref{tab:polyline-types} and  \autoref{tab:agent_types} are actually used, and hence result in degenerate encodings.
 
+
+\subsubsection{Dataset Metadata}
+
+\begin{table}[h]
+\centering
+\caption{UniTraj Sample Metadata Fields}
+\label{tab:sample_metadata_fields}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lp{8cm}l@{}}
+\toprule
+\textbf{Field} & \textbf{Description} & \textbf{Data Type} \\
+\midrule
+\texttt{h5\_path} & Path to the HDF5 file containing the processed sample data & Path \\
+\texttt{scenario\_id} & Original scenario identifier from ScenarioNet & str \\
+\texttt{kalman\_difficulty} & Array of Kalman filter difficulty scores for all agents in the scenario & np.ndarray \\
+\texttt{num\_agents} & Total number of agents with valid trajectories in the scenario & int64 \\
+\texttt{num\_agents\_interest} & Number of agents of interest (prediction candidates) in the scenario & int64 \\
+\texttt{scenario\_future\_duration} & Number of future timesteps available in the scenario & int64 \\
+\texttt{num\_map\_polylines} & Total number of map polylines in the scenario & int64 \\
+\texttt{track\_index\_to\_predict} & Index of the specific agent track to predict within the scenario & int64 \\
+\texttt{center\_objects\_type} & Semantic type of the centered object (vehicle, pedestrian, cyclist) & category \\
+\texttt{dataset\_name} & Name of the source dataset (e.g., av2\_scenarionet) & category \\
+\texttt{trajectory\_type} & Behavioral classification of the trajectory & category \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
 \subsection{Deformable Attention}
 \label{sec:deformable_attention}
 
@@ -218,8 +246,10 @@ with fixed prototype orientations \(\{\theta_n\}\) and interpolation coefficient
 \subsection{The UniTraj Dataprocessing Pipeline}
 \label{app:framework}
 
+The pseudo-code in this section are mostly generated using~\cite{copilotSonnet}.
+
 \textbf{Phase 1: Temporal Window Extraction}
-The first processing stage extracts \emph{uniformly sampled} windows containing historical context (\(T_p\) steps) and future ground truth (\(T_f\) steps) from raw agent trajectories. Frequency masking ensures consistent uniform temporal resolution with a sampling interval \(\Delta t_{s}\) across datasets, and is combined with the original validity masks to indicate which observations are valid at each timestep. Validity masks indicate missing observations throughout the pipeline.
+The first processing stage extracts \emph{uniformly sampled} windows containing historical context (\(T_p\) steps) and future ground truth (\(T_f\) steps) from raw agent trajectories. Frequency masking ensures consistent uniform temporal resolution with a sampling interval \(\Delta t_{s}\) across datasets, and is combined with the original validity masks to indicate which observations are valid at each timestep. Validity masks indicate missing observations throughout the pipeline.\\
 
 \begin{algorithm}[H]
 \caption{Phase 1: Temporal Window Extraction}
@@ -415,7 +445,6 @@ The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training
 
 \subsection{UniTraj Directory Structure}
 
-
 \dirtree{%
 .1 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/}{\texttt{unitraj/}}.
 .2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/__init__.py}{\texttt{\_\_init\_\_.py}}.
@@ -457,50 +486,3 @@ The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training
 .3 \texttt{concatenate\_varying()} ― varying size image concatenation.
 .3 \texttt{visualize\_prediction()} ― prediction result visualization.
 }
-
-% \begin{forest}
-%   for tree={%
-%     folder,
-%     grow'=east,
-%     child anchor=west,
-%     parent anchor=east,
-%     align=left,
-%     edge={rounded corners},
-%     font=\ttfamily
-%   }
-% [unitraj/
-%   [\href{https://.../__init__.py}{__init__.py}\\@package root]
-%   [configs/
-%     [\href{https://.../experiment_config.py}{experiment\_config.py}\\@experiment settings]
-%     [\href{https://.../path_config.py}{path\_config.py}\\@PathConfig]
-%     [\href{https://.../wandb_config.py}{wandb\_config.py}\\@WandB callbacks]
-%   ]
-%   [datasets/
-%     [\href{https://.../types.py}{types.py}\\@RawScenarioDict, ProcessedDataDict]
-%     [\href{https://.../base\_dataparser.py}{base\_dataparser.py}\\@BaseDataParser]
-%     [\href{https://.../dataparser.py}{dataparser.py}\\@QC pipeline]
-%     [\href{https://.../base\_dataset.py}{base\_dataset.py}\\@BaseDataset]
-%     [common\_utils.py]\\@shared transforms
-%   ]
-%   [lightning/
-%     [\href{https://.../lit\_datamodule.py}{lit\_datamodule.py}\\@LightningDataModule]
-%     [\href{https://.../lit\_trainer\_factory.py}{lit\_trainer\_factory.py}\\@Trainer factory]
-%   ]
-%   [models/
-%     [base\_model/
-%       [\href{https://.../base\_model.py}{base\_model.py}\\@BaseModel, BaseModelConfig]
-%     ]
-%     [autobot/]
-%     [mtr/]
-%     [wayformer/]
-%   ]
-%   [utils/
-%     [\href{https://.../console.py}{console.py}\\@Console API]
-%     [\href{https://.../base\_config.py}{base\_config.py}\\@BaseConfig, setup\_target()]
-%     [config.py]\\@YAML parsing
-%     [tsne.py]\\@t-SNE utils
-%     [utils.py]\\@misc helpers
-%     [visualization.py]\\@plot functions
-%   ]
-% ]
-% \end{forest}

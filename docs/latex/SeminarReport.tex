@@ -4,6 +4,7 @@
 % package for including graphics with figure-environment
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{dirtree}
 \usepackage[backend=biber,natbib=true,style=numeric,sorting=none]{biblatex}
 \addbibresource{references.bib}
 % Enhanced hyperref setup with professional colors
@@ -79,6 +80,9 @@
 \usepackage{pgfplots}         % For plotting graphs and data visualization
 \usepackage{subcaption}       % For subfigures and subcaptions
 \usepackage{booktabs}         % For better looking tables
+\usepackage{tabularx}
+\usepackage{adjustbox}
+\usepackage{siunitx}
 \usepackage{longtable}        % For tables spanning multiple pages
 \usepackage{microtype}        % For better typography
 \usepackage{array}            % Enhanced table column types
@@ -109,6 +113,8 @@
 % Custom symbols for pros/cons lists
 \newcommand{\greenoplus}{\textcolor{green!70!black}{\(\oplus\)}}
 \newcommand{\redominus}{\textcolor{red!70!black}{\(\ominus\)}}
+\newcolumntype{Y}{>{\ttfamily\arraybackslash}X}
+
 
 % Enhanced TikZ and PGFPlots settings
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, decorations.pathreplacing, calc, backgrounds, angles, quotes}
@@ -204,7 +210,8 @@
 
 \input{chapters/01_introduction.tex}
 \input{chapters/02_background.tex}
-\input{chapters/03_data_methodology.tex}
+\input{chapters/03_unitraj.tex}
+\input{chapters/04_data_methodology.tex}
 \input{chapters/05_model_architecture.tex}
 % \input{chapters/04_query.tex}
 \input{chapters/05_model_architecture_casp.tex}
