@@ -103,7 +103,7 @@ The quantitative analysis of the MTR model's performance is based on metrics rec
     \label{fig:training_metrics_grid_merged}
 \end{figure}
 
-Final validation metrics, taken at step 31,295 (6,259 batches), are presented in Table \ref{tab:validation_results}.  On the validation set, the trained MTR model achieved a brier-minFDE of 1.98, a minFDE of 1.6655, a minADE of 0.86294, and a Miss Rate of 0.30141.  These results are comparable to baseline values from existing literature.  The consistent decrease in error seen in Figure \ref{fig:validation_metrics_merged} demonstrates that the model generalizes well to unseen data.  Notably, the Brier-FDE of 1.98 shows a slight improvement over the 2.08 value reported in the MTR paper's appendix, highlighting the effectiveness of this training implementation. 
+Final validation metrics, taken at step 31,295 (6,259 batches), are presented in Table \ref{tab:validation_results}.  On the validation set, the trained MTR model achieved a brier-minFDE of 1.98, a minFDE of 1.6655, a minADE of 0.86294, and a Miss Rate of 0.30141. These results demonstrate competitive performance against baseline values from existing literature. The consistent decrease in error seen in Figure \ref{fig:validation_metrics_merged} demonstrates that the model generalizes well to unseen data. The model shows improvements in brier-minFDE (1.98 vs 2.08) and minFDE (1.6655 vs 1.68) compared to the UniTraj paper benchmarks, while maintaining comparable performance in minADE and Miss Rate \cite{unitrajFeng2024}.
 
 \begin{table}[htbp]
     \centering
@@ -114,9 +114,9 @@ Final validation metrics, taken at step 31,295 (6,259 batches), are presented in
         \textbf{Metric} & \textbf{Value} & \textbf{Benchmark (MTR Paper)} \\
         \midrule
         brier-minFDE & 1.98  & 2.08  \\
-        minFDE & 1.6655  & - \\
-        minADE & 0.86294  & - \\
-        Miss Rate & 0.30141  & - \\
+        minFDE & 1.6655  & 1.68\\
+        minADE & 0.86294  & 0.85 \\
+        Miss Rate & 0.30141  & 0.30 \\
         \bottomrule
     \end{tabular}
 \end{table}
