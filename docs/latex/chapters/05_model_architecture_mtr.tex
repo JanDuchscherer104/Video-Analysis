@@ -1,7 +1,4 @@
 % section: Model Architecture and Functional Decomposition
-\section{Model Architecture and Functional Decomposition}
-\label{ch:model_architecture}
-
 \subsection{MTR Architectural Structure}
 \label{sec:model_mtr_architecture}
 
@@ -22,7 +19,7 @@ This modular, Transformer-based structure allows MTR to effectively manage the i
     \label{fig:mtr_architecture}
 \end{figure}
 
-\subsection{Input Encoding}
+\subsubsection{Input Encoding}
 \label{sec:model_input_encoding}
 MTR represents all input data—both from agents and the map—as vectorized polylines, which are sequences of points. This method, pioneered by models like VectorNet, is more efficient and precise than grid-based representations like bird's-eye-view (BEV) images, as it avoids quantization errors and handles sparse map data well \cite{gao2020vectornet}. PointNet-like encoders then process these polylines to generate fixed-size feature vectors for the Transformer model \cite{PointNet2017}.
 
@@ -37,11 +34,11 @@ An agent's historical state is also treated as a polyline. The input for each ag
 \end{itemize}
 A three-layer MLP processes these point-wise features, and max-pooling creates a 256-dimensional feature vector ($A_p$) for each agent's history.
 
-\subsection{Trajectory Decoding}
+\subsubsection{Trajectory Decoding}
 \label{sec:model_decoding}
 Once the inputs are encoded, the core of the MTR model performs context aggregation and generates predictions.
 
-\subsubsubsection{Transformer Encoder Module}
+\subsubsubsection{Transformer Encoder Module.}
 The feature vectors for all agents ($A_p$) and map polylines ($M_p$) are fed into a Transformer Encoder. This module's job is to contextualize each element by modeling its interactions with its surroundings. To do this efficiently, MTR uses a \textbf{local self-attention} mechanism. Instead of having each element attend to every other element in the scene, it only attends to its $k$ nearest neighbors (e.g., $k=16$). This preserves local structure, reduces computational cost, and improves performance compared to global attention \cite{Shi2022MTR}. The output of this stage is a set of context-aware feature vectors for agents ($A_{past}$) and the map ($M$).
 
 \subsubsubsection{Dynamic Map Collection Strategy}
@@ -119,7 +116,7 @@ To understand how the components work together, consider a vehicle approaching a
     \item \textbf{Final Output:} After iterative refinement across the decoder layers, the GMM output will reflect the context. Because the model has taken the pedestrian's presence and future path into account, the probability ($p_k$) associated with the ``yield'' trajectory will be high, while the ``proceed'' trajectory will have a low probability. This demonstrates how MTR generates contextually-aware, multimodal predictions. A visualization of this would show the vehicle's past path, the map features (lanes, crosswalk), and multiple predicted future paths, each with a different color and a displayed probability score.
 \end{enumerate}
 
-\subsection{Key Scientific Challenges and Model Variants}
+\subsubsection{Key Scientific Challenges and Model Variants}
 
 The primary scientific challenge in motion prediction is managing the inherent uncertainty and multimodality of agent behavior in complex, interactive environments. MTR addresses this through its query-based decoder, but different versions of the model optimize for different goals.
 
@@ -131,7 +128,7 @@ The primary scientific challenge in motion prediction is managing the inherent u
 
 These variants show the flexibility of the core MTR architecture in addressing the diverse challenges of motion forecasting.
 
-\subsection{Conclusion}
+\subsubsection{Conclusion}
 \label{sec:conclusion}
 
 The Motion Transformer (MTR) architecture addresses the challenge of multimodal motion prediction through its innovative design. Its core strength is the joint optimization of global intention localization and local movement refinement \cite{Shi2022MTR}, which is realized through a clear encoder-decoder structure.
