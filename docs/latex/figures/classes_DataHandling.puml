@@ -1,0 +1,49 @@
+@startuml classes_CustomUnitaj_data_handling
+set namespaceSeparator none
+
+' Hide empty members to show classes as single boxes
+hide empty members
+
+' Data Types and Dictionaries (only those with relationships)
+class "Stage" as unitraj.datasets.types.Stage
+
+' Base Data Classes
+class "BaseDataParser" as unitraj.datasets.base_dataparser.BaseDataParser
+
+class "BaseDataset" as unitraj.datasets.base_dataset.BaseDataset
+
+class "DatasetConfig" as unitraj.datasets.base_dataset.DatasetConfig
+
+' Data Parsers
+class "DataParser" as unitraj.datasets.dataparser.DataParser
+
+class "DataParserConfig" as unitraj.datasets.dataparser.DataParserConfig
+
+' Lightning Data Module
+class "LitDatamodule" as unitraj.lightning.lit_datamodule.LitDatamodule
+
+class "LitDatamoduleConfig" as unitraj.lightning.lit_datamodule.LitDatamoduleConfig
+
+' Configuration Base Classes
+class "BaseConfig" as unitraj.utils.base_config.BaseConfig
+
+class "PathConfig" as unitraj.configs.path_config.PathConfig
+
+' Inheritance relationships
+unitraj.datasets.base_dataset.DatasetConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.datasets.dataparser.DataParser --|> unitraj.datasets.base_dataparser.BaseDataParser
+unitraj.datasets.dataparser.DataParserConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --|> unitraj.utils.base_config.BaseConfig
+
+' Composition relationships
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.base_dataparser.BaseDataParser : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.base_dataset.DatasetConfig : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.dataparser.DataParserConfig : paths
+unitraj.datasets.base_dataset.DatasetConfig --* unitraj.datasets.base_dataset.BaseDataset : config
+unitraj.datasets.base_dataset.DatasetConfig --* unitraj.lightning.lit_datamodule.LitDatamoduleConfig : dataset_config
+unitraj.datasets.dataparser.DataParserConfig --* unitraj.datasets.base_dataset.DatasetConfig : parser
+unitraj.datasets.types.Stage --* unitraj.datasets.base_dataset.DatasetConfig : stage
+unitraj.datasets.types.Stage --* unitraj.datasets.dataparser.DataParserConfig : stage
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --* unitraj.lightning.lit_datamodule.LitDatamodule : config
+
+@enduml
