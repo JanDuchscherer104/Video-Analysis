@@ -317,9 +317,9 @@ with fixed prototype orientations \(\{\theta_n\}\) and interpolation coefficient
 %--------------------------------------------------------------------
 
 \subsection{The UniTraj Dataprocessing Pipeline}
+\label{app:framework}
 
 \textbf{Phase 1: Temporal Window Extraction}
-
 The first processing stage extracts \emph{uniformly sampled} windows containing historical context (\(T_p\) steps) and future ground truth (\(T_f\) steps) from raw agent trajectories. Frequency masking ensures consistent uniform temporal resolution with a sampling interval \(\Delta t_{s}\) across datasets, and is combined with the original validity masks to indicate which observations are valid at each timestep. Validity masks indicate missing observations throughout the pipeline.
 
 \begin{algorithm}[H]
