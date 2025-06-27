@@ -31,76 +31,64 @@ These components encompass the complete research pipeline: training and evaluati
 \subsection{Limitations of UniTraj}
 \label{sec:data_challenges}
 
-While we hoped to find a fully functional and well-structured implementation of the UniTraj framework, we encountered significant challenges that necessitated extensive refactoring and improvements to achieve a production-ready codebase.
+While the original UniTraj framework provided foundational functionality for unified trajectory prediction research, it suffered from poor software quality and architectural design, which limited its usability and transparency. As the goal of this seminar work was to understand the task of motion forecasting from the ground up, we undertook a comprehensive refactoring of the UniTraj framework to address these limitations in order to achieve a holistic understanding of components belonging to the motion forecasting task.
 
-The original UniTraj implementation suffered from critical software quality deficiencies that significantly hindered its usability and maintainability, as we had the goal to \emph{fully} understand the frameworks and its components that would be required to implement and train a model. Essentially the functionalities of the framework were mostly implemented but lacked transparency.
+Some of the most significant limitations of the original UniTraj framework, that motivated the refactoring, are summarized below:
 
-These issues included a lack of modular design patterns, insufficient type safety, and poor separation of concerns, which made the codebase difficult to navigate and extend. The absence of comprehensive documentation and standardized coding practices further exacerbated these problems, leading to confusion among developers and users alike.
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Monolithic Architecture:} The complex data processing pipeline consisted of a single monolithic script with poor separation of concerns, making it almost impossible to understand data flow and transformations, extend individual components or fix issues that we observed in the resulting dataset.
+    \item \textbf{Insufficient Type Safety:} Critical symbols lacked proper type hints, comments, and docstrings; the \texttt{Hydra} configuration system was used as an untyped dictionary without structural validation, such that it was difficult to work with these configuration objects, to understand the impact or expected values of parameters, and to catch potential issues early in the development process.
+    \item \textbf{Data Split Integrity:} The framework failed to respect original train/validation/test splits from source datasets, violating standard machine learning practices. Our efforts to resolve this issue turned out to be quit frustrating due to the intransparent path and file handling in the original implementation.
+    \item \textbf{Inadequate Documentation:} Absence of comprehensive documentation and standardized coding practices made it challenging to work with and understand the framework.
+\end{itemize}
 
-When creating unified dataset, given multiple source datasets, they did not respect the original train, val, and test splits which is a common practice in machine learning
+\paragraph{Infrastructure and Framework Integration Issues.}
+Despite utilizing modern frameworks like PyTorch Lightning, the implementation failed to follow recommended practices:
 
-None of the most important symbols were annotated properly with type hints or explanatory comments or doc-strings. Especially the dataprocessing pipeline and the data handling were a single monolithic script with no clear separation of concerns, making it difficult to understand the data flow and transformations applied at each stage. The code lacked modular design patterns, leading to tight coupling between components and making it challenging to extend or modify the framework without introducing bugs which were annoying to deal with.
-No proper separation of responsibilities, no modular design patterns.
-
-None of the most important symbols and conventions used throughout this work, following UniTraj framework standards~\cite{unitrajFeng2024} and the \textsc{DatasetItem} type definitions.
-
-While they were using \texttt{PyTorch Lightning}~\cite{falcon2019pytorch}, they were not following the recommended practices for employing it, such as using the \texttt{LightningDataModule} for data handling on the highest level, or a proper integration of logging functionalities such as Weights \& Biases with the framework.
-
-Their path handling was poorly implemented, such that there was no clear control over the sources and destinations of various important data like the resulting datasets, model checkpoints and logs.
-
-The training infrastructure lacked (and in some parts still lacks) essential deep learning capabilities: automatic mixed precision training, gradient accumulation, learning rate scheduling, and distributed computing support, various callbacks (such as learning rate monitors, early stopping, model checkpointing) all of which are easily configurable if using \texttt{PyTorch Lightning} in the way it's \emph{intended} to be used.
-
-Another major issue was the lack of any typing information in the used \texttt{Hydra} configuration, which was essentially used as a dictionary without any type hints or structure, making it difficult to understand the effects of parameters or what kinds of values were expected. We decided to employ our own \emph{Config-as-Factory} pattern, where every functional component of the framework has it's own strongly typed configuration class that also serves as a factory for instantiating the corresponding component. This approach ensures type safety, improves code readability, and allows for various static analysis tools to catch potential issues early in the development process, as well as easy sanity checks when instantiating components like checking if all required parameters are in allowed ranges, if a path is valid, etc.
-
-
-
-Mitigation strategies follow modern ML engineering best practices, with PyTorch Lightning migration as the primary solution. This architectural change provides structured training loops, automatic optimization, distributed computing support, and seamless experiment tracking integration~\cite{falcon2019pytorch}. Additional improvements include codebase refactoring into modular components, comprehensive unit and integration testing implementation, continuous integration adoption, and enhanced logging capabilities through Lightning's callback system for better visibility into training dynamics across datasets~\cite{unitrajFeng2024, scenarionetLi2023}.
+\begin{itemize}[leftmargin=*]
+    \item \textbf{PyTorch Lightning Misuse:} Improper integration lacking \texttt{LightningDataModule} usage, inadequate logging functionality, no easy configuration of the components of this framework and improper integration with Weights \& Biases.
+    \item \textbf{Path Management Deficiencies:} Poor filesystem path handling without clear control over data sources, destinations, model checkpoints, and logs.
+    \item \textbf{Missing Training Capabilities:} Absence of essential deep learning features including automatic mixed precision, gradient accumulation, learning rate scheduling, distributed computing support, and essential callbacks (learning rate monitors, early stopping, model checkpointing), all of which are relatively easy to use if PyTorch Lightning is used properly.
+\end{itemize}
 
 
 \subsubsection{Revision of the UniTraj Framework}
-This section details the major modifications we applied to the original UniTraj framework to achieve a more modular, type-safe, and production-ready codebase.
-
-\paragraph{Data handling and preprocessing refinements.}
-\begin{itemize}[leftmargin=*]
-  \item \textbf{Strongly typed interfaces:} Introduced \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} to declare all input and output tensors via \texttt{TypedDict} and dataclasses, replacing untyped \texttt{dict} passes and surfacing shape mismatches at static analysis time. Defines \texttt{RawScenarioDict}, \texttt{ProcessedDataDict} and other interfaces.
-  \item \textbf{Decoupled parsing pipeline:} Split the monolithic script into three stages—\href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{base\_dataparser.py}} (handles raw file ingestion and basic conversions), \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{dataparser.py}} (implements the nine-phase QC preprocessing pipeline), and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataset.py}{\texttt{base\_dataset.py}} (wraps processed data into a PyTorch \texttt{Dataset} class), enabling modular parser swaps without code changes.
-  \item \textbf{PyTorch Lightning integration:} Built a \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{lit\_datamodule.py}} (defines \texttt{LightningDataModule}) and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{lit\_trainer\_factory.py}} (instantiates \texttt{pl.Trainer} from config) to configure \texttt{pl.Trainer} via YAML, unlocking multi-GPU, mixed-precision, and gradient accumulation.
-  \item \textbf{Full Weights \& Biases (WandB) support:} Added comprehensive experiment tracking with real-time metric logging, hyperparameter sweeps, and model artifact management, enabling CSV dumps and real-time dashboards.
-\end{itemize}
-
-\paragraph{Architecture Overview}
-The revised UniTraj framework follows a hierarchical configuration-driven architecture that enables modular component instantiation and type-safe data flow. Figure~\ref{fig:unitraj_data_architecture} illustrates the core data handling components and their relationships within the framework.
+This section details the comprehensive refactoring applied to the original UniTraj framework to achieve a modular, type-safe, and extensible codebase that addresses all identified limitations while maintaining full functionality.\\
+The revised framework implements a hierarchical configuration-driven architecture, of which a small subset is visualized in Figure~\ref{fig:unitraj_data_architecture}.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{figures/classes_DataHandling.png}
-    \caption{UniTraj data handling architecture showing the relationships between configuration classes, data parsers, datasets, and Lightning modules. The diagram illustrates the Config-as-Factory pattern implementation and the modular data processing pipeline.}
+    \caption{UniTraj data handling architecture showing the relationships between configuration classes, data parsers, datasets, and Lightning modules.}
     \label{fig:unitraj_data_architecture}
 \end{figure}
 
-The architecture comprises four primary layers:
+\paragraph{Core Architectural Improvements.}
+The refactoring introduced three foundational design patterns that address the primary limitations of the original implementation:
 
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Configuration Layer:} The \texttt{BaseConfig} class serves as the foundation for all configuration objects, implementing the Config-as-Factory pattern through the \texttt{setup\_target()} method. The \texttt{PathConfig} centralizes all filesystem paths and is automatically propagated to child configurations during instantiation. The \texttt{Stage} enum defines dataset splits (train/validation/test) and ensures consistent stage handling across the pipeline.
-    \item \textbf{Data Processing Layer:} The \texttt{BaseDataParser} provides the interface for raw data ingestion, while \texttt{DataParser} implements the nine-phase preprocessing pipeline that transforms ScenarioNet format into normalized feature representations. The \texttt{DataParserConfig} controls preprocessing behavior including multiprocessing settings, cache management, and debug mode configuration.
-    \item \textbf{Dataset Layer:} The \texttt{BaseDataset} wraps processed data into PyTorch-compatible format, implementing efficient data loading with optional H5PY file handles for large-scale datasets. The \texttt{DatasetConfig} manages dataset instantiation parameters and integrates the parser configuration for end-to-end data pipeline control.
-    \item \textbf{Lightning Integration Layer:} The \texttt{LitDatamodule} provides PyTorch Lightning-compatible data loading with automatic train/validation/test split handling, configurable batch sizes, and multiprocessing support. The \texttt{LitDatamoduleConfig} enables declarative dataloader configuration from YAML files while maintaining type safety through Pydantic validation.
+    \item \textbf{Config-as-Factory Pattern:} Implemented through \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{BaseConfig}} with strongly typed configuration classes for each functional component. Every configuration object serves as both a type-safe parameter container and a factory for instantiating its corresponding component.
+
+    \item \textbf{Modular Data Processing Pipeline:} Decomposed the monolithic preprocessing script into three specialized stages with clear separation of concerns: \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{BaseDataParser}} orchestrates high-level pipeline execution including multiprocessing, HDF5 storage, and metadata collection; \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{DataParser}} implements a nine-phase preprocessing pipeline; and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataset.py}{\texttt{BaseDataset}} provides efficient PyTorch-compatible data loading.
+
+    \item \textbf{Strongly Typed Interfaces:} Introduced comprehensive type definitions in \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} using \texttt{TypedDict} and Pydantic \texttt{BaseModel} classes, replacing untyped dictionary passing and enabling compile-time shape validation. Defines \texttt{RawScenarioDict}, \texttt{ProcessedDataDict}, \texttt{DatasetItem}, and \texttt{BatchInputDict} interfaces.
+    \item \textbf{Lightning Data Module:} \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{LitDatamodule}} provides standardized data loading with custom collate functions, configurable batch sizes, worker processes, and automatic train/validation/test split handling while maintaining original dataset split integrity.
+    \item \textbf{Trainer Factory:} \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{LitTrainerFactory}} enables easy \texttt{pl.Trainer} configuration with support for multi-GPU training, mixed precision, gradient accumulation, learning rate scheduling, and comprehensive callback management.
 \end{itemize}
 
-The composition relationships shown in the diagram reflect the framework's dependency injection approach: configurations contain references to their dependencies rather than hard-coded instantiations, enabling flexible component swapping and comprehensive testing. For instance, the \texttt{DatasetConfig} contains both a \texttt{DataParserConfig} and stage information, allowing different parsing strategies per dataset split without code duplication.
+\paragraph{Infrastructure and Monitoring Enhancements.}
+Comprehensive improvements to logging, experiment tracking, and development workflows:
 
-\paragraph{Configuration and path management.}
 \begin{itemize}[leftmargin=*]
-  \item \textbf{Config-as-Factory pattern:} Implemented \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}} (defines \texttt{BaseConfig} and \texttt{setup\_target()}) methods, allowing declarative instantiation of datasets, trainers, and models from YAML/JSON without touching code.
-  \item \textbf{Centralized PathConfig:} Consolidated all filesystem paths (data root, logs, checkpoints) in \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/path_config.py}{\texttt{path\_config.py}} (centralizes filesystem paths) and ensured automatic directory creation, eliminating scattered \texttt{os.makedirs()} calls.
-  \item \textbf{Experiment reproducibility:} Integrated hierarchical overrides and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}} (provides \texttt{inspect()} for config trees) to print the full resolved config tree at startup, improving traceability of parameter sweeps.
+    \item \textbf{Centralized Path Management:} \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/path_config.py}{\texttt{PathConfig}} consolidates all filesystem paths with automatic directory creation and propagation to child configurations, eliminating scattered path management errors.
+
+    \item \textbf{Hierarchical Configuration:} The \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/experiment_config.py}{\texttt{ExperimentConfig}} serves as the top-level orchestrator with automatic parameter propagation and the \texttt{inspect()} method for complete configuration tree visualization, improving experiment reproducibility.
+
+    \item \textbf{Experiment Tracking:} Integrated \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/wandb_config.py}{\texttt{WandBConfig}} provides comprehensive experiment tracking with real-time metric logging, hyperparameter sweeps, and model artifact management.
+
+    \item \textbf{Type Safety and Validation:} Added precise type annotations throughout the codebase, enabling \texttt{mypy} enforcement and Pydantic validation for all configuration objects, catching potential runtime errors at development time.
 \end{itemize}
 
-\paragraph{General refactoring and model zoo expansion.}
-\begin{itemize}[leftmargin=*]
-  \item \textbf{Modular model registry:} Refactored the \texttt{models/} folder into sub-packages (e.g., \texttt{autobot}, \texttt{mtr}, \texttt{wayformer}), each with its own \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/models/base_model/base_model.py}{\texttt{base\_model.py}} (defines \texttt{BaseModel} and \texttt{BaseModelConfig}), standardizing the interface for adding new architectures.
-  \item \textbf{Utility consolidation:} Moved logging, console output, and visualization routines into \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/console.py}{\texttt{console.py}} (provides structured \texttt{Console} API) modules, replacing ad-hoc print statements with a structured \texttt{Console} API.
-  \item \textbf{Typed function signatures:} Audited all \texttt{.py} files to add precise type annotations for inputs and outputs (e.g., \texttt{batch: list[DatasetItem] -> BatchDict}), enabling \texttt{mypy} enforcement and catching runtime errors early.
-\end{itemize}
+Further relevant components can be found in the directory tree in~\autoref{app:directory_structure}.
 
 \newpage
