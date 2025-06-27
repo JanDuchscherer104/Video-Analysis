@@ -15,4 +15,4 @@
 *.vrb
 
 # Latex build directory
-build/
+.build/

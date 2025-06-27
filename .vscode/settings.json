@@ -1,36 +1,64 @@
-home/roess/workspace/Video-Analysis/.vscode/settings.json
 {
+    // LaTeX Workshop build configuration
+    "latex-workshop.latex.build.forceRecipeUsage": false,
+    "latex-workshop.latex.autoBuild.run": "never",
+    "latex-workshop.intellisense.citation.backend": "bibtex",
+    "latex-workshop.intellisense.citation.type": "inline",
+    "latex-workshop.latex.rootFile.doNotPrompt": true,
+    "latex-workshop.latex.rootFile.useSubFile": false,
+    
+    // Add root file detection
+    "latex-workshop.latex.rootFile.indicator": "\\documentclass",
+    "latex-workshop.latex.search.rootFiles.include": [
+        "**/*.tex"
+    ],
+    "latex-workshop.latex.search.rootFiles.exclude": [
+        "**/node_modules/**",
+        "**/.vscode/**"
+    ],
+    
+    // LaTeX Workshop tools
     "latex-workshop.latex.tools": [
         {
             "name": "make",
             "command": "make",
-            "args": [],
-            "env": {},
-            "cwd": "%WORKSPACE_FOLDER%/docs/latex"
+            "args": ["-C", "%WORKSPACE_FOLDER%/docs/latex"],
+            "env": {}
         },
         {
             "name": "make-clean",
             "command": "make",
-            "args": ["clean"],
-            "env": {},
-            "cwd": "%WORKSPACE_FOLDER%/docs/latex"
+            "args": ["-C", "%WORKSPACE_FOLDER%/docs/latex", "clean"],
+            "env": {}
         }
     ],
+    
+    // LaTeX Workshop recipes
     "latex-workshop.latex.recipes": [
         {
             "name": "Make Build",
-            "tools": [
-                "make"
-            ]
+            "tools": ["make"]
         },
         {
-            "name": "latexmk",
-            "tools": [
-                "latexmk"
-            ]
+            "name": "Make Clean",
+            "tools": ["make-clean"]
         }
     ],
+    
+    // Output and cleaning configuration
     "latex-workshop.latex.outDir": ".build",
-    "latex-workshop.latex.rootFile.useSubFile": false,
-    "latex-workshop.latex.rootFile.doNotPrompt": true
+    "latex-workshop.latex.clean.fileTypes": [
+        "*.aux", "*.bbl", "*.blg", "*.idx", "*.ind", "*.lof", "*.lot",
+        "*.out", "*.toc", "*.acn", "*.acr", "*.alg", "*.glg", "*.glo",
+        "*.gls", "*.fls", "*.log", "*.fdb_latexmk", "*.synctex.gz"
+    ],
+    "latex-workshop.view.pdf.viewer": "tab",
+    
+    // Warning suppression settings
+    "latex-workshop.message.badbox.show": "none",
+    "latex-workshop.message.information.show": false,
+    "problems.decorations.enabled": false,
+    
+    // Set default recipe
+    "latex-workshop.latex.recipe.default": "Make Build"
 }

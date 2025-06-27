@@ -1,37 +1,150 @@
-
 % 3. Data Corpus and Preprocessing Methodology
 \chapter{Data Corpus and Preprocessing Methodology}
 \label{ch:data_methodology}
 
+This chapter presents the data processing methodology within the UniTraj framework~\cite{unitrajFeng2024}, covering dataset integration, preprocessing pipelines, and the challenges encountered during implementation. The focus lies on the transformation from heterogeneous autonomous driving datasets to standardized tensor representations suitable for trajectory prediction models.
+
 \section{Utilized Datasets and Amalgamation Strategy}
 \label{sec:data_datasets}
-Formal characterization of the constituent autonomous driving datasets (ArgoverseV2, NuScenes, Waymo) and the UniTraj fusion methodology.
+
+The UniTraj framework integrates three major autonomous driving datasets: Argoverse2 (AV2)~\cite{av2Wilson2023}, NuScenes~\cite{caesar2020nuscenes}, and Waymo Open Dataset~\cite{wmodSun2020}. Each dataset contributes unique characteristics:
+
+\begin{itemize}
+    \item \textbf{Argoverse2:} High-resolution HD maps with detailed lane topology, focusing on highway and urban scenarios
+    \item \textbf{NuScenes:} Multi-modal sensor data with 360° coverage, diverse weather and lighting conditions
+    \item \textbf{Waymo:} Large-scale dataset with consistent labeling and comprehensive scene coverage
+\end{itemize}
+
+The amalgamation strategy standardizes coordinate systems, temporal sampling rates, and feature representations across datasets~\cite{VectorNet2020, Shi2022MTR}. This unified approach enables cross-dataset training and evaluation while preserving dataset-specific characteristics through metadata annotations.
+
+The fusion methodology addresses inherent dataset heterogeneities through a nine-phase preprocessing pipeline (detailed in Appendix~\ref{app:notation}) that transforms raw data into consistent \texttt{DatasetItem} representations. This approach follows established practices in trajectory prediction literature~\cite{zhou2022hivt, qcnetZhou2023, Shi2023MTRplusplus}.
 
 \section{UniTraj Data Preprocessing Pipeline}
 \label{sec:data_pipeline}
-    \subsection{Agent Instance Selection Protocol}
-    Detailed criteria for agent inclusion (type $\in \{\text{VEH, PED, CYCL}\}$, minimum displacement $\Delta d_{i}$, visibility threshold $\rho_{i}$, Kalman filter-based difficulty estimation). Clarification of the distinction between total agents ($N_{\text{max}}$) and focal agents of interest ($N_{c}$).
-    \subsection{Coordinate System Normalization}
-    Specification of the transformation to an agent-centric reference frame ($p_{t}^{(i),a}=R_{z}(-\theta_{c})(p_{t}^{(i),w}-p_{c})$).
-    \subsection{Feature Vector Assembly and Masking}
-    Formal definition of dynamic agent feature tensors ($X_{d}\in\mathbb{R}^{N_{\text{max}}\times T_{p}\times F_{ap}}$, $M_{d}\in\{0,1\}^{N_{\text{max}}\times T_{p}}$) and static map feature tensors ($X_{s}\in\mathbb{R}^{K\times L\times F_{\text{map}}}$, $M_{s}\in\{0,1\}^{K\times L}$).
+
+The preprocessing pipeline serves as the cornerstone of the unified framework, transforming heterogeneous dataset formats into standardized representations. The pipeline architecture emphasizes reproducibility, scalability, and data quality assurance, drawing from best practices in deep learning frameworks~\cite{vaswani2023attention}.
+
+\subsection{Agent Instance Selection Protocol}
+\label{ssec:agent_selection}
+
+Agent selection employs multi-criteria filtering to ensure data quality and computational efficiency, following protocols established in motion prediction research~\cite{WOMD2021, Chai2019MultiPath}:
+
+\begin{itemize}
+    \item \textbf{Type Constraint:} $\text{type} \in \{\text{VEH, PED, CYCL}\}$ with dataset-specific availability
+    \item \textbf{Displacement Filter:} Minimum movement threshold $\Delta d_{i} > \tau_{displacement}$ to exclude stationary objects
+    \item \textbf{Visibility Requirement:} Temporal coverage $\rho_{i} > \tau_{visibility}$ ensuring sufficient observation history
+    \item \textbf{Difficulty Classification:} Kalman filter-based estimation categorizing trajectories as Easy, Medium, or Hard based on prediction uncertainty~\cite{MultiPathPlusPlus2022}
+\end{itemize}
+
+The framework distinguishes between total scene agents ($N_{\max}$) and focal prediction targets ($N_{c}$), enabling scalable processing while maintaining comprehensive scene context. This distinction proves crucial for computational efficiency in dense urban scenarios~\cite{hu2023planning}.
+
+\subsection{Coordinate System Normalization}
+\label{ssec:coordinate_normalization}
+
+Spatial normalization transforms all coordinates to an agent-centric reference frame, enhancing model translation and rotation invariance~\cite{qcnetZhou2023, gao2020vectornet}:
+
+\begin{equation}
+p_{t}^{(i),a} = R_{z}(-\theta_{c})(p_{t}^{(i),w} - p_{c})
+\end{equation}
+
+where $R_{z}(-\theta_{c})$ represents the rotation matrix around the z-axis by the negative center agent heading $\theta_{c}$, $p_{t}^{(i),w}$ denotes world coordinates, and $p_{c}$ is the center agent position at the prediction timestamp.
+
+This transformation ensures that the center agent appears at the origin facing along the positive x-axis, providing a canonical reference frame for trajectory prediction. This approach aligns with established practices in motion forecasting literature~\cite{shi2022motion, DenseTNT2021}.
+
+\subsection{Feature Vector Assembly and Masking}
+\label{ssec:feature_assembly}
+
+The framework constructs standardized tensor representations with comprehensive masking strategies, following tensor design principles from PointNet~\cite{PointNet2017} and VectorNet~\cite{VectorNet2020}:
+
+\textbf{Dynamic Agent Tensors:}
+- Feature tensor: $X_{d} \in \mathbb{R}^{N_{\max} \times T_{p} \times F_{ap}}$
+- Validity mask: $M_{d} \in \{0,1\}^{N_{\max} \times T_{p}}$
+
+\textbf{Static Map Tensors:}
+- Feature tensor: $X_{s} \in \mathbb{R}^{K \times L \times F_{\text{map}}}$
+- Validity mask: $M_{s} \in \{0,1\}^{K \times L}$
+
+The masking mechanism handles variable scene complexity by marking valid data points, enabling efficient batch processing across scenarios with different agent counts and map complexities. This design follows established tensor processing patterns in autonomous driving research~\cite{SceneTransformer2022}.
 
 \section{Dataset Specification and Feature Semantics}
 \label{sec:data_datasetitem}
-    \subsection{Agent-Centric Sample Generation}
-    Explanation of how multiple \texttt{DatasetItems} are derived from a single scenario.
-    \subsection{Input Tensor Definitions}
-    \texttt{obj\_trajs}, \texttt{map\_polylines}, \texttt{center\_gt\_trajs}.
-    \subsection{Semantic Description of Feature Dimensions}
-    $F_{ap}$ (Agent-State Features): e.g., relative spatiotemporal coordinates, physical dimensions, one-hot encoded object class, one-hot encoded temporal index, heading embedding, relative velocity and acceleration vectors.
-    $F_{\text{map}}$ (Map Element Features): e.g., polyline point coordinates, tangent vectors, one-hot encoded lane types.
-    \subsection{Auxiliary Metadata}
-    Utilization of metadata such as Kalman difficulty and trajectory classification for stratified analysis.
 
-% \section{Data Loading and Batching Strategy}
-% \label{sec:data_loading}
-% Description of the HDF5-based random-access sharding mechanism for efficient, parallelized data ingestion during training.
+The \texttt{DatasetItem} structure encapsulates all necessary information for trajectory prediction, serving as the fundamental data unit throughout the framework. This design follows data standardization principles established in computer vision~\cite{DETR2020} and trajectory prediction domains~\cite{unitrajFeng2024}.
 
-\section{Challenges in Data Curation and Representational Fidelity within UniTraj}
+\subsection{Agent-Centric Sample Generation}
+\label{ssec:sample_generation}
+
+Multiple \texttt{DatasetItems} derive from a single scenario by selecting different center agents. This agent-centric approach maximizes data utilization while ensuring balanced representation across different agent types and scenario complexities~\cite{cui2019multimodal}.
+
+Each \texttt{DatasetItem} contains:
+- Historical trajectories for all visible agents
+- Corresponding map topology within a defined radius
+- Ground truth future trajectories for prediction evaluation
+- Metadata including difficulty scores and scene classifications
+
+\subsection{Input Tensor Definitions}
+\label{ssec:tensor_definitions}
+
+The framework defines three core input tensors with standardized semantics. For complete tensor specifications and dimensions, refer to Table~\ref{tab:data_tensors} in Appendix~\ref{app:framework}.
+
+\textbf{Primary Tensors:}
+\begin{itemize}
+    \item \texttt{obj\_trajs}: Dynamic agent trajectory data with temporal history
+    \item \texttt{map\_polylines}: Static map topology represented as polyline sequences
+    \item \texttt{center\_gt\_trajs}: Ground truth future trajectories for target agents
+\end{itemize}
+
+These tensors maintain consistent shapes across datasets while accommodating varying scene complexities through appropriate masking strategies. The design follows vectorized representation principles established in VectorNet~\cite{gao2020vectornet} and subsequent works~\cite{liang2020learning}.
+
+\subsection{Semantic Description of Feature Dimensions}
+\label{ssec:feature_semantics}
+
+\textbf{Agent-State Features ($F_{ap}$):} The agent feature dimension encompasses comprehensive state information, drawing from established motion modeling practices~\cite{chai2019multipath, rupprecht2017learning}:
+\begin{itemize}
+    \item Relative spatiotemporal coordinates $(x, y, t)$ in agent-centric frame
+    \item Physical dimensions (length, width, height) for collision modeling
+    \item One-hot encoded object class distinguishing vehicles, pedestrians, and cyclists
+    \item One-hot encoded temporal index for sequence position encoding
+    \item Heading embedding $(\sin(\theta), \cos(\theta))$ providing continuous angular representation
+    \item Relative velocity and acceleration vectors for kinematic modeling
+\end{itemize}
+
+\textbf{Map Element Features ($F_{\text{map}}$):} The map feature dimension includes geometric and semantic information, following HD map representation standards~\cite{av2Wilson2023, caesar2020nuscenes}:
+\begin{itemize}
+    \item Polyline point coordinates defining lane boundaries and centerlines
+    \item Tangent vectors encoding local geometric continuity
+    \item One-hot encoded lane types (driving lanes, intersections, crosswalks, etc.)
+    \item Traffic control information (traffic lights, stop signs) where available
+\end{itemize}
+
+\subsection{Auxiliary Metadata}
+\label{ssec:auxiliary_metadata}
+
+The framework utilizes extensive metadata for stratified analysis and model evaluation, following evaluation practices from motion prediction benchmarks~\cite{WOMD2021, av2Wilson2023}:
+\begin{itemize}
+    \item Kalman filter-based difficulty scores enabling complexity-aware evaluation
+    \item Trajectory classification (straight, turning, lane-changing) for behavioral analysis
+    \item Scene type annotations (highway, urban, intersection) for domain-specific assessment
+    \item Dataset provenance information for cross-dataset analysis
+\end{itemize}
+
+This metadata enables fine-grained performance analysis and helps identify model strengths and weaknesses across different scenario types, supporting comprehensive evaluation protocols~\cite{unitrajFeng2024}.
+
+\section{Framework Implementation Challenges and Limitations}
 \label{sec:data_challenges}
-Addressing data limitations (e.g., absence of BBOX information from AV2, restriction to vehicle types) and potential impacts on model generalizability.
+
+Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability, aligning with known issues in autonomous driving dataset integration~\cite{metadriveLi2022, scenarionetLi2023}.
+
+\subsection{Data Integration and Representational Limitations}
+\label{ssec:data_limitations}
+
+Critical limitations emerged during dataset integration, reflecting broader challenges in autonomous driving data standardization~\cite{hu2023planning}. Dataset heterogeneity manifests through inconsistent feature availability: Argoverse2 lacks 3D bounding box data compared to Waymo and NuScenes, forcing models to rely on point-based representations that potentially reduce collision awareness. Agent type availability varies inconsistently—while Waymo provides comprehensive pedestrian and cyclist annotations, Argoverse2 focuses primarily on vehicle trajectories, creating domain-specific biases~\cite{unitrajFeng2024}.
+Temporal and spatial standardization introduces information loss, highlighting trade-offs between unification and data fidelity~\cite{bronstein2021geometric}. Varying sampling rates (10Hz vs 20Hz) require interpolation that potentially loses behavioral nuances. Agent-centric coordinate transformations enhance invariance but obscure global spatial relationships relevant for scene understanding. Feature quantization for computational efficiency reduces predictive accuracy, while fixed scene radii exclude relevant distant objects affecting long-range interactions.
+
+\subsection{Framework Implementation Issues and Mitigation Strategies}
+\label{ssec:framework_issues}
+
+The original UniTraj implementation suffered from critical software quality deficiencies that significantly impacted model performance and generalization across domains~\cite{metadriveLi2022}. The most significant limitation was the absence of PyTorch Lightning integration, forcing manual implementation of training infrastructure that modern ML frameworks provide standardized~\cite{falcon2019pytorch}. Additional problems included poor code organization with tight coupling between components, lack of modular design patterns, and insufficient testing frameworks, making the system difficult to maintain, extend, or debug effectively.
+The training infrastructure lacked essential deep learning capabilities: automatic mixed precision training, gradient accumulation, learning rate scheduling, and distributed computing support. Manual implementation of these features resulted in suboptimal performance, excessive memory usage, and limited scalability. The framework also lacked integrated experiment tracking with tools like Weights \& Biases or TensorBoard, hampering reproducibility and systematic model development workflows.
+Mitigation strategies follow modern ML engineering best practices, with PyTorch Lightning migration as the primary solution. This architectural change provides structured training loops, automatic optimization, distributed computing support, and seamless experiment tracking integration~\cite{falcon2019pytorch}. Additional improvements include codebase refactoring into modular components, comprehensive unit and integration testing implementation, continuous integration adoption, and enhanced logging capabilities through Lightning's callback system for better visibility into training dynamics across datasets~\cite{unitrajFeng2024, scenarionetLi2023}.
+
