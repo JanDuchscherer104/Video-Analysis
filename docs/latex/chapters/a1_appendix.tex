@@ -190,7 +190,7 @@ where \(\mathbf{W}_m\) are learned projection matrices and \(\mathbf{X}(\bullet)
 
 The key innovation is that both offsets and weights are \emph{content-dependent}—computed dynamically based on the current query state rather than being fixed. This enables efficient sparse attention that adapts to the spatial structure of each specific scene, focusing computational resources on the most informative regions.
 
-\subsubsection{Gabor Filter Steerability}
+\subsection{Gabor Filter Steerability}
 \label{ssec:gabor_filters}
 Gabor filters are defined by a sinusoidal plane wave modulated by a Gaussian envelope:
 \begin{equation}
@@ -214,107 +214,6 @@ G_{\lambda,\theta}(x,y)
 = \sum_{n=1}^N k_n(\theta)\,G_{\lambda,\theta_n}(x,y),
 \end{equation}
 with fixed prototype orientations \(\{\theta_n\}\) and interpolation coefficients \(\{k_n(\theta)\}\)~\cite{steerableGaborFilters}. This property enables the network to capture directional patterns without having to learn separate filters for each orientation—leading to improved sample efficiency and built-in \(\mathrm{SO}(2)\)-equivariance. In CASPNet, this steerability is leveraged to induce rotational quasi-equivariance in the first layers of the map encoder, ensuring that road elements are represented robustly regardless of global scene orientation. Additionally, by using filter banks that span multiple scales (\(\sigma\)) and aspect ratios (\(\gamma\)), the architecture gains partial \(\mathrm{SIM}(2)\)-equivariance, responding consistently to rescaled and rotated map structures~\cite{steerableGaborFilters}.
-
-%--------------------------------------------------------------------
-% \subsection{CASPNet Mathematical Formulations}
-% \label{app:caspnet_details}
-
-% \paragraph{Notation.} We denote \(T_p\) and \(T_f\) as the numbers of observed and predicted timesteps, respectively. Following UniTraj conventions~\cite{unitrajFeng2024}, agent trajectories are represented as \(\boldsymbol{X}_d \in \mathbb{R}^{N_{\max} \times T_p \times F_{ap}}\) and map polylines as \(\boldsymbol{X}_s \in \mathbb{R}^{K_{\max} \times L \times F_{map}}\), where \(N_{\max}\) is the maximum number of agents, \(K_{\max}\) is the maximum number of map polylines, \(L\) is the points per polyline, and \(F_{ap}, F_{map}\) are the respective feature dimensions. For rasterized approaches, BEV representations use \(H \times W\) spatial resolution with \(F_d, F_s\) channel dimensions for dynamic and static inputs, respectively.
-
-% \subsubsection{Dual FPN Encoding}
-% Rasterized models convert trajectories and HD maps into BEV image stacks:
-% \begin{equation}
-% \label{eq:app_bev_inputs}
-% I_d\in\mathbb{R}^{T_p\times H\times W\times F_d},\quad
-% I_s\in\mathbb{R}^{H\times W\times F_s}.
-% \end{equation}
-
-% At each level \(\ell\), the trajectory branch produces:
-% \begin{equation}
-% \label{eq:app_fpn_traj}
-% F_{\ell}^{\mathrm{traj}}
-% = \mathrm{ConvLSTM}_\ell\Bigl\{\mathrm{CNN}_\ell\bigl(I_d(t)\bigr)\Bigr\}_{t=1}^{T_p},
-% \end{equation}
-% and the map branch:
-% \begin{equation}
-% \label{eq:app_fpn_map}
-% F_{\ell}^{\mathrm{map}}
-% = \mathrm{CNN}_\ell^{\mathrm{Gabor}}(I_s).
-% \end{equation}
-% These form the multi-scale scene representation:
-% \begin{equation}
-% \label{eq:app_fpn_fusion}
-% \mathcal{F}=\{F_\ell^{\mathrm{traj}}\oplus F_\ell^{\mathrm{map}}\}_{\ell=0}^{L-1}.
-% \end{equation}
-
-% \subsection{CASPFormer Mathematical Formulations}
-% \label{app:caspformer_details}
-
-% \subsubsection{Deformable Multi-Scale Attention}
-% Each query \(q\) attends to \(K\) sampling points across multiple feature levels:
-% \begin{equation}
-% \label{eq:deformable_sampling}
-% p_{q\ell k}=p_q + \Delta p_{q\ell k},
-% \end{equation}
-% \begin{equation}
-% \label{eq:msda}
-% \mathrm{MSDA}(Q,K,V) = \sum_{\ell=0}^{L-1}\sum_{k=1}^K A_{q\ell k}\,W_\ell\,V_\ell(p_{q\ell k}),
-% \end{equation}
-% where \(\Delta p\) are learned sampling offsets and \(A_{q\ell k}\) are attention weights normalized such that \(\sum_{\ell,k} A_{q\ell k} = 1\).
-
-% \subsubsection{Recurrent Cross-Attention Decoder}
-% The recurrent decoder maintains:
-% \begin{equation}
-% \label{eq:dual_query}
-% Q_t = T_{t-1} + M,
-% \end{equation}
-% \begin{equation}
-% \label{eq:cross_attention}
-% Y_t = \mathrm{CrossDA}(Q_t,Z,r_{t-1}),
-% \end{equation}
-% with deformable cross-attention defined as:
-% \begin{equation}
-% \label{eq:crossda_definition}
-% \mathrm{CrossDA}(Q,Z,r) = \sum_{\ell,k}A^{\mathit{x}}_{\ell k}\,W_\ell\,Z_\ell(r+\Delta p_{\ell k}).
-% \end{equation}
-
-% Outputs \(Y_t\) update both the reference point and temporal queries:
-% \begin{equation}
-% \label{eq:reference_update}
-% r_t = r_{t-1} + \delta_r(Y_t),
-% \end{equation}
-% \begin{equation}
-% \label{eq:temporal_update}
-% T_t = \phi(Y_t),
-% \end{equation}
-% ensuring spatial anchoring around the ego vehicle position and temporal coherence across prediction steps.
-
-% \begin{figure}[ht]
-%   \centering
-%   \includegraphics[width=0.8\linewidth]{figures/caspformer_decoder.jpg}
-%   \caption{Recurrent deformable cross-attention: updates reference points and temporal queries per step.}
-%   \label{fig:recurrent_architecture_appendix}
-% \end{figure}
-
-% \subsubsection{Loss Formulation and Multi-Modal Outputs}
-% CASPFormer employs a combination of regression and classification losses, following HiVT~\cite{zhou2022hivt}. The approach encourages diversity by optimizing only the best mode, selected based on minimum \(\ell_2\) distance to ground truth:
-% \begin{align}
-% \label{eq:total_loss}
-% \mathcal{L} &= \mathcal{L}_{reg} + \mathcal{L}_{cls}\\
-% \label{eq:regression_loss}
-% \mathcal{L}_{reg} &= -\frac{1}{T_o} \sum_{t=1}^{T_o} \log[\mathbb{L}(P_t \mid \mu_t, b_t)]\\
-% \label{eq:classification_loss}
-% \mathcal{L}_{cls} &= -\frac{1}{M} \sum_{k=1}^{M} \log(\pi(k)) \mathbb{L}(P_{T_o,k} \mid \mu_{T_o,k}, b_{T_o,k})
-% \end{align}
-% where \(\mathbb{L}\) denotes the Laplacian distribution, \(\mu_t\) and \(b_t\) are position and uncertainty of the best mode, \(P_t\) are ground truth positions, and \(\pi(k)\) are mode probabilities.
-
-% A shared MLP decodes \(Y_t\) to \(\{\mu_{t,k},\pi_{t,k}\}_{k=1}^M\), modeling a mixture distribution over predicted modes:
-% \begin{equation}
-% \label{eq:mixture_distribution}
-% \mathcal{P}(\boldsymbol{\mu}_t, b_t) = \sum_{k=1}^{M} \pi_k \cdot \mathbb{L}(\boldsymbol{\mu}_t \mid \boldsymbol{\mu}_{t,k}, b_{t,k})
-% \end{equation}
-
-%--------------------------------------------------------------------
 
 \subsection{The UniTraj Dataprocessing Pipeline}
 \label{app:framework}
@@ -509,3 +408,144 @@ The final processing phase assembles all processed components into final \texttt
 \end{algorithm}
 
 The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training and evaluation. They include all agent tensors, map tensors, ground truth labels, and validity masks as \texttt{numpy} arrays in various formats for easy handling at different training, evaluation or visualization stages.
+
+
+% \subsection{UniTraj Metadata}
+% \input{chapters/sample_metadata.tex}
+
+\subsection{UniTraj Directory Structure}
+
+
+\dirtree{%
+.1 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/}{\texttt{unitraj/}}.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/__init__.py}{\texttt{\_\_init\_\_.py}} ― package marker.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/}{\texttt{configs/}}.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/experiment_config.py}{\texttt{experiment\_config.py}} ― top‐level experiment settings.
+.4 \texttt{ExperimentConfig} ― main configuration class.
+.4 \texttt{load\_experiment\_config ()} ― config loader function.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/path_config.py}{\texttt{path\_config.py}} ― \texttt{PathConfig} definitions.
+.4 \texttt{PathConfig} ― file path configuration class.
+.4 \texttt{get\_default\_paths ()} ― default path setup.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/wandb_config.py}{\texttt{wandb\_config.py}} ― WandB logger callbacks.
+.4 \texttt{WandBConfig} ― weights \& biases configuration.
+.4 \texttt{setup\_wandb\_logger ()} ― logger initialization.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/data_analysis.py}{\texttt{data\_analysis.py}} ― EDA scripts.
+.3 \texttt{DataAnalyzer} ― exploratory data analysis class.
+.3 \texttt{plot\_trajectory\_distribution ()} ― trajectory statistics.
+.3 \texttt{analyze\_agent\_behavior ()} ― agent behavior analysis.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/}{\texttt{datasets/}}.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{base\_dataparser.py}} ― \texttt{BaseDataParser} class.
+.4 \texttt{BaseDataParser} ― abstract data parser interface.
+.4 \texttt{parse\_scenario ()} ― scenario parsing method.
+.4 \texttt{process\_agents ()} ― agent data processing.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{dataparser.py}} ― QC preprocessing pipeline.
+.4 \texttt{QCNetDataParser} ― query-centric data parser.
+.4 \texttt{CustomDataParser} ― custom dataset parser.
+.4 \texttt{process\_raw\_data ()} ― raw data processing function.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataset.py}{\texttt{base\_dataset.py}} ― \texttt{BaseDataset} wrapper.
+.4 \texttt{BaseDataset} ― PyTorch dataset base class.
+.4 \texttt{collate\_fn ()} ― batch collation function.
+.4 \texttt{\_\_getitem\_\_ ()} ― dataset item accessor.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/common_utils.py}{\texttt{common\_utils.py}} ― shared parsers \& transforms.
+.4 \texttt{transform\_coordinates ()} ― coordinate transformation.
+.4 \texttt{extract\_features ()} ― feature extraction utilities.
+.4 \texttt{validate\_data ()} ― data validation function.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} ― \texttt{RawScenarioDict}, \texttt{ProcessedDataDict}, etc.
+.4 \texttt{RawScenarioDict} ― raw scenario data type.
+.4 \texttt{ProcessedDataDict} ― processed data type.
+.4 \texttt{DatasetItem} ― final dataset item structure.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/k_means.py}{\texttt{k\_means.py}} ― clustering utilities.
+.3 \texttt{KMeansClusterer} ― k-means clustering class.
+.3 \texttt{cluster\_trajectories ()} ― trajectory clustering function.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/}{\texttt{lightning/}}.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{lit\_datamodule.py}} ― \texttt{LightningDataModule}.
+.4 \texttt{CustomDataModule} ― PyTorch Lightning data module.
+.4 \texttt{setup ()} ― data module setup method.
+.4 \texttt{train\_dataloader ()} ― training data loader.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{lit\_trainer\_factory.py}} ― \texttt{pl.Trainer} factory.
+.4 \texttt{TrainerFactory} ― trainer factory class.
+.4 \texttt{create\_trainer ()} ― trainer creation function.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/models/}{\texttt{models/}}.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/models/base_model/base_model.py}{\texttt{base\_model.py}} ― \texttt{BaseModel}, \texttt{BaseModelConfig}.
+.4 \texttt{BaseModel} ― abstract model base class.
+.4 \texttt{BaseModelConfig} ― model configuration class.
+.4 \texttt{forward ()} ― forward pass method.
+.3 \texttt{autobot/} ― AutoBot model implementation.
+.4 \texttt{AutoBotModel} ― AutoBot trajectory predictor.
+.4 \texttt{AutoBotConfig} ― AutoBot configuration.
+.3 \texttt{mtr/} ― MTR model implementation.
+.4 \texttt{MTRModel} ― Motion Transformer model.
+.4 \texttt{MTRConfig} ― MTR configuration.
+.3 \texttt{wayformer/} ― Wayformer model implementation.
+.4 \texttt{WayformerModel} ― Wayformer trajectory model.
+.4 \texttt{WayformerConfig} ― Wayformer configuration.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/console.py}{\texttt{console.py}} ― \texttt{Console} API\@.
+.3 \texttt{Console} ― console output management class.
+.3 \texttt{print\_status ()} ― status printing function.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}} ― \texttt{BaseConfig}, \texttt{setup\_target ()}.
+.3 \texttt{BaseConfig} ― base configuration class.
+.3 \texttt{setup\_target ()} ― target setup function.
+.3 \texttt{validate\_config ()} ― configuration validation.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/config.py}{\texttt{config.py}} ― config parsing helpers.
+.3 \texttt{ConfigParser} ― configuration parser class.
+.3 \texttt{load\_yaml\_config ()} ― YAML config loader.
+.3 \texttt{merge\_configs ()} ― configuration merging.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/tsne.py}{\texttt{tsne.py}} ― t-SNE visualization.
+.3 \texttt{TSNEVisualizer} ― t-SNE visualization class.
+.3 \texttt{plot\_embeddings ()} ― embedding plotting function.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/utils.py}{\texttt{utils.py}} ― general utilities.
+.3 \texttt{ensure\_dir ()} ― directory creation utility.
+.3 \texttt{save\_pickle ()} ― pickle saving function.
+.3 \texttt{load\_pickle ()} ― pickle loading function.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/visualization.py}{\texttt{visualization.py}} ― plotting and rendering helpers.
+.3 \texttt{TrajectoryVisualizer} ― trajectory plotting class.
+.3 \texttt{plot\_scenario ()} ― scenario visualization function.
+.3 \texttt{render\_predictions ()} ― prediction rendering function.
+}
+
+% \begin{forest}
+%   for tree={%
+%     folder,
+%     grow'=east,
+%     child anchor=west,
+%     parent anchor=east,
+%     align=left,
+%     edge={rounded corners},
+%     font=\ttfamily
+%   }
+% [unitraj/
+%   [\href{https://.../__init__.py}{__init__.py}\\@package root]
+%   [configs/
+%     [\href{https://.../experiment_config.py}{experiment\_config.py}\\@experiment settings]
+%     [\href{https://.../path_config.py}{path\_config.py}\\@PathConfig]
+%     [\href{https://.../wandb_config.py}{wandb\_config.py}\\@WandB callbacks]
+%   ]
+%   [datasets/
+%     [\href{https://.../types.py}{types.py}\\@RawScenarioDict, ProcessedDataDict]
+%     [\href{https://.../base\_dataparser.py}{base\_dataparser.py}\\@BaseDataParser]
+%     [\href{https://.../dataparser.py}{dataparser.py}\\@QC pipeline]
+%     [\href{https://.../base\_dataset.py}{base\_dataset.py}\\@BaseDataset]
+%     [common\_utils.py]\\@shared transforms
+%   ]
+%   [lightning/
+%     [\href{https://.../lit\_datamodule.py}{lit\_datamodule.py}\\@LightningDataModule]
+%     [\href{https://.../lit\_trainer\_factory.py}{lit\_trainer\_factory.py}\\@Trainer factory]
+%   ]
+%   [models/
+%     [base\_model/
+%       [\href{https://.../base\_model.py}{base\_model.py}\\@BaseModel, BaseModelConfig]
+%     ]
+%     [autobot/]
+%     [mtr/]
+%     [wayformer/]
+%   ]
+%   [utils/
+%     [\href{https://.../console.py}{console.py}\\@Console API]
+%     [\href{https://.../base\_config.py}{base\_config.py}\\@BaseConfig, setup\_target()]
+%     [config.py]\\@YAML parsing
+%     [tsne.py]\\@t-SNE utils
+%     [utils.py]\\@misc helpers
+%     [visualization.py]\\@plot functions
+%   ]
+% ]
+% \end{forest}

@@ -22,24 +22,33 @@ box and rich semantic annotations, but these are lost during \texttt{ScenarioNet
 The normalization of the feature spaces is performed through a multi-stage processing, and its results are outlined in~\autoref{app:framework}.
 
 
-The UniTraj framework integrates three major autonomous driving datasets: Argoverse2 (AV2)~\cite{av2Wilson2023}, NuScenes~\cite{caesar2020nuscenes}, and Waymo Open Dataset~\cite{wmodSun2020}. Each dataset contributes unique characteristics:
+% The UniTraj framework integrates three major autonomous driving datasets: Argoverse2 (AV2)~\cite{av2Wilson2023}, NuScenes~\cite{caesar2020nuscenes}, and Waymo Open Dataset~\cite{wmodSun2020}. Each dataset contributes unique characteristics:
 
-\begin{itemize}
-    \item \textbf{Argoverse2:} High-resolution HD maps with detailed lane topology, focusing on highway and urban scenarios
-    \item \textbf{NuScenes:} Multi-modal sensor data with 360° coverage, diverse weather and lighting conditions
-    \item \textbf{Waymo:} Large-scale dataset with consistent labeling and comprehensive scene coverage
-\end{itemize}
+% \begin{itemize}
+%     \item \textbf{Argoverse2:} High-resolution HD maps with detailed lane topology, focusing on highway and urban scenarios
+%     \item \textbf{NuScenes:} Multi-modal sensor data with 360° coverage, diverse weather and lighting conditions
+%     \item \textbf{Waymo:} Large-scale dataset with consistent labeling and comprehensive scene coverage
+% \end{itemize}
 
-The amalgamation strategy standardizes coordinate systems, temporal sampling rates, and feature representations across datasets~\cite{VectorNet2020, Shi2022MTR}. This unified approach enables cross-dataset training and evaluation while preserving dataset-specific characteristics through metadata annotations.
+% The amalgamation strategy standardizes coordinate systems, temporal sampling rates, and feature representations across datasets~\cite{VectorNet2020, Shi2022MTR}. This unified approach enables cross-dataset training and evaluation while preserving dataset-specific characteristics through metadata annotations.
 
-The fusion methodology addresses inherent dataset heterogeneities through a nine-phase preprocessing pipeline (detailed in Appendix~\ref{app:notation}) that transforms raw data into consistent \texttt{DatasetItem} representations. This approach follows established practices in trajectory prediction literature~\cite{zhou2022hivt, qcnetZhou2023, Shi2023MTRplusplus}.
+% The fusion methodology addresses inherent dataset heterogeneities through a nine-phase preprocessing pipeline (detailed in Appendix~\ref{app:notation}) that transforms raw data into consistent \texttt{DatasetItem} representations. This approach follows established practices in trajectory prediction literature~\cite{zhou2022hivt, qcnetZhou2023, Shi2023MTRplusplus}.
+
+% \subsection{Remaining ML Infrastructure}
+% This subsection outlines the need for further essential components required to develop motion forecasting models, and why it would be beneficial to unify them in a single framework such that the research communicty can focus on the model architecture and training, rather than the implementation details of the infrastructure.
+% This includes logging and experiment tracking, distributed training, configuration management, evaluation metrics, visualization tools
+
 
 
 
 \subsection{Limitations of UniTraj}
 \label{sec:data_challenges}
 
-Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability, aligning with known issues in autonomous driving dataset integration~\cite{metadriveLi2022, scenarionetLi2023}.
+Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability, aligning with known issues in autonomous driving dataset integration.
+
+When creating unified dataset, given multiple source datasets, they did not respect the original train, val, and test splits which is a common practice in machine learning
+
+None of the most important sym
 
 \subsection{Data Integration and Representational Limitations}
 \label{ssec:data_limitations}
@@ -56,4 +65,28 @@ Mitigation strategies follow modern ML engineering best practices, with PyTorch 
 
 
 \subsubsection{Revision of the UniTraj Framework}
-...
+This section details the major modifications we applied to the original UniTraj framework to achieve a more modular, type-safe, and production-ready codebase.
+
+\paragraph{Data handling and preprocessing refinements.}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Strongly typed interfaces:} Introduced \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} to declare all input and output tensors via \texttt{TypedDict} and dataclasses, replacing untyped \texttt{dict} passes and surfacing shape mismatches at static analysis time. Defines \texttt{RawScenarioDict}, \texttt{ProcessedDataDict} and other interfaces.
+  \item \textbf{Decoupled parsing pipeline:} Split the monolithic script into three stages—\href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{base\_dataparser.py}} (handles raw file ingestion and basic conversions), \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{dataparser.py}} (implements the nine-phase QC preprocessing pipeline), and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataset.py}{\texttt{base\_dataset.py}} (wraps processed data into a PyTorch \texttt{Dataset} class), enabling modular parser swaps without code changes.
+  \item \textbf{PyTorch Lightning integration:} Built a \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{lit\_datamodule.py}} (defines \texttt{LightningDataModule}) and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{lit\_trainer\_factory.py}} (instantiates \texttt{pl.Trainer} from config) to configure \texttt{pl.Trainer} via YAML, unlocking multi-GPU, mixed-precision, and gradient accumulation with <30LoC of overhead and removing ~300LoC of boilerplate.
+  \item \textbf{Full Weights \& Biases (WandB) support:} Added \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/wandb_config.py}{\texttt{wandb\_config.py}} (configures WandB logger and callbacks) and Lightning callbacks to log hyperparameters, metrics, and checkpoint artefacts directly to WandB, replacing ad-hoc CSV dumps and enabling real-time dashboards.
+\end{itemize}
+
+\paragraph{Configuration and path management.}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Config-as-Factory pattern:} Implemented \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}} (defines \texttt{BaseConfig} and \texttt{setup\_target()}) methods, allowing declarative instantiation of datasets, trainers, and models from YAML/JSON without touching code.
+  \item \textbf{Centralized PathConfig:} Consolidated all filesystem paths (data root, logs, checkpoints) in \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/path_config.py}{\texttt{path\_config.py}} (centralizes filesystem paths) and ensured automatic directory creation, eliminating scattered \texttt{os.makedirs()} calls.
+  \item \textbf{Experiment reproducibility:} Integrated hierarchical overrides and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}} (provides \texttt{inspect()} for config trees) to print the full resolved config tree at startup, improving traceability of parameter sweeps.
+\end{itemize}
+
+\paragraph{General refactoring and model zoo expansion.}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Modular model registry:} Refactored the \texttt{models/} folder into sub-packages (e.g., \texttt{autobot}, \texttt{mtr}, \texttt{wayformer}), each with its own \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/models/base_model/base_model.py}{\texttt{base\_model.py}} (defines \texttt{BaseModel} and \texttt{BaseModelConfig}), standardizing the interface for adding new architectures.
+  \item \textbf{Utility consolidation:} Moved logging, console output, and visualization routines into \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/console.py}{\texttt{console.py}} (provides structured \texttt{Console} API) modules, replacing ad-hoc print statements with a structured \texttt{Console} API.
+  \item \textbf{Typed function signatures:} Audited all \texttt{.py} files to add precise type annotations for inputs and outputs (e.g., \texttt{batch: list[DatasetItem] -> BatchDict}), enabling \texttt{mypy} enforcement and catching runtime errors early.
+\end{itemize}
+
+\newpage
