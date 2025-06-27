@@ -14,8 +14,8 @@ This section provides a comprehensive reference for all symbols and conventions 
 \toprule
 \textbf{Symbol} & \textbf{Definition} \\
 \midrule
-\(T_p\) & Number of past timesteps (historical context) \\
-\(T_f\) & Number of future timesteps (prediction horizon) \\
+\(T_p, T_{\text{in}}\) & Number of past timesteps (historical context) \\
+\(T_f, T_{\text{out}}\) & Number of future timesteps (prediction horizon) \\
 \(T\) & Total trajectory length: \(T = T_p + T_f\) \\
 \(\Delta t\) & Temporal sampling interval (i.e.\ 0.1s for 10Hz data) \\
 \bottomrule
@@ -31,14 +31,16 @@ This section provides a comprehensive reference for all symbols and conventions 
 \textbf{Symbol} & \textbf{Definition} \\
 \midrule
 \(N_{\max}\) & Maximum number of agents in scene (i.e.\ 64) \\
-\(N\) & Actual number of agents in a specific scenario \\
-\(N_c\) & Number of center agents (i.e.\ 1) \\
+\(N, N_A\) & Actual number of agents in a specific scenario \\
+\(N_c\) & Number of center agents, \(N_c = N \) in \cite{lmformerYadav2025}. \\
 \(K_{\max}\) & Maximum number of map polylines (i.e.\ 256) \\
 \(K\) & Actual number of map polylines in a specific scenario \\
 \(L\) & Number of points per map polyline (i.e.\ 20) \\
+\( N_L\) & Number of lane segments in \( \boldsymbol{X}_s, N_L=K \cdot L \) \\
 \(F_{ap}\) & Agent feature dimension (i.e.\ 39) \\
 \(F_{af}\) & Agent future state dimension (4: \(x, y, v_x, v_y\)) \\
 \(F_{map}\) & Map feature dimension (i.e.\ 29) \\
+\(D\) & Hidden dimension of encodings or latent representations. \\
 \bottomrule
 \end{tabular}
 \end{table}
