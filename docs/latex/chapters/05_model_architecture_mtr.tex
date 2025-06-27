@@ -128,11 +128,18 @@ The primary scientific challenge in motion prediction is managing the inherent u
 
 These variants show the flexibility of the core MTR architecture in addressing the diverse challenges of motion forecasting.
 
-\subsubsection{Conclusion}
-\label{sec:conclusion}
+\subsubsubsection{Pros}
+\begin{itemize}[leftmargin=*, label=\greenoplus]
+  \item Vectorized polyline input and output avoid rasterization artifacts and preserve geometric precision.
+  \item Query-based decoder enables explicit, interpretable multi-modal prediction.
+  \item Dynamic map collection ensures trajectory refinement leverages the most pertinent map features at each step.
+  \item Probabilistic output via GMM provides uncertainty estimates and supports downstream risk assessment.
+\end{itemize}
 
-The Motion Transformer (MTR) architecture addresses the challenge of multimodal motion prediction through its innovative design. Its core strength is the joint optimization of global intention localization and local movement refinement \cite{Shi2022MTR}, which is realized through a clear encoder-decoder structure.
-
-The architecture processes vectorized polyline inputs for agent histories and map features with PointNet-like encoders \cite{gao2020vectornet, PointNet2017}. A Transformer encoder then uses local self-attention to build a rich, contextualized scene understanding \cite{Shi2022MTR}. The subsequent Motion Decoder uses its key components to generate predictions. Static intention queries ($Q_I$) provide stable, mode-specific anchors based on data-driven intention points. Dynamic searching queries ($Q_S^j$) then perform precise, context-aware refinement of these intentions. This refinement is guided by prior predictions and a dynamic map collection strategy ($\alpha(M)$) \cite{Shi2022MTR}. The stacked decoder layers iteratively improve the trajectories, and a final prediction head produces a probabilistic set of future paths using a Gaussian Mixture Model (GMM) \cite{Bishop1994MDN}.
-
-Model variants show the architecture's flexibility. MTR-e2e adapts the model for end-to-end prediction with a fixed number of outputs, while the MTR++ extension enables efficient and interactive multi-agent prediction \cite{Shi2023MTRplusplus}. These architectural choices allow MTR to generate accurate, diverse, and scene-compliant trajectory forecasts. The principles of query-based prediction, iterative refinement, and adaptive context utilization are valuable paradigms for future work in autonomous navigation.
+\subsubsubsection{Cons}
+\begin{itemize}[leftmargin=*, label=\redominus]
+  \item Computational cost scales with the number of queries and decoder layers.
+  \item NMS post-processing is required to select diverse, high-quality predictions for benchmarks with limited output slots.
+  \item Static intention queries rely on clustering endpoints, which may not capture rare or atypical maneuvers.
+  \item No explicit modeling of physical feasibility constraints or agent kinematics.
+\end{itemize}
