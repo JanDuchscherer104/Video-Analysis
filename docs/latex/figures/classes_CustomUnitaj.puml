@@ -1,0 +1,255 @@
+@startuml classes_CustomUnitaj
+set namespaceSeparator none
+class "AbstractAttentionLayer" as unitraj.models.wayformer.wayformer_utils.AbstractAttentionLayer {
+}
+class "AttentionValueComputation" as unitraj.models.mtr.ops.attention.attention_utils.AttentionValueComputation {
+}
+class "AttentionValueComputation" as unitraj.models.mtr.ops.attention.attention_utils_v2.AttentionValueComputation {
+}
+class "AttentionWeightComputation" as unitraj.models.mtr.ops.attention.attention_utils.AttentionWeightComputation {
+}
+class "AttentionWeightComputation" as unitraj.models.mtr.ops.attention.attention_utils_v2.AttentionWeightComputation {
+}
+class "AutoBotConfig" as unitraj.models.autobot.autobot.AutoBotConfig {
+}
+class "AutoBotDataset" as unitraj.datasets.autobot_dataset.AutoBotDataset {
+}
+class "AutoBotEgo" as unitraj.models.autobot.autobot.AutoBotEgo {
+}
+class "BaseConfig" as unitraj.utils.base_config.BaseConfig {
+}
+class "BaseDataParser" as unitraj.datasets.base_dataparser.BaseDataParser {
+}
+class "BaseDataset" as unitraj.datasets.base_dataset.BaseDataset {
+}
+class "BaseLitModule" as unitraj.lightning.lit_module.BaseLitModule {
+}
+class "BaseLitModuleConfig" as unitraj.lightning.lit_module.BaseLitModuleConfig {
+}
+class "BaseModel" as unitraj.models.base_model.base_model.BaseModel {
+}
+class "BaseModelConfig" as unitraj.models.base_model.base_model.BaseModelConfig {
+}
+class "BatchDict" as unitraj.datasets.types.BatchDict {
+}
+class "BatchInputDict" as unitraj.datasets.types.BatchInputDict {
+}
+class "Console" as unitraj.utils.console.Console {
+}
+class "Criterion" as unitraj.models.autobot.autobot.Criterion {
+}
+class "Criterion" as unitraj.models.wayformer.wayformer.Criterion {
+}
+class "CrossAttention" as unitraj.models.wayformer.wayformer_utils.CrossAttention {
+}
+class "CrossAttentionLayer" as unitraj.models.wayformer.wayformer_utils.CrossAttentionLayer {
+}
+class "DataParser" as unitraj.datasets.dataparser.DataParser {
+}
+class "DataParserConfig" as unitraj.datasets.dataparser.DataParserConfig {
+}
+class "DatasetConfig" as unitraj.datasets.base_dataset.DatasetConfig {
+}
+class "DatasetItem" as unitraj.datasets.types.DatasetItem {
+}
+class "DynamicMapInfosDict" as unitraj.datasets.types.DynamicMapInfosDict {
+}
+class "DynamicSampler" as unitraj.datasets.common_utils.DynamicSampler {
+}
+class "EmbeddingInitializer" as unitraj.models.base_model.model_utils.EmbeddingInitializer {
+}
+class "EmbeddingPair" as unitraj.models.base_model.model_utils.EmbeddingPair {
+}
+class "ExperimentConfig" as unitraj.configs.experiment_config.ExperimentConfig {
+}
+class "FisherInformationCallback" as unitraj.models.base_model.model_utils.FisherInformationCallback {
+}
+class "InternalFormatDict" as unitraj.datasets.types.InternalFormatDict {
+}
+class "KNNBatch" as unitraj.models.mtr.ops.knn.knn_utils.KNNBatch {
+}
+class "KNNBatchMlogK" as unitraj.models.mtr.ops.knn.knn_utils.KNNBatchMlogK {
+}
+class "LitDatamodule" as unitraj.lightning.lit_datamodule.LitDatamodule {
+}
+class "LitDatamoduleConfig" as unitraj.lightning.lit_datamodule.LitDatamoduleConfig {
+}
+class "LitTrainerFactory" as unitraj.lightning.lit_trainer_factory.LitTrainerFactory {
+}
+class "LitTrainerFactoryConfig" as unitraj.lightning.lit_trainer_factory.LitTrainerFactoryConfig {
+}
+class "MLP" as unitraj.models.wayformer.wayformer_utils.MLP {
+}
+class "MTRDataset" as unitraj.datasets.MTR_dataset.MTRDataset {
+}
+class "MTRDecoder" as unitraj.models.mtr.MTR.MTRDecoder {
+}
+class "MTREncoder" as unitraj.models.mtr.MTR.MTREncoder {
+}
+class "MapEncoderCNN" as unitraj.models.autobot.autobot.MapEncoderCNN {
+}
+class "MapEncoderPts" as unitraj.models.autobot.autobot.MapEncoderPts {
+}
+class "MapInfoEntry" as unitraj.datasets.types.MapInfoEntry {
+}
+class "MapInfosDict" as unitraj.datasets.types.MapInfosDict {
+}
+class "ModuleOutput" as unitraj.models.wayformer.wayformer_utils.ModuleOutput {
+}
+class "MotionTransformer" as unitraj.models.mtr.MTR.MotionTransformer {
+}
+class "MultiHeadAttention" as unitraj.models.wayformer.wayformer_utils.MultiHeadAttention {
+}
+class "MultiheadAttention" as unitraj.models.mtr.transformer.multi_head_attention.MultiheadAttention {
+}
+class "MultiheadAttentionLocal" as unitraj.models.mtr.transformer.multi_head_attention_local.MultiheadAttentionLocal {
+}
+class "NoTarget" as unitraj.utils.base_config.NoTarget {
+}
+class "ObjectType" as unitraj.datasets.types.ObjectType {
+}
+class "OptimizerConfig" as unitraj.lightning.lit_module.OptimizerConfig {
+}
+class "OutputModel" as unitraj.models.autobot.autobot.OutputModel {
+}
+class "PathConfig" as unitraj.configs.path_config.PathConfig {
+}
+class "PerceiverDecoder" as unitraj.models.wayformer.wayformer_utils.PerceiverDecoder {
+}
+class "PerceiverEncoder" as unitraj.models.wayformer.wayformer_utils.PerceiverEncoder {
+}
+class "PointNetPolylineEncoder" as unitraj.models.mtr.MTR_utils.PointNetPolylineEncoder {
+}
+class "PolylineType" as unitraj.datasets.types.PolylineType {
+}
+class "PositionalEncoding" as unitraj.models.autobot.autobot.PositionalEncoding {
+}
+class "ProcessedDataDict" as unitraj.datasets.types.ProcessedDataDict {
+}
+class "QueryProvider" as unitraj.models.wayformer.wayformer_utils.QueryProvider {
+}
+class "RawDynamicState" as unitraj.datasets.types.RawDynamicState {
+}
+class "RawMapFeatureDict" as unitraj.datasets.types.RawMapFeatureDict {
+}
+class "RawScenarioDict" as unitraj.datasets.types.RawScenarioDict {
+}
+class "RawStateDict" as unitraj.datasets.types.RawStateDict {
+}
+class "RawTrackDict" as unitraj.datasets.types.RawTrackDict {
+}
+class "Residual" as unitraj.models.wayformer.wayformer_utils.Residual {
+}
+class "RotaryPositionEmbedding" as unitraj.models.wayformer.wayformer_utils.RotaryPositionEmbedding {
+}
+class "SchedulerConfig" as unitraj.lightning.lit_module.SchedulerConfig {
+}
+class "SelfAttention" as unitraj.models.wayformer.wayformer_utils.SelfAttention {
+}
+class "SelfAttentionBlock" as unitraj.models.wayformer.wayformer_utils.SelfAttentionBlock {
+}
+class "SelfAttentionLayer" as unitraj.models.wayformer.wayformer_utils.SelfAttentionLayer {
+}
+class "SingletonConfig" as unitraj.utils.base_config.SingletonConfig {
+}
+class "SmartSamplerCallback" as unitraj.models.base_model.model_utils.SmartSamplerCallback {
+}
+class "Stage" as unitraj.datasets.types.Stage {
+}
+class "TrackInfosDict" as unitraj.datasets.types.TrackInfosDict {
+}
+class "TracksToPredictDict" as unitraj.datasets.types.TracksToPredictDict {
+}
+class "TrainableQueryProvider" as unitraj.models.wayformer.wayformer_utils.TrainableQueryProvider {
+}
+class "TrainerCallbacksConfig" as unitraj.lightning.lit_trainer_factory.TrainerCallbacksConfig {
+}
+class "TrajectoryType" as unitraj.datasets.common_utils.TrajectoryType {
+}
+class "TransformerDecoderLayer" as unitraj.models.mtr.transformer.transformer_decoder_layer.TransformerDecoderLayer {
+}
+class "TransformerEncoderLayer" as unitraj.models.mtr.transformer.transformer_encoder_layer.TransformerEncoderLayer {
+}
+class "WandbConfig" as unitraj.configs.wandb_config.WandbConfig {
+}
+class "Wayformer" as unitraj.models.wayformer.wayformer.Wayformer {
+}
+class "WayformerDataset" as unitraj.datasets.wayformer_dataset.WayformerDataset {
+}
+unitraj.configs.experiment_config.ExperimentConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.configs.path_config.PathConfig --|> unitraj.utils.base_config.SingletonConfig
+unitraj.configs.wandb_config.WandbConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.datasets.MTR_dataset.MTRDataset --|> unitraj.datasets.base_dataset.BaseDataset
+unitraj.datasets.autobot_dataset.AutoBotDataset --|> unitraj.datasets.base_dataset.BaseDataset
+unitraj.datasets.base_dataset.DatasetConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.datasets.dataparser.DataParser --|> unitraj.datasets.base_dataparser.BaseDataParser
+unitraj.datasets.dataparser.DataParserConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.datasets.wayformer_dataset.WayformerDataset --|> unitraj.datasets.base_dataset.BaseDataset
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.lightning.lit_module.BaseLitModuleConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.lightning.lit_trainer_factory.LitTrainerFactoryConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.lightning.lit_trainer_factory.TrainerCallbacksConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.models.autobot.autobot.AutoBotConfig --|> unitraj.models.base_model.base_model.BaseModelConfig
+unitraj.models.autobot.autobot.AutoBotEgo --|> unitraj.models.base_model.base_model.BaseModel
+unitraj.models.base_model.base_model.BaseModelConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.models.mtr.MTR.MotionTransformer --|> unitraj.models.base_model.base_model.BaseModel
+unitraj.models.wayformer.wayformer.Wayformer --|> unitraj.models.base_model.base_model.BaseModel
+unitraj.models.wayformer.wayformer_utils.CrossAttentionLayer --|> unitraj.models.wayformer.wayformer_utils.AbstractAttentionLayer
+unitraj.models.wayformer.wayformer_utils.SelfAttentionLayer --|> unitraj.models.wayformer.wayformer_utils.AbstractAttentionLayer
+unitraj.models.wayformer.wayformer_utils.TrainableQueryProvider --|> unitraj.models.wayformer.wayformer_utils.QueryProvider
+unitraj.utils.base_config.SingletonConfig --|> unitraj.utils.base_config.BaseConfig
+unitraj.configs.path_config.PathConfig --* unitraj.configs.experiment_config.ExperimentConfig : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.base_dataparser.BaseDataParser : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.base_dataset.DatasetConfig : paths
+unitraj.configs.path_config.PathConfig --* unitraj.datasets.dataparser.DataParserConfig : paths
+unitraj.configs.path_config.PathConfig --* unitraj.lightning.lit_trainer_factory.LitTrainerFactoryConfig : path_config
+unitraj.configs.wandb_config.WandbConfig --* unitraj.lightning.lit_trainer_factory.TrainerCallbacksConfig : wandb_config
+unitraj.datasets.base_dataset.DatasetConfig --* unitraj.datasets.base_dataset.BaseDataset : config
+unitraj.datasets.base_dataset.DatasetConfig --* unitraj.lightning.lit_datamodule.LitDatamoduleConfig : dataset_config
+unitraj.datasets.dataparser.DataParserConfig --* unitraj.datasets.base_dataset.DatasetConfig : parser
+unitraj.datasets.types.BatchInputDict --* unitraj.datasets.types.BatchDict : input_dict
+unitraj.datasets.types.DynamicMapInfosDict --* unitraj.datasets.types.InternalFormatDict : dynamic_map_infos
+unitraj.datasets.types.MapInfosDict --* unitraj.datasets.types.InternalFormatDict : map_infos
+unitraj.datasets.types.RawStateDict --* unitraj.datasets.types.RawTrackDict : state
+unitraj.datasets.types.Stage --* unitraj.datasets.base_dataset.DatasetConfig : stage
+unitraj.datasets.types.Stage --* unitraj.datasets.dataparser.DataParserConfig : stage
+unitraj.datasets.types.TrackInfosDict --* unitraj.datasets.types.InternalFormatDict : track_infos
+unitraj.datasets.types.TracksToPredictDict --* unitraj.datasets.types.InternalFormatDict : tracks_to_predict
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --* unitraj.configs.experiment_config.ExperimentConfig : datamodule
+unitraj.lightning.lit_datamodule.LitDatamoduleConfig --* unitraj.lightning.lit_datamodule.LitDatamodule : config
+unitraj.lightning.lit_module.BaseLitModuleConfig --* unitraj.lightning.lit_module.BaseLitModule : config
+unitraj.lightning.lit_module.OptimizerConfig --* unitraj.lightning.lit_module.BaseLitModuleConfig : optimizer_config
+unitraj.lightning.lit_module.SchedulerConfig --* unitraj.lightning.lit_module.BaseLitModuleConfig : scheduler_config
+unitraj.lightning.lit_trainer_factory.LitTrainerFactoryConfig --* unitraj.configs.experiment_config.ExperimentConfig : trainer
+unitraj.lightning.lit_trainer_factory.LitTrainerFactoryConfig --* unitraj.lightning.lit_trainer_factory.LitTrainerFactory : config
+unitraj.lightning.lit_trainer_factory.TrainerCallbacksConfig --* unitraj.lightning.lit_trainer_factory.LitTrainerFactoryConfig : callbacks_config
+unitraj.models.autobot.autobot.AutoBotConfig --* unitraj.configs.experiment_config.ExperimentConfig : model
+unitraj.models.autobot.autobot.AutoBotConfig --* unitraj.models.autobot.autobot.AutoBotEgo : config
+unitraj.models.autobot.autobot.Criterion --* unitraj.models.autobot.autobot.AutoBotEgo : criterion
+unitraj.models.autobot.autobot.MapEncoderPts --* unitraj.models.autobot.autobot.AutoBotEgo : map_encoder
+unitraj.models.autobot.autobot.OutputModel --* unitraj.models.autobot.autobot.AutoBotEgo : output_model
+unitraj.models.autobot.autobot.PositionalEncoding --* unitraj.models.autobot.autobot.AutoBotEgo : pos_encoder
+unitraj.models.base_model.base_model.BaseModelConfig --* unitraj.models.base_model.base_model.BaseModel : config
+unitraj.models.base_model.model_utils.EmbeddingInitializer --* unitraj.models.base_model.model_utils.EmbeddingPair : embedding_initializer
+unitraj.models.mtr.MTR.MTRDecoder --* unitraj.models.mtr.MTR.MotionTransformer : motion_decoder
+unitraj.models.mtr.MTR.MTREncoder --* unitraj.models.mtr.MTR.MotionTransformer : context_encoder
+unitraj.models.mtr.MTR_utils.PointNetPolylineEncoder --* unitraj.models.mtr.MTR.MTREncoder : agent_polyline_encoder
+unitraj.models.mtr.MTR_utils.PointNetPolylineEncoder --* unitraj.models.mtr.MTR.MTREncoder : map_polyline_encoder
+unitraj.models.mtr.transformer.multi_head_attention.MultiheadAttention --* unitraj.models.mtr.transformer.transformer_decoder_layer.TransformerDecoderLayer : self_attn
+unitraj.models.mtr.transformer.multi_head_attention.MultiheadAttention --* unitraj.models.mtr.transformer.transformer_decoder_layer.TransformerDecoderLayer : cross_attn
+unitraj.models.mtr.transformer.multi_head_attention.MultiheadAttention --* unitraj.models.mtr.transformer.transformer_encoder_layer.TransformerEncoderLayer : self_attn
+unitraj.models.mtr.transformer.multi_head_attention_local.MultiheadAttentionLocal --* unitraj.models.mtr.transformer.transformer_decoder_layer.TransformerDecoderLayer : cross_attn
+unitraj.models.mtr.transformer.multi_head_attention_local.MultiheadAttentionLocal --* unitraj.models.mtr.transformer.transformer_encoder_layer.TransformerEncoderLayer : self_attn
+unitraj.models.wayformer.wayformer.Criterion --* unitraj.models.wayformer.wayformer.Wayformer : criterion
+unitraj.models.wayformer.wayformer_utils.CrossAttentionLayer --* unitraj.models.wayformer.wayformer_utils.PerceiverEncoder : cross_attn_1
+unitraj.models.wayformer.wayformer_utils.CrossAttentionLayer --* unitraj.models.wayformer.wayformer_utils.PerceiverEncoder : cross_attn_n
+unitraj.models.wayformer.wayformer_utils.MultiHeadAttention --* unitraj.models.wayformer.wayformer_utils.CrossAttention : attention
+unitraj.models.wayformer.wayformer_utils.MultiHeadAttention --* unitraj.models.wayformer.wayformer_utils.SelfAttention : attention
+unitraj.models.wayformer.wayformer_utils.PerceiverDecoder --* unitraj.models.wayformer.wayformer.Wayformer : perceiver_decoder
+unitraj.models.wayformer.wayformer_utils.PerceiverEncoder --* unitraj.models.wayformer.wayformer.Wayformer : perceiver_encoder
+unitraj.models.wayformer.wayformer_utils.QueryProvider --* unitraj.models.wayformer.wayformer_utils.PerceiverDecoder : output_query_provider
+unitraj.models.wayformer.wayformer_utils.SelfAttentionBlock --* unitraj.models.wayformer.wayformer_utils.PerceiverEncoder : self_attn_1
+unitraj.models.wayformer.wayformer_utils.SelfAttentionBlock --* unitraj.models.wayformer.wayformer_utils.PerceiverEncoder : self_attn_n
+unitraj.models.wayformer.wayformer_utils.TrainableQueryProvider --* unitraj.models.wayformer.wayformer_utils.PerceiverEncoder : latent_provider
+unitraj.utils.console.Console --* unitraj.lightning.lit_module.BaseLitModule : CONSOLE
+@enduml
