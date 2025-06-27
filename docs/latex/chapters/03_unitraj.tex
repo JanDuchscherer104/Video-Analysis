@@ -89,11 +89,8 @@ The architecture comprises four primary layers:
 
 \begin{itemize}[leftmargin=*]
     \item \textbf{Configuration Layer:} The \texttt{BaseConfig} class serves as the foundation for all configuration objects, implementing the Config-as-Factory pattern through the \texttt{setup\_target()} method. The \texttt{PathConfig} centralizes all filesystem paths and is automatically propagated to child configurations during instantiation. The \texttt{Stage} enum defines dataset splits (train/validation/test) and ensures consistent stage handling across the pipeline.
-    
     \item \textbf{Data Processing Layer:} The \texttt{BaseDataParser} provides the interface for raw data ingestion, while \texttt{DataParser} implements the nine-phase preprocessing pipeline that transforms ScenarioNet format into normalized feature representations. The \texttt{DataParserConfig} controls preprocessing behavior including multiprocessing settings, cache management, and debug mode configuration.
-    
     \item \textbf{Dataset Layer:} The \texttt{BaseDataset} wraps processed data into PyTorch-compatible format, implementing efficient data loading with optional H5PY file handles for large-scale datasets. The \texttt{DatasetConfig} manages dataset instantiation parameters and integrates the parser configuration for end-to-end data pipeline control.
-    
     \item \textbf{Lightning Integration Layer:} The \texttt{LitDatamodule} provides PyTorch Lightning-compatible data loading with automatic train/validation/test split handling, configurable batch sizes, and multiprocessing support. The \texttt{LitDatamoduleConfig} enables declarative dataloader configuration from YAML files while maintaining type safety through Pydantic validation.
 \end{itemize}
 
