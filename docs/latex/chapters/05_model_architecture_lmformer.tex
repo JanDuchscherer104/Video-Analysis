@@ -136,7 +136,7 @@ As~\cite{lmformerYadav2025} notes, it would be beneficial to redict velocity mix
 While~\cite{lmformerYadav2025} weighs the regression losses across all refinement layers uniformly, we believe that later layers should dominate the regression loss. This is because early layers primarily establish coarse trajectory patterns, while later layers refine these patterns into fine-grained, multi-modal trajectories. Furthermore, the gradient emitted from the loss of the later layers will also affect all previous layers.
 
 \item[\textbf{Geometric Symmetries \& Multi-Agent Capabilities}]
-The architecture preserves all symmetries as introduced in \autoref{sec:geometry_symmetries}. These properties allow the same cached scene encoding to serve \emph{all} agents and \emph{all} successive frames, a capability absent in all agent-centric architectures.
+The architecture preserves all symmetries as introduced in \autoref{sssec:qc_geometric_perspective}. These properties allow the same cached scene encoding to serve \emph{all} agents and \emph{all} successive frames, a capability absent in all agent-centric architectures.
 
 
 
