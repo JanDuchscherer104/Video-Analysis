@@ -12,8 +12,14 @@ Attention-based architectures have emerged as powerful tools to model these comp
 Third, \emph{scalability and generalization} remain elusive: models trained on a single dataset like nuScenes, Argoverse 2, and Waymo~\cite{caesar2020nuscenes, av2Wilson2023, wmodSun2020} often fail to transfer across benchmarks with disparate formats, sampling rates, and map semantics~\cite{unitrajFeng2024}.
 
 \subsection{Contributions and Report Structure}
-In this report, we explore these challenges by unifying data, theory, and models within the \texttt{UniTraj} framework.
-
- We begin in Section~\ref{sec:background} by reviewing geometric deep learning foundations and key forecasting paradigms. In Section~\ref{sec:data_methodology}, we introduce \texttt{UniTraj}'s data harmonization pipeline, which converts heterogeneous datasets into a single, agent-centric format. Section~\ref{ssec:qc_paradigm} delivers a formal analysis of the query-centric encoding paradigm, highlighting its invariance properties and efficiency gains. Building on these insights, Section~\ref{ssec:lmformer} presents the Smol-LMFormer, a minimal, lane-aware transformer reimplementation of theroposed in~\cite{lmformerYadav2025}. Finally, Sections~\ref{sec:performance_analysis_merged} and~\ref{sec:conclusion} validate our approach by comparing it against the MTR within the \texttt{UniTraj} framework.
+ We begin in~\autoref{sec:background} by reviewing key forecasting paradigms and explore the query-centric encoding scheme~\cite{qcnetZhou2023} as a \emph{geometrically} elegant solution towards \emph{joint motion forecasting} and \emph{streaming inference} in autonomous driving in~\autoref{ssec:qc_paradigm}.\\
+ We then introduce the \texttt{UniTraj} framework~\cite{unitrajFeng2024} in~\autoref{ch:unitraj}, which provides a unified interface for single-agent trajectory prediction across multiple datasets. Here, we describe the practical contributions of this seminar work.\\
+In~\autoref{sec:data_methodology}, we introduce \texttt{UniTraj}'s data harmonization pipeline, which converts heterogeneous datasets into a single, agent-centric format.\\
+Building on the insights established in~\autoref{sec:background},
+we then provide in-depth reviews of four selected motion-forecasting models in~\autoref{ch:model_architecture}:
+\autoref{ssec:caspnet} introduces a conceptually simple raster-based approach, the \texttt{CASPNet}~\cite{caspnetSchäfer2022}. Following this, \autoref{ssec:caspformer} presents the \texttt{CASPFormer}, a hybrid CNN-transformer architecture that extends the raster-based approach to incorporate attention mechanisms for improved feature extraction and interaction modeling.
+Next,~\autoref{ssec:mtr} discusses the \texttt{MTR}~\cite{Shi2022MTR}, another agent-centric model which was implemented within the \texttt{UniTraj} framework.
+Finally, \autoref{ssec:lmformer} presents the LMFormer~\cite{lmformerYadav2025}, a query-centric model that maintains various invariances throughout the entire pipeline.\\
+In~\autoref{ch:experimental_design_and_results} we describe the experimental design and results of training the \texttt{MTR} within the \texttt{UniTraj} framework and validate the results with those reported in the \texttt{UniTraj} paper~\cite{unitrajFeng2024}.
 
 \newpage
