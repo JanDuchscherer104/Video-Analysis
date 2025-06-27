@@ -418,89 +418,44 @@ The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training
 
 \dirtree{%
 .1 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/}{\texttt{unitraj/}}.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/__init__.py}{\texttt{\_\_init\_\_.py}} ― package marker.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/__init__.py}{\texttt{\_\_init\_\_.py}}.
 .2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/}{\texttt{configs/}}.
-.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/experiment_config.py}{\texttt{experiment\_config.py}} ― top‐level experiment settings.
-.4 \texttt{ExperimentConfig} ― main configuration class.
-.4 \texttt{load\_experiment\_config ()} ― config loader function.
-.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/path_config.py}{\texttt{path\_config.py}} ― \texttt{PathConfig} definitions.
-.4 \texttt{PathConfig} ― file path configuration class.
-.4 \texttt{get\_default\_paths ()} ― default path setup.
-.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/wandb_config.py}{\texttt{wandb\_config.py}} ― WandB logger callbacks.
-.4 \texttt{WandBConfig} ― weights \& biases configuration.
-.4 \texttt{setup\_wandb\_logger ()} ― logger initialization.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/data_analysis.py}{\texttt{data\_analysis.py}} ― EDA scripts.
-.3 \texttt{DataAnalyzer} ― exploratory data analysis class.
-.3 \texttt{plot\_trajectory\_distribution ()} ― trajectory statistics.
-.3 \texttt{analyze\_agent\_behavior ()} ― agent behavior analysis.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/experiment_config.py}{\texttt{experiment\_config.py}}.
+.4 \texttt{ExperimentConfig} ― top-level experiment config.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/path_config.py}{\texttt{path\_config.py}}.
+.4 \texttt{PathConfig} ― centralized Singleton for path-handling.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/wandb_config.py}{\texttt{wandb\_config.py}}.
+.4 \texttt{WandBConfig} ― WandB integration for PyTorch Lightning.
 .2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/}{\texttt{datasets/}}.
-.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{base\_dataparser.py}} ― \texttt{BaseDataParser} class.
-.4 \texttt{BaseDataParser} ― abstract data parser interface.
-.4 \texttt{parse\_scenario ()} ― scenario parsing method.
-.4 \texttt{process\_agents ()} ― agent data processing.
-.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{dataparser.py}} ― QC preprocessing pipeline.
-.4 \texttt{QCNetDataParser} ― query-centric data parser.
-.4 \texttt{CustomDataParser} ― custom dataset parser.
-.4 \texttt{process\_raw\_data ()} ― raw data processing function.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{base\_dataparser.py}}.
+.4 \texttt{BaseDataParser} - multiprocessing, file \& metadata handling.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{dataparser.py}}.
+.4 \texttt{DataParser} ― Processing pipeline as per~\autoref{app:framework}.
 .3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataset.py}{\texttt{base\_dataset.py}} ― \texttt{BaseDataset} wrapper.
-.4 \texttt{BaseDataset} ― PyTorch dataset base class.
-.4 \texttt{collate\_fn ()} ― batch collation function.
-.4 \texttt{\_\_getitem\_\_ ()} ― dataset item accessor.
+.4 \texttt{BaseDataset} ― PyTorch dataset.
 .3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/common_utils.py}{\texttt{common\_utils.py}} ― shared parsers \& transforms.
-.4 \texttt{transform\_coordinates ()} ― coordinate transformation.
-.4 \texttt{extract\_features ()} ― feature extraction utilities.
-.4 \texttt{validate\_data ()} ― data validation function.
-.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} ― \texttt{RawScenarioDict}, \texttt{ProcessedDataDict}, etc.
-.4 \texttt{RawScenarioDict} ― raw scenario data type.
-.4 \texttt{ProcessedDataDict} ― processed data type.
+.3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} ― type definitions.
 .4 \texttt{DatasetItem} ― final dataset item structure.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/k_means.py}{\texttt{k\_means.py}} ― clustering utilities.
-.3 \texttt{KMeansClusterer} ― k-means clustering class.
-.3 \texttt{cluster\_trajectories ()} ― trajectory clustering function.
+.4 \texttt{BatchInputDict} ― collated tensor dict.
 .2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/}{\texttt{lightning/}}.
 .3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{lit\_datamodule.py}} ― \texttt{LightningDataModule}.
-.4 \texttt{CustomDataModule} ― PyTorch Lightning data module.
-.4 \texttt{setup ()} ― data module setup method.
-.4 \texttt{train\_dataloader ()} ― training data loader.
+.4 \texttt{LitDatamodule} ― PyTorch Lightning data module.
 .3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{lit\_trainer\_factory.py}} ― \texttt{pl.Trainer} factory.
-.4 \texttt{TrainerFactory} ― trainer factory class.
-.4 \texttt{create\_trainer ()} ― trainer creation function.
+.4 \texttt{TrainerFactory} ― factory for \texttt{pl.Trainer}.
 .2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/models/}{\texttt{models/}}.
 .3 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/models/base_model/base_model.py}{\texttt{base\_model.py}} ― \texttt{BaseModel}, \texttt{BaseModelConfig}.
-.4 \texttt{BaseModel} ― abstract model base class.
-.4 \texttt{BaseModelConfig} ― model configuration class.
-.4 \texttt{forward ()} ― forward pass method.
-.3 \texttt{autobot/} ― AutoBot model implementation.
-.4 \texttt{AutoBotModel} ― AutoBot trajectory predictor.
-.4 \texttt{AutoBotConfig} ― AutoBot configuration.
-.3 \texttt{mtr/} ― MTR model implementation.
-.4 \texttt{MTRModel} ― Motion Transformer model.
-.4 \texttt{MTRConfig} ― MTR configuration.
-.3 \texttt{wayformer/} ― Wayformer model implementation.
-.4 \texttt{WayformerModel} ― Wayformer trajectory model.
-.4 \texttt{WayformerConfig} ― Wayformer configuration.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/console.py}{\texttt{console.py}} ― \texttt{Console} API\@.
-.3 \texttt{Console} ― console output management class.
-.3 \texttt{print\_status ()} ― status printing function.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}} ― \texttt{BaseConfig}, \texttt{setup\_target ()}.
-.3 \texttt{BaseConfig} ― base configuration class.
-.3 \texttt{setup\_target ()} ― target setup function.
-.3 \texttt{validate\_config ()} ― configuration validation.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/config.py}{\texttt{config.py}} ― config parsing helpers.
-.3 \texttt{ConfigParser} ― configuration parser class.
-.3 \texttt{load\_yaml\_config ()} ― YAML config loader.
-.3 \texttt{merge\_configs ()} ― configuration merging.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/tsne.py}{\texttt{tsne.py}} ― t-SNE visualization.
-.3 \texttt{TSNEVisualizer} ― t-SNE visualization class.
-.3 \texttt{plot\_embeddings ()} ― embedding plotting function.
-.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/utils.py}{\texttt{utils.py}} ― general utilities.
-.3 \texttt{ensure\_dir ()} ― directory creation utility.
-.3 \texttt{save\_pickle ()} ― pickle saving function.
-.3 \texttt{load\_pickle ()} ― pickle loading function.
+.4 \texttt{BaseModel} ― base \texttt{pl.LightningModule} for UniTraj.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/console.py}{\texttt{console.py}}.
+.3 \texttt{Console} ― Rich console for logging.
+.2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/base_config.py}{\texttt{base\_config.py}}.
+.3 \texttt{BaseConfig} ― abstract base config for Config-as-Factory pattern.
 .2 \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/utils/visualization.py}{\texttt{visualization.py}} ― plotting and rendering helpers.
-.3 \texttt{TrajectoryVisualizer} ― trajectory plotting class.
-.3 \texttt{plot\_scenario ()} ― scenario visualization function.
-.3 \texttt{render\_predictions ()} ― prediction rendering function.
+.3 \texttt{plot\_dataset\_item()} ― static visualization for single DatasetItem.
+.3 \texttt{check\_loaded\_data()} ― data integrity visualization check.
+.3 \texttt{visualize\_batch\_data()} ― batch data visualization.
+.3 \texttt{concatenate\_images()} ― image concatenation utility.
+.3 \texttt{concatenate\_varying()} ― varying size image concatenation.
+.3 \texttt{visualize\_prediction()} ― prediction result visualization.
 }
 
 % \begin{forest}
