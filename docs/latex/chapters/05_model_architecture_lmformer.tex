@@ -1,7 +1,6 @@
-\subsection{LMFormer}
+\subsection{LMFormer: Lane based Motion Prediction Transformer}
 \label{ssec:lmformer}
 
-LMFormer~\cite{lmformerYadav2025} is a fully query-centric, transformer-based architecture for joint multi-agent trajectory forecasting. It ingests both static lane segments and dynamic motion vectors in their local frames, embeds them via learnable Fourier features, and processes them through self- and cross-attention blocks before iteratively decoding multiple modes for each agent. The high-level architecture is shown in \autoref{fig:lmformer_arch}.
 LMFormer~\cite{lmformerYadav2025} is a fully query-centric, transformer-based architecture for joint multi-agent trajectory forecasting. It ingests both static lane segments and dynamic motion vectors in their local frames, embeds them via learnable Fourier features, and processes them through self- and cross-attention blocks before iteratively decoding multiple modes for each agent. The high-level architecture is shown in \autoref{fig:lmformer_arch}.
 
 \begin{figure}[ht]
@@ -21,7 +20,7 @@ The encoder leverages the asymmetric relationship between static and dynamic con
   \label{fig:lmformer_arch_encoder}
 \end{figure}
 
-\paragraph{Learnable Fourier Embeddings.}
+\subsubsubsection{Learnable Fourier Embeddings}
 All scalar inputs—lane-segment lengths, relative headings, time offsets, motion-vector norms, and relative descriptors—are lifted with \emph{learnable Fourier features}~\cite{li2021llearnableFourier}:
 \begin{equation}
   \label{eq:learnable_fourier_embedding}
@@ -101,7 +100,7 @@ where \(V_t^{a,m}=[P_{t-1}^{a,m},P_t^{a,m}]\) is a displacement vector and \(S_t
 \end{algorithmic}
 \end{algorithm}
 
-\paragraph{Loss formulation.}
+\subsubsubsection{Loss formulation}
 LMFormer re-uses winner-takes-all regression loss from~\autoref{eq:caspformer_regression_loss}, combined with the cross-entropy loss to update mode probabilities from~\autoref{eq:caspformer_classification_loss} but supervises \emph{every} refinement layer (except the first) to encourage iterative coarse-to-fine anchor refinement:
 \begin{equation}
   \mathcal{L}
@@ -148,7 +147,7 @@ The authors furthermore noted the need for targeted data augmentation strategies
 
 \end{description}
 
-\paragraph{Pros.}
+\subsubsubsection{Pros}
 \begin{itemize}[leftmargin=*, label=\greenoplus]
   \item Fully query-centric, preserving \(\mathrm{SE}(2)\!\rtimes\!\mathbb{R}\) invariance end-to-end.
   \item Joint multi-agent decoding with shared static context.
@@ -156,7 +155,7 @@ The authors furthermore noted the need for targeted data augmentation strategies
   \item Managed to drastically reduce VRAM requirements compared to \cite{qcnetZhou2023}, as they trained on a single A100 GPU with 40GB VRAM, while QCNet required approx. 160GB VRAM for training.
 \end{itemize}
 
-\paragraph{Cons.}
+\subsubsubsection{Cons}
 \begin{itemize}[leftmargin=*, label=\redominus]
   \item Higher VRAM demand compared to CASPFormer due to larger key-value cache.
   \item Limited static context representation (lane-only tokens).
@@ -165,7 +164,7 @@ The authors furthermore noted the need for targeted data augmentation strategies
   \item Employed only a single type of augmentation (flipping inputs along the driving direction).
 \end{itemize}
 
-\paragraph{Relation to CASPNet \& CASPFormer.}
+\subsubsubsection{Relation to CASPNet \& CASPFormer}
 CASPNet operates on raster grids and predicts per-pixel occupancies; CASPFormer adds deformable attention and vector outputs but retains an \emph{agent-centric} frame. LMFormer discards the raster backbone entirely, embraces the query-centric paradigm, and gains strict symmetry compliance and parallel multi-agent decoding—at the cost of a larger key-value cache and higher VRAM demand (\(\approx\)2x CASPFormer on nuScenes).
 
 \newpage

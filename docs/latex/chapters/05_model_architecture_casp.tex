@@ -1,9 +1,7 @@
-\subsection{Context-Aware Scene Prediction}
+\subsection{CASPNet: Rasterized BEV Encoding with Dual FPN}
 \label{ssec:caspnet}
 
 This section distills the key ideas behind \emph{Context-Aware Scene Prediction Network} (CASPNet)~\cite{caspnetSchäfer2022} and its transformer successor \emph{CASPFormer}~\cite{caspformerYadav2024}. Both architectures perform \emph{joint multi-agent} trajectory forecasting from rasterized bird's-eye-view (BEV) inputs, yet they differ strongly in how they fuse context and decode trajectories. We summarize their core components, strengths, and limitations.
-
-\subsubsection*{CASPNet: Rasterized BEV Encoding with Dual FPN}
 
 \textbf{CASPNet}~\cite{caspnetSchäfer2022} processes rasterized BEV inputs through a dual-encoder architecture that separately handles dynamic agent trajectories and static HD map information. Overall, it strongly resembles a \emph{fully convolutional network} as it employs no fully connected layers, meaning that the spatial representation of the scene is preserved throughout the network. Furthermore, it can be classified as a \emph{feature pyramid network} (FPN)~\cite{FPNLin2017} as it provides the decoder with latent representations at multiple spatial resolutions. Together, these architectural qualities starkly resemble the famous \emph{U-Net} architecture with \emph{lateral skip connections}~\cite{UNetLSRonneberger2015}. Considering CASPNet's usage of \emph{attention} mechanisms within the skip connections its closest relative in the field of image segmentation is the \emph{Attention U-Net}~\cite{UNetAttnOktay2018}.
 
@@ -62,14 +60,14 @@ where \(\alpha^{(i,j)}_{r} = \text{softmax}(\text{Conv}(\mathbf{F}^{(i,j)}_{\ell
 \item[Grid-based decoder.] The decoder employs a series of \emph{residual up-sampling blocks} to progressively up-sample the feature maps from the FPN to the original raster resolution. Each residual block consists of a parallel \emph{transposed convolution} and a \emph{linear interpolation} layer. The resulting feature maps of each up-sampling block are concatenated with the corresponding feature maps the next level of the FPN.\\
 Finally, the decoder uses a \emph{ConvLSTM} layer to autoregressively generate future predictions. For each future timestep \(t \in \{T_p, \ldots, T_p + T_f - 1\}\), the decoder outputs a occupancy probabilities and motion offsets. The occupancy probabilities are represented as a categorical distribution over the possible agent classes at each pixel, while the motion offsets represent the displacement of each pixel with respect to the previous timestep~\cite{caspnetSchäfer2022}.
 
-\paragraph{Pros.}
+\subsubsubsection{Pros}
 \begin{itemize}[leftmargin=*, label=\greenoplus]
   \item Inference time independent of agent count
   \item Inherent multi-modality via heat-map superposition
   \item Good interpretability through adaptation of well-established motifs from the field of image segmentation
 \end{itemize}
 
-\paragraph{Cons.}
+\subsubsubsection{Cons}
 \begin{itemize}[leftmargin=*, label=\redominus]
   \item Metric accuracy capped by raster resolution
   \item Inference cost scales with grid size \( \mathcal{O}(H \cdot W) \)
@@ -86,7 +84,7 @@ The follow-up work CASPNet++~\cite{caspnetppSchäfer2023} improves upon CASPNet 
 
 %--------------------------------------------------------------------
 %% Above is done %%
-\subsubsection*{CASPFormer: Hybrid CNN-Transformer with Deformable Attention}
+\subsection{CASPFormer: Hybrid CNN-Transformer with Deformable Attention}
 \label{ssec:caspformer}
 
 \textbf{CASPFormer}~\cite{caspformerYadav2024} retains CASPNet's, FPN-CNN backbone while replacing its grid-based decoder with a transformer that emits vectorized \((x,y)\) trajectories, explicitly modeling the uncertainties of each mode as a \emph{parametrized Laplacian}. The core innovation lies in adapting \emph{deformable attention}~\cite{zhu2021deformabledetr} from object detection to trajectory prediction, enabling sparse, efficient attention over multi-scale feature representations. The overall architecture is illustrated in~\autoref{fig:caspformer_overall}, with the detailed decoder mechanism shown in~\autoref{fig:caspformer_decoder}. The following section requires basic understanding of both regular and deformable attention mechanisms. While we are referring the reader to~\cite{vaswani2023attention} and~\cite{zhu2021deformabledetr} for a detailed introduction, a concise explanation of the key concepts is provided in \autoref{sec:deformable_attention}.
@@ -159,7 +157,7 @@ The recurrent architecture updates both the temporal queries and reference point
 where \(m^* = \text{argmax}_m \hat{\boldsymbol{\pi}}_{t,ego}\) yields the index of the ego agent's most probable mode, hence the next reference point is set the likeliest predicted position of the ego vehicle (which must be one of the \( N_c \) agents of interest).
 \end{description}
 
-\paragraph{Loss Formulation and Training Recipe.}
+\subsubsection{Loss Formulation and Training Recipe}
 \label{par:casp_loss_formulation}
 CASPFormer adopts the HiVT loss formulation~\cite{zhou2022hivt}, combining regression and classification objectives \(\mathcal{L} = \mathcal{L}_{reg} + \lambda \mathcal{L}_{cls}\) to optimize the predicted mixture of Laplacians.
 To avoid numerical instability and mode collapse in mixture model optimization~\cite{rupprecht2017learning}, the regression loss adopts winner-takes-all (WTA) strategy, where only the mode with the lowest Euclidean distance to the ground truth trajectory is considered:
@@ -174,7 +172,7 @@ The influence of all other modes and the predicted categorical distribution is c
 \end{equation}
 \end{description}
 
-\paragraph{Pros.}
+\subsubsubsection{Pros}
 \begin{itemize}[leftmargin=*, label=\greenoplus]
   \item Direct vectorized output without post-processing
   \item Explicit multi-modal prediction and uncertainty estimates
@@ -183,7 +181,7 @@ The influence of all other modes and the predicted categorical distribution is c
   \item Mode-queries mitigate mode collapse
 \end{itemize}
 
-\paragraph{Cons.}
+\subsubsubsection{Cons}
 \begin{itemize}[leftmargin=*, label=\redominus]
   \item Still inherits quantization artifacts from the rasterized backbone
   \item Limited to ego-agent-centric coordinate systems
@@ -192,7 +190,7 @@ The influence of all other modes and the predicted categorical distribution is c
   \item Cross-attention decoder complexity scales as \(\mathcal{O}(N_c H W)\)
 \end{itemize}
 
-% \paragraph{Empirical Performance and Limitations.} On nuScenes validation, CASPFormer achieves 1.23m minFDE and 2.85m minADE, representing 30--40\% improvement over CASPNet while maintaining real-time inference at \(\sim\)20 FPS on V100 GPUs. The deformable attention mechanism reduces computational complexity from \(\mathcal{O}(H \cdot W \cdot T_f)\) for grid-based approaches to \(\mathcal{O}(M K_s \cdot T_f)\) where \(M K_s \ll H \cdot W\) represents the decoder complexity with \(M = 5\) modes and \(K_s = 4\) sampling points per query.
+% \subsubsubsection{Empirical Performance and Limitations} On nuScenes validation, CASPFormer achieves 1.23m minFDE and 2.85m minADE, representing 30--40\% improvement over CASPNet while maintaining real-time inference at \(\sim\)20 FPS on V100 GPUs. The deformable attention mechanism reduces computational complexity from \(\mathcal{O}(H \cdot W \cdot T_f)\) for grid-based approaches to \(\mathcal{O}(M K_s \cdot T_f)\) where \(M K_s \ll H \cdot W\) represents the decoder complexity with \(M = 5\) modes and \(K_s = 4\) sampling points per query.
 
 % However, CASPFormer inherits certain limitations from its rasterized backbone. The BEV rasterization process can introduce sparse artifacts in regions with limited map coverage, affecting prediction quality in complex intersections or areas with irregular geometry. Additionally, failure cases include scenarios with highly dynamic pedestrians in dense crowds and abrupt lane-change maneuvers that exceed the temporal modeling capacity of the recurrent decoder. Unlike CASPNet, which outputs discrete grid-based likelihood distributions that can be directly interpreted as trajectory modes, CASPFormer generates continuous trajectory coordinates through mixture distributions but does not provide explicit trajectory mode probabilities in the same interpretable format.
 

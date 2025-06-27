@@ -1,8 +1,9 @@
 % section: Model Architecture and Functional Decomposition
-\subsection{MTR Architectural Structure}
+\subsection{Motion TRansformer (MTR)}
 \label{sec:model_mtr_architecture}
 
-The Motion Transformer (MTR) framework provides a unified approach to multimodal motion prediction, a critical task for autonomous systems \cite{Shi2022MTR}. Its central principle is to model motion prediction as a joint optimization of two tasks: \textbf{global intention localization} and \textbf{local movement refinement} \cite{Shi2022MTR}. In simpler terms, the model first identifies a diverse set of high-level goals or destinations for an agent and then fine-tunes the precise paths to reach those goals.
+\subsubsection{Architectural Structure}
+The Motion TRansformer (MTR) framework provides a unified approach to multimodal motion prediction, a critical task for autonomous systems \cite{Shi2022MTR}. Its central principle is to model motion prediction as a joint optimization of two tasks: \textbf{global intention localization} and \textbf{local movement refinement} \cite{Shi2022MTR}. In simpler terms, the model first identifies a diverse set of high-level goals or destinations for an agent and then fine-tunes the precise paths to reach those goals.
 
 The architecture consists of two main stages:
 \begin{enumerate}
@@ -84,7 +85,7 @@ The decoder consists of multiple stacked layers (e.g., 6 layers). This stacked s
 
 The model is trained by comparing its $K$ predictions to the single ground-truth trajectory. A loss function guides the model to improve its predictions over time. It essentially encourages the model to assign a high probability ($p_k$) to the predicted trajectory that most closely matches the ground truth, while also moving the waypoints of that trajectory even closer to the actual path. This process can be thought of as a learned form of hypothesis testing: the queries propose $K$ hypotheses, and the training process teaches the model how to evaluate and refine them based on scene context \cite{Shi2022MTR}.
 
-\subsection{MTR Input-Output Formulation}
+\subsection{Input-Output Formulation}
 \label{sec:model_mtr_io}
 
 At a high level, the MTR model transforms historical scene data into a set of ranked, probable future paths.
@@ -99,7 +100,6 @@ At a high level, the MTR model transforms historical scene data into a set of ra
 
 \begin{itemize}
     \item \textbf{Input Domain:} The minimum necessary input for a single agent's prediction is its historical spatiotemporal data and the features of the surrounding map environment. All input coordinates are normalized into an agent-centric frame, which makes the learning task simpler and invariant to global position and rotation. The framework is designed to process data from large-scale datasets like the Waymo Open Motion Dataset (WOMD) \cite{WOMD2021}. The model can handle various agent types, including vehicles, pedestrians, and cyclists. Within a scene, MTR processes up to 128 context agents, from which a smaller group of up to 8 ``agents of interest'' are designated for prediction, as specified by the WOMD benchmark \cite{WOMD2021}. The provided documentation focuses on the MTR architecture itself and does not detail specific dataset fusion techniques (e.g., for UniTraj) or agent selection criteria (e.g., based on Kalman difficulty).
-
     \item \textbf{Output Domain:} The model's exact output is a set of $K$ plausible future trajectories (e.g., $K=64$) for an agent of interest over a future time horizon (e.g., 8 seconds). Each trajectory is defined by a sequence of waypoints and is associated with a probability score ($p_k$) indicating its likelihood. For evaluation against benchmarks that require a smaller number of predictions (e.g., 6), a Non-Maximum Suppression (NMS) algorithm is used to select the most likely and diverse trajectories from the initial set of $K$ proposals \cite{Shi2022MTR}.
 \end{itemize}
 
