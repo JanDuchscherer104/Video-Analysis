@@ -1,0 +1,126 @@
+
+
+\section{Data Methodology within UniTraj}
+This section presents the data processing methodology within the UniTraj framework~\cite{unitrajFeng2024}, covering dataset integration, preprocessing pipelines, and the challenges encountered during implementation. The focus lies on the transformation from heterogeneous autonomous driving datasets to standardized tensor representations suitable for trajectory prediction models.
+
+\subsection{UniTraj Data Preprocessing Pipeline}
+\label{sec:data_pipeline}
+
+The preprocessing pipeline serves as the cornerstone of the unified framework, transforming heterogeneous dataset formats into standardized representations. The pipeline architecture emphasizes reproducibility, scalability, and data quality assurance, drawing from best practices in deep learning frameworks~\cite{vaswani2023attention}.
+
+\subsubsection{Agent Instance Selection Protocol}
+\label{ssec:agent_selection}
+
+Agent selection employs multi-criteria filtering to ensure data quality and computational efficiency, following protocols established in motion prediction research~\cite{WOMD2021, Chai2019MultiPath}:
+
+\begin{itemize}
+    \item \textbf{Type Constraint:} $\text{type} \in \{\text{VEH, PED, CYCL}\}$ with dataset-specific availability
+    \item \textbf{Displacement Filter:} Minimum movement threshold $\Delta d_{i} > \tau_{displacement}$ to exclude stationary objects
+    \item \textbf{Visibility Requirement:} Temporal coverage $\rho_{i} > \tau_{visibility}$ ensuring sufficient observation history
+    \item \textbf{Difficulty Classification:} Kalman filter-based estimation categorizing trajectories as Easy, Medium, or Hard based on prediction uncertainty~\cite{MultiPathPlusPlus2022}
+\end{itemize}
+
+The framework distinguishes between total scene agents ($N_{\max}$) and focal prediction targets ($N_{c}$), enabling scalable processing while maintaining comprehensive scene context. This distinction proves crucial for computational efficiency in dense urban scenarios~\cite{hu2023planning}.
+
+\subsubsection{Coordinate System Normalization}
+\label{ssec:coordinate_normalization}
+
+Spatial normalization transforms all coordinates to an agent-centric reference frame, enhancing model translation and rotation invariance~\cite{qcnetZhou2023, gao2020vectornet}:
+
+\begin{equation}
+p_{t}^{(i),a} = R_{z}(-\theta_{c})(p_{t}^{(i),w} - p_{c})
+\end{equation}
+
+where $R_{z}(-\theta_{c})$ represents the rotation matrix around the z-axis by the negative center agent heading $\theta_{c}$, $p_{t}^{(i),w}$ denotes world coordinates, and $p_{c}$ is the center agent position at the prediction timestamp.
+
+This transformation ensures that the center agent appears at the origin facing along the positive x-axis, providing a canonical reference frame for trajectory prediction. This approach aligns with established practices in motion forecasting literature~\cite{shi2022motion, DenseTNT2021}.
+
+\subsubsection{Feature Vector Assembly and Masking}
+\label{ssec:feature_assembly}
+
+The framework constructs standardized tensor representations with comprehensive masking strategies, following tensor design principles from PointNet~\cite{PointNet2017} and VectorNet~\cite{VectorNet2020}.
+
+The masking mechanism handles variable scene complexity by marking valid data points, enabling efficient batch processing across scenarios with different agent counts and map complexities. This design follows established tensor processing patterns in autonomous driving research~\cite{SceneTransformer2022}.
+
+\section{Dataset Specification and Feature Semantics}
+\label{sec:data_datasetitem}
+
+The \texttt{DatasetItem} structure encapsulates all necessary information for trajectory prediction, serving as the fundamental data unit throughout the framework. This design follows data standardization principles established in computer vision~\cite{DETR2020} and trajectory prediction domains~\cite{unitrajFeng2024}.
+
+\subsubsection{Agent-Centric Sample Generation}
+\label{ssec:sample_generation}
+
+Multiple \texttt{DatasetItems} derive from a single scenario by selecting different center agents. This agent-centric approach maximizes data utilization while ensuring balanced representation across different agent types and scenario complexities~\cite{cui2019multimodal}.
+
+
+
+% <TODO merege into a brief overview of the most important Tensors in the DatasetItem, refering to \autoref{tab:data_tensors}, \autoref{tab:agent_types} and \autoref{tab:polyline-types}>
+\subsection{The Resulting Dataset}
+\label{ssec:tensor_definitions}
+
+Each \texttt{DatasetItem} contains:
+- Historical trajectories for all visible agents
+- Corresponding map topology within a defined radius
+- Ground truth future trajectories for prediction evaluation
+- Metadata including difficulty scores and scene classifications
+
+The framework defines three core input tensors with standardized semantics. For complete tensor specifications and dimensions, refer to Table~\ref{tab:data_tensors} in Appendix~\ref{app:framework}.
+
+
+\textbf{Primary Tensors:}
+\begin{itemize}
+    \item \texttt{obj\_trajs}: Dynamic agent trajectory data with temporal history
+    \item \texttt{map\_polylines}: Static map topology represented as polyline sequences
+    \item \texttt{center\_gt\_trajs}: Ground truth future trajectories for target agents
+\end{itemize}
+
+\textbf{Dynamic Agent Tensors:}
+\begin{itemize}
+    \item Feature tensor: $X_{d} \in \mathbb{R}^{N_{\max} \times T_{p} \times F_{ap}}$
+    \item Validity mask: $M_{d} \in \{0,1\}^{N_{\max} \times T_{p}}$
+\end{itemize}
+
+
+\textbf{Static Map Tensors:}
+\begin{itemize}
+    \item  Feature tensor: $X_{s} \in \mathbb{R}^{K \times L \times F_{\text{map}}}$
+    \item Validity mask: $M_{s} \in \{0,1\}^{K \times L}$
+\end{itemize}
+
+These tensors maintain consistent shapes across datasets while accommodating varying scene complexities through appropriate masking strategies. The design follows vectorized representation principles established in VectorNet~\cite{gao2020vectornet} and subsequent works~\cite{liang2020learning}.
+
+
+\subsection{Semantic Description of Feature Dimensions}
+\label{ssec:feature_semantics}
+
+\textbf{Agent-State Features ($F_{ap}$):} The agent feature dimension encompasses comprehensive state information, drawing from established motion modeling practices~\cite{chai2019multipath, rupprecht2017learning}:
+\begin{itemize}
+    \item Relative spatiotemporal coordinates $(x, y, t)$ in agent-centric frame
+    \item Physical dimensions (length, width, height) for collision modeling
+    \item One-hot encoded object class distinguishing vehicles, pedestrians, and cyclists
+    \item One-hot encoded temporal index for sequence position encoding
+    \item Heading embedding $(\sin(\theta), \cos(\theta))$ providing continuous angular representation
+    \item Relative velocity and acceleration vectors for kinematic modeling
+\end{itemize}
+
+\textbf{Map Element Features ($F_{\text{map}}$):} The map feature dimension includes geometric and semantic information, following HD map representation standards~\cite{av2Wilson2023, caesar2020nuscenes}:
+\begin{itemize}
+    \item Polyline point coordinates defining lane boundaries and centerlines
+    \item Tangent vectors encoding local geometric continuity
+    \item One-hot encoded lane types (driving lanes, intersections, crosswalks, etc.)
+    \item Traffic control information (traffic lights, stop signs) where available
+\end{itemize}
+
+\subsection{Auxiliary Metadata}
+\label{ssec:auxiliary_metadata}
+
+The framework utilizes extensive metadata for stratified analysis and model evaluation, following evaluation practices from motion prediction benchmarks~\cite{WOMD2021, av2Wilson2023}:
+\begin{itemize}
+    \item Kalman filter-based difficulty scores enabling complexity-aware evaluation
+    \item Trajectory classification (straight, turning, lane-changing) for behavioral analysis
+    \item Scene type annotations (highway, urban, intersection) for domain-specific assessment
+    \item Dataset provenance information for cross-dataset analysis
+\end{itemize}
+
+This metadata enables fine-grained performance analysis and helps identify model strengths and weaknesses across different scenario types, supporting comprehensive evaluation protocols~\cite{unitrajFeng2024}.
+% <TODO merege into a brief overview of the most important Tensors and metadata in the DatasetItem, refering to \autoref{tab:data_tensors}, \autoref{tab:agent_types} and \autoref{tab:polyline-types}>

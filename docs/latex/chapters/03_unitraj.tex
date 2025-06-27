@@ -1,0 +1,59 @@
+% 3. Data Corpus and Preprocessing Methodology
+\section{The Need for Unification}
+\label{ch:data_methodology}
+
+This section presents an overview of the need for a unified framework for trajectory prediction in autonomous driving, addressing the challenges of dataset heterogeneity and the complexities of motion forecasting tasks. The discussion highlights the importance of standardizing data formats, feature characteristics, and preprocessing pipelines to enable effective model training and evaluation across diverse datasets.
+
+\subsection{Unification of Motion Forecasting Datasets}
+\label{sec:data_datasets}
+
+The \texttt{UniTraj} framework addresses the fundamental challenge of standardizing multiple motion-forecasting datasets that exhibit substantial heterogeneities in both \emph{data formats} and \emph{feature characteristics}.
+The former encompasses differences in data structure and organization, while the latter stems from variations in
+spatio-temporal resolution, coverage range, and semantic annotation schemes.
+
+To overcome format discrepancies, \texttt{UniTraj} leverages \texttt{ScenarioNet}~\cite{scenarionetLi2023} for conversion into a common
+format, thereby eliminating the need for multiple preprocessing implementations. However, feature characteristics require additional harmonization. Temporal coverage varies substantially
+across datasets, with historical trajectories ranging from 1 second in \texttt{WOMD}\cite{wmodSun2020} to 5 seconds in \texttt{Argoverse 2}\cite{av2Wilson2023},
+and future prediction horizons extending from 6 to 8 seconds. Map resolutions and semantic annotations differ
+significantly, with all datasets providing \emph{scene-centric} HD maps at varying resolutions.
+Agent features also exhibit substantial variations: \texttt{nuScenes} provides only velocity and heading, while
+\texttt{WOMD} includes comprehensive 3D bounding box annotations. Notably, \texttt{Argoverse 2} provides bounding
+box and rich semantic annotations, but these are lost during \texttt{ScenarioNet} format conversion.
+The normalization of the feature spaces is performed through a multi-stage processing, and its results are outlined in~\autoref{app:framework}.
+
+
+The UniTraj framework integrates three major autonomous driving datasets: Argoverse2 (AV2)~\cite{av2Wilson2023}, NuScenes~\cite{caesar2020nuscenes}, and Waymo Open Dataset~\cite{wmodSun2020}. Each dataset contributes unique characteristics:
+
+\begin{itemize}
+    \item \textbf{Argoverse2:} High-resolution HD maps with detailed lane topology, focusing on highway and urban scenarios
+    \item \textbf{NuScenes:} Multi-modal sensor data with 360° coverage, diverse weather and lighting conditions
+    \item \textbf{Waymo:} Large-scale dataset with consistent labeling and comprehensive scene coverage
+\end{itemize}
+
+The amalgamation strategy standardizes coordinate systems, temporal sampling rates, and feature representations across datasets~\cite{VectorNet2020, Shi2022MTR}. This unified approach enables cross-dataset training and evaluation while preserving dataset-specific characteristics through metadata annotations.
+
+The fusion methodology addresses inherent dataset heterogeneities through a nine-phase preprocessing pipeline (detailed in Appendix~\ref{app:notation}) that transforms raw data into consistent \texttt{DatasetItem} representations. This approach follows established practices in trajectory prediction literature~\cite{zhou2022hivt, qcnetZhou2023, Shi2023MTRplusplus}.
+
+
+
+\subsection{Limitations of UniTraj}
+\label{sec:data_challenges}
+
+Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability, aligning with known issues in autonomous driving dataset integration~\cite{metadriveLi2022, scenarionetLi2023}.
+
+\subsection{Data Integration and Representational Limitations}
+\label{ssec:data_limitations}
+
+Critical limitations emerged during dataset integration, reflecting broader challenges in autonomous driving data standardization~\cite{hu2023planning}. Dataset heterogeneity manifests through inconsistent feature availability: Agent type availability varies inconsistently—while Waymo provides comprehensive pedestrian and cyclist annotations, Argoverse2 focuses primarily on vehicle trajectories, creating domain-specific biases~\cite{unitrajFeng2024}.\\
+Temporal and spatial standardization introduces information loss, highlighting trade-offs between unification and data fidelity. Varying sampling rates (10Hz vs 20Hz) require interpolation that potentially loses behavioral nuances. Feature quantization for computational efficiency reduces predictive accuracy, while fixed scene radii exclude relevant distant objects affecting long-range interactions.
+
+\subsection{Framework Implementation Issues and Mitigation Strategies}
+\label{ssec:framework_issues}
+
+The original UniTraj implementation suffered from critical software quality deficiencies that significantly impacted model performance and generalization across domains~\cite{metadriveLi2022}. The most significant limitation was the absence of PyTorch Lightning integration, forcing manual implementation of training infrastructure that modern ML frameworks provide standardized~\cite{falcon2019pytorch}. Additional problems included poor code organization with tight coupling between components, lack of modular design patterns, and insufficient testing frameworks, making the system difficult to maintain, extend, or debug effectively.
+The training infrastructure lacked essential deep learning capabilities: automatic mixed precision training, gradient accumulation, learning rate scheduling, and distributed computing support. Manual implementation of these features resulted in suboptimal performance, excessive memory usage, and limited scalability. The framework also lacked integrated experiment tracking with tools like Weights \& Biases or TensorBoard, hampering reproducibility and systematic model development workflows.
+Mitigation strategies follow modern ML engineering best practices, with PyTorch Lightning migration as the primary solution. This architectural change provides structured training loops, automatic optimization, distributed computing support, and seamless experiment tracking integration~\cite{falcon2019pytorch}. Additional improvements include codebase refactoring into modular components, comprehensive unit and integration testing implementation, continuous integration adoption, and enhanced logging capabilities through Lightning's callback system for better visibility into training dynamics across datasets~\cite{unitrajFeng2024, scenarionetLi2023}.
+
+
+\subsubsection{Revision of the UniTraj Framework}
+...
