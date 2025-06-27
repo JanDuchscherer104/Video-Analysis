@@ -19,48 +19,41 @@ significantly, with all datasets providing \emph{scene-centric} HD maps at varyi
 Agent features also exhibit substantial variations: \texttt{nuScenes} provides only velocity and heading, while
 \texttt{WOMD} includes comprehensive 3D bounding box annotations. Notably, \texttt{Argoverse 2} provides bounding
 box and rich semantic annotations, but these are lost during \texttt{ScenarioNet} format conversion.
-The normalization of the feature spaces is performed through a multi-stage processing, and its results are outlined in~\autoref{app:framework}.
+The conversion and normalization process is outlined in~\autoref{ssec:data_pipeline}.
 
+\subsection{Unified ML Infrastructure}
+Beyond dataset unification, trajectory prediction research requires a comprehensive machine learning infrastructure that handles the complexities of modern deep learning workflows. The UniTraj framework addresses this need by providing essential components that allow researchers to focus on model innovation rather than infrastructure implementation.
 
-% The UniTraj framework integrates three major autonomous driving datasets: Argoverse2 (AV2)~\cite{av2Wilson2023}, NuScenes~\cite{caesar2020nuscenes}, and Waymo Open Dataset~\cite{wmodSun2020}. Each dataset contributes unique characteristics:
-
-% \begin{itemize}
-%     \item \textbf{Argoverse2:} High-resolution HD maps with detailed lane topology, focusing on highway and urban scenarios
-%     \item \textbf{NuScenes:} Multi-modal sensor data with 360° coverage, diverse weather and lighting conditions
-%     \item \textbf{Waymo:} Large-scale dataset with consistent labeling and comprehensive scene coverage
-% \end{itemize}
-
-% The amalgamation strategy standardizes coordinate systems, temporal sampling rates, and feature representations across datasets~\cite{VectorNet2020, Shi2022MTR}. This unified approach enables cross-dataset training and evaluation while preserving dataset-specific characteristics through metadata annotations.
-
-% The fusion methodology addresses inherent dataset heterogeneities through a nine-phase preprocessing pipeline (detailed in Appendix~\ref{app:notation}) that transforms raw data into consistent \texttt{DatasetItem} representations. This approach follows established practices in trajectory prediction literature~\cite{zhou2022hivt, qcnetZhou2023, Shi2023MTRplusplus}.
-
-% \subsection{Remaining ML Infrastructure}
-% This subsection outlines the need for further essential components required to develop motion forecasting models, and why it would be beneficial to unify them in a single framework such that the research communicty can focus on the model architecture and training, rather than the implementation details of the infrastructure.
-% This includes logging and experiment tracking, distributed training, configuration management, evaluation metrics, visualization tools
-
+These components encompass the complete research pipeline: training and evaluation frameworks, data handling and preprocessing modules, logging and visualization tools, shared metrics and loss functions, and experiment management systems that facilitate reproducibility and systematic experimentation. Such a framework should be designed with transparency and modularity as core principles, enabling seamless extension and integration of new datasets, models, evaluation metrics, and additional functionalities such as callbacks or custom training procedures.
 
 
 
 \subsection{Limitations of UniTraj}
 \label{sec:data_challenges}
 
-Implementation of the unified framework revealed significant challenges affecting data quality and model generalizability, aligning with known issues in autonomous driving dataset integration.
+While we hoped to find a fully functional and well-structured implementation of the UniTraj framework, we encountered significant challenges that necessitated extensive refactoring and improvements to achieve a production-ready codebase.
+
+The original UniTraj implementation suffered from critical software quality deficiencies that significantly hindered its usability and maintainability, as we had the goal to \emph{fully} understand the frameworks and its components that would be required to implement and train a model. Essentially the functionalities of the framework were mostly implemented but lacked transparency.
+
+These issues included a lack of modular design patterns, insufficient type safety, and poor separation of concerns, which made the codebase difficult to navigate and extend. The absence of comprehensive documentation and standardized coding practices further exacerbated these problems, leading to confusion among developers and users alike.
 
 When creating unified dataset, given multiple source datasets, they did not respect the original train, val, and test splits which is a common practice in machine learning
 
-None of the most important sym
+None of the most important symbols were annotated properly with type hints or explanatory comments or doc-strings. Especially the dataprocessing pipeline and the data handling were a single monolithic script with no clear separation of concerns, making it difficult to understand the data flow and transformations applied at each stage. The code lacked modular design patterns, leading to tight coupling between components and making it challenging to extend or modify the framework without introducing bugs which were annoying to deal with.
+No proper separation of responsibilities, no modular design patterns.
 
-\subsection{Data Integration and Representational Limitations}
-\label{ssec:data_limitations}
+None of the most important symbols and conventions used throughout this work, following UniTraj framework standards~\cite{unitrajFeng2024} and the \textsc{DatasetItem} type definitions.
 
-Critical limitations emerged during dataset integration, reflecting broader challenges in autonomous driving data standardization~\cite{hu2023planning}. Dataset heterogeneity manifests through inconsistent feature availability: Agent type availability varies inconsistently—while Waymo provides comprehensive pedestrian and cyclist annotations, Argoverse2 focuses primarily on vehicle trajectories, creating domain-specific biases~\cite{unitrajFeng2024}.\\
-Temporal and spatial standardization introduces information loss, highlighting trade-offs between unification and data fidelity. Varying sampling rates (10Hz vs 20Hz) require interpolation that potentially loses behavioral nuances. Feature quantization for computational efficiency reduces predictive accuracy, while fixed scene radii exclude relevant distant objects affecting long-range interactions.
+While they were using \texttt{PyTorch Lightning}~\cite{falcon2019pytorch}, they were not following the recommended practices for employing it, such as using the \texttt{LightningDataModule} for data handling on the highest level, or a proper integration of logging functionalities such as Weights \& Biases with the framework.
 
-\subsection{Framework Implementation Issues and Mitigation Strategies}
-\label{ssec:framework_issues}
+Their path handling was poorly implemented, such that there was no clear control over the sources and destinations of various important data like the resulting datasets, model checkpoints and logs.
 
-The original UniTraj implementation suffered from critical software quality deficiencies that significantly impacted model performance and generalization across domains~\cite{metadriveLi2022}. The most significant limitation was the absence of PyTorch Lightning integration, forcing manual implementation of training infrastructure that modern ML frameworks provide standardized~\cite{falcon2019pytorch}. Additional problems included poor code organization with tight coupling between components, lack of modular design patterns, and insufficient testing frameworks, making the system difficult to maintain, extend, or debug effectively.
-The training infrastructure lacked essential deep learning capabilities: automatic mixed precision training, gradient accumulation, learning rate scheduling, and distributed computing support. Manual implementation of these features resulted in suboptimal performance, excessive memory usage, and limited scalability. The framework also lacked integrated experiment tracking with tools like Weights \& Biases or TensorBoard, hampering reproducibility and systematic model development workflows.
+The training infrastructure lacked (and in some parts still lacks) essential deep learning capabilities: automatic mixed precision training, gradient accumulation, learning rate scheduling, and distributed computing support, various callbacks (such as learning rate monitors, early stopping, model checkpointing) all of which are easily configurable if using \texttt{PyTorch Lightning} in the way it's \emph{intended} to be used.
+
+Another major issue was the lack of any typing information in the used \texttt{Hydra} configuration, which was essentially used as a dictionary without any type hints or structure, making it difficult to understand the effects of parameters or what kinds of values were expected. We decided to employ our own \emph{Config-as-Factory} pattern, where every functional component of the framework has it's own strongly typed configuration class that also serves as a factory for instantiating the corresponding component. This approach ensures type safety, improves code readability, and allows for various static analysis tools to catch potential issues early in the development process, as well as easy sanity checks when instantiating components like checking if all required parameters are in allowed ranges, if a path is valid, etc.
+
+
+
 Mitigation strategies follow modern ML engineering best practices, with PyTorch Lightning migration as the primary solution. This architectural change provides structured training loops, automatic optimization, distributed computing support, and seamless experiment tracking integration~\cite{falcon2019pytorch}. Additional improvements include codebase refactoring into modular components, comprehensive unit and integration testing implementation, continuous integration adoption, and enhanced logging capabilities through Lightning's callback system for better visibility into training dynamics across datasets~\cite{unitrajFeng2024, scenarionetLi2023}.
 
 
@@ -71,8 +64,8 @@ This section details the major modifications we applied to the original UniTraj 
 \begin{itemize}[leftmargin=*]
   \item \textbf{Strongly typed interfaces:} Introduced \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/types.py}{\texttt{types.py}} to declare all input and output tensors via \texttt{TypedDict} and dataclasses, replacing untyped \texttt{dict} passes and surfacing shape mismatches at static analysis time. Defines \texttt{RawScenarioDict}, \texttt{ProcessedDataDict} and other interfaces.
   \item \textbf{Decoupled parsing pipeline:} Split the monolithic script into three stages—\href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataparser.py}{\texttt{base\_dataparser.py}} (handles raw file ingestion and basic conversions), \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/dataparser.py}{\texttt{dataparser.py}} (implements the nine-phase QC preprocessing pipeline), and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/datasets/base_dataset.py}{\texttt{base\_dataset.py}} (wraps processed data into a PyTorch \texttt{Dataset} class), enabling modular parser swaps without code changes.
-  \item \textbf{PyTorch Lightning integration:} Built a \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{lit\_datamodule.py}} (defines \texttt{LightningDataModule}) and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{lit\_trainer\_factory.py}} (instantiates \texttt{pl.Trainer} from config) to configure \texttt{pl.Trainer} via YAML, unlocking multi-GPU, mixed-precision, and gradient accumulation with <30LoC of overhead and removing ~300LoC of boilerplate.
-  \item \textbf{Full Weights \& Biases (WandB) support:} Added \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/configs/wandb_config.py}{\texttt{wandb\_config.py}} (configures WandB logger and callbacks) and Lightning callbacks to log hyperparameters, metrics, and checkpoint artefacts directly to WandB, replacing ad-hoc CSV dumps and enabling real-time dashboards.
+  \item \textbf{PyTorch Lightning integration:} Built a \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_datamodule.py}{\texttt{lit\_datamodule.py}} (defines \texttt{LightningDataModule}) and \href{https://github.com/JanDuchscherer104/UniTraj/blob/main/unitraj/lightning/lit_trainer_factory.py}{\texttt{lit\_trainer\_factory.py}} (instantiates \texttt{pl.Trainer} from config) to configure \texttt{pl.Trainer} via YAML, unlocking multi-GPU, mixed-precision, and gradient accumulation.
+  \item \textbf{Full Weights \& Biases (WandB) support:} Added comprehensive experiment tracking with real-time metric logging, hyperparameter sweeps, and model artifact management, enabling CSV dumps and real-time dashboards.
 \end{itemize}
 
 \paragraph{Architecture Overview}
