@@ -48,4 +48,16 @@ Future trajectory targets for the center agent are provided in \(\boldsymbol{y}_
 \paragraph{Sample Metadata and Dataset Composition.}
 UniTraj maintains metadata for efficient dataset management and analysis. The sample metadata, stored as a pandas DataFrame that provides high-level information about each scenaro. Each entry is uniquely identified by a composite index encoding the dataset name, worker process, scenario counter, and agent index (e.g., \texttt{av2\_scenarionet{-}0{-}0{-}0}). A complete overview of the sample metadata fields is provided in Table~\ref{tab:sample_metadata_fields}.
 
+\paragraph{DatasetItem Visualization.}
+To illustrate the comprehensive nature of the processed data, Figure~\ref{fig:datasetitem_visualization} presents a detailed visualization of a representative \texttt{DatasetItem}. This enhanced visualization demonstrates the multi-modal nature of the data, showing the spatial relationships between agents, their historical trajectories, and the underlying high-definition map infrastructure.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/plot_datasetitem.png}
+    \caption{
+        \textbf{Enhanced DatasetItem Visualization.} A comprehensive view of a processed scenario showing: (a) the center agent (ego vehicle) in red with its historical trajectory, (b) surrounding agents with their temporal information including velocity vectors and heading indicators, (c) high-definition map polylines with semantic classifications (lanes in blue, crosswalks in black dashed, boundaries in gray), and (d) agent interaction zones and proximity relationships. This visualization demonstrates the multi-modal nature of the standardized \texttt{DatasetItem} format, capturing spatial and temporal dynamics used for trajectory prediction tasks.
+    }
+    \label{fig:datasetitem_visualization}
+\end{figure}
+
 \newpage
