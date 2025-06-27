@@ -11,7 +11,7 @@ LMFormer~\cite{lmformerYadav2025} is a fully query-centric, transformer-based ar
 \end{figure}
 
 
-\subsubsection*{Encoder}
+\subsubsection{Encoder}
 The encoder leverages the asymmetric relationship between static and dynamic contexts: while static lane geometry is independent of dynamic agent states, agent behavior is heavily influenced by road structure. This motivates a two-stage design where static context is encoded first, then incorporated into dynamic agent processing. Following the original architecture~\cite{lmformerYadav2025}, all scalar inputs are embedded using learnable Fourier features before processing through specialized attention modules.
 \begin{figure}[H]
   \centering
@@ -48,7 +48,7 @@ This harmonic basis lets later attention layers pick up patterns at various task
         The encoder repeats this triad \(N_{ed}\) times, producing \emph{agent encodings} \(\mathbf{E}_d \in \mathbb{R}^{N \times T_{p} \times D}\).
 \end{itemize}
 
-\subsubsection*{Recurrent Cross-Attention Decoder}
+\subsubsection{Recurrent Cross-Attention Decoder}
 
 To facilitate multimodal trajectory prediction, LMFormer introduces learnable mode queries where each query corresponds to a distinct trajectory for every agent. The decoder employs a two-level strategy combining iterative refinement across \(N_{\text{dec}}\) stacked layers with autoregressive generation within each layer. Inspired by DAB-DETR's coarse-to-fine anchor refinement~\cite{liu2022dabdetr}, early layers establish coarse trajectory patterns while later layers add fine-grained details, maintaining temporal coherence and social consistency.
 
@@ -111,7 +111,7 @@ LMFormer re-uses winner-takes-all regression loss from~\autoref{eq:caspformer_re
 where \(\lambda\) balances classification against regression~\cite{lmformerYadav2025}.
 
 % allowed to edit below:
-\subsubsection*{Discussion} % Here our critique and qualitative analysis of LMFormer.
+\subsubsection{Discussion} % Here our critique and qualitative analysis of LMFormer.
 
 \begin{description}[itemsep=0.5em]
 
@@ -136,7 +136,7 @@ As~\cite{lmformerYadav2025} notes, it would be beneficial to redict velocity mix
 While~\cite{lmformerYadav2025} weighs the regression losses across all refinement layers uniformly, we believe that later layers should dominate the regression loss. This is because early layers primarily establish coarse trajectory patterns, while later layers refine these patterns into fine-grained, multi-modal trajectories. Furthermore, the gradient emitted from the loss of the later layers will also affect all previous layers.
 
 \item[\textbf{Geometric Symmetries \& Multi-Agent Capabilities}]
-The architecture preserves all symmetries as introduced in \autoref{sec:geometry_symmetries}. These properties allow the same cached scene encoding to serve \emph{all} agents and \emph{all} successive frames, a capability absent in all agent-centric architectures.
+The architecture preserves all symmetries as introduced in \autoref{sssec:qc_geometric_perspective}. These properties allow the same cached scene encoding to serve \emph{all} agents and \emph{all} successive frames, a capability absent in all agent-centric architectures.
 
 
 

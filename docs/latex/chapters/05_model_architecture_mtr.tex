@@ -85,7 +85,7 @@ The decoder consists of multiple stacked layers (e.g., 6 layers). This stacked s
 
 The model is trained by comparing its $K$ predictions to the single ground-truth trajectory. A loss function guides the model to improve its predictions over time. It essentially encourages the model to assign a high probability ($p_k$) to the predicted trajectory that most closely matches the ground truth, while also moving the waypoints of that trajectory even closer to the actual path. This process can be thought of as a learned form of hypothesis testing: the queries propose $K$ hypotheses, and the training process teaches the model how to evaluate and refine them based on scene context \cite{Shi2022MTR}.
 
-\subsection{Input-Output Formulation}
+\subsubsection{Input-Output Formulation}
 \label{sec:model_mtr_io}
 
 At a high level, the MTR model transforms historical scene data into a set of ranked, probable future paths.
@@ -103,7 +103,7 @@ At a high level, the MTR model transforms historical scene data into a set of ra
     \item \textbf{Output Domain:} The model's exact output is a set of $K$ plausible future trajectories (e.g., $K=64$) for an agent of interest over a future time horizon (e.g., 8 seconds). Each trajectory is defined by a sequence of waypoints and is associated with a probability score ($p_k$) indicating its likelihood. For evaluation against benchmarks that require a smaller number of predictions (e.g., 6), a Non-Maximum Suppression (NMS) algorithm is used to select the most likely and diverse trajectories from the initial set of $K$ proposals \cite{Shi2022MTR}.
 \end{itemize}
 
-\subsubsection{Illustrative Scenario: Agent at a Crosswalk}
+\subsubsubsection{Illustrative Scenario: Agent at a Crosswalk}
 To understand how the components work together, consider a vehicle approaching a crosswalk where a pedestrian is present.
 \begin{enumerate}
     \item \textbf{Input and Encoding:} The model takes in the vehicle's past trajectory and the pedestrian's history, along with map polylines for the crosswalk and stop line. These are encoded into feature vectors.
@@ -116,7 +116,7 @@ To understand how the components work together, consider a vehicle approaching a
     \item \textbf{Final Output:} After iterative refinement across the decoder layers, the GMM output will reflect the context. Because the model has taken the pedestrian's presence and future path into account, the probability ($p_k$) associated with the ``yield'' trajectory will be high, while the ``proceed'' trajectory will have a low probability. This demonstrates how MTR generates contextually-aware, multimodal predictions. A visualization of this would show the vehicle's past path, the map features (lanes, crosswalk), and multiple predicted future paths, each with a different color and a displayed probability score.
 \end{enumerate}
 
-\subsubsection{Key Scientific Challenges and Model Variants}
+\subsubsubsection{Key Scientific Challenges and Model Variants}
 
 The primary scientific challenge in motion prediction is managing the inherent uncertainty and multimodality of agent behavior in complex, interactive environments. MTR addresses this through its query-based decoder, but different versions of the model optimize for different goals.
 
@@ -128,11 +128,18 @@ The primary scientific challenge in motion prediction is managing the inherent u
 
 These variants show the flexibility of the core MTR architecture in addressing the diverse challenges of motion forecasting.
 
-\subsubsection{Conclusion}
-\label{sec:conclusion}
+\subsubsubsection{Pros}
+\begin{itemize}[leftmargin=*, label=\greenoplus]
+  \item Vectorized polyline input and output avoid rasterization artifacts and preserve geometric precision.
+  \item Query-based decoder enables explicit, interpretable multi-modal prediction.
+  \item Dynamic map collection ensures trajectory refinement leverages the most pertinent map features at each step.
+  \item Probabilistic output via GMM provides uncertainty estimates and supports downstream risk assessment.
+\end{itemize}
 
-The Motion Transformer (MTR) architecture addresses the challenge of multimodal motion prediction through its innovative design. Its core strength is the joint optimization of global intention localization and local movement refinement \cite{Shi2022MTR}, which is realized through a clear encoder-decoder structure.
-
-The architecture processes vectorized polyline inputs for agent histories and map features with PointNet-like encoders \cite{gao2020vectornet, PointNet2017}. A Transformer encoder then uses local self-attention to build a rich, contextualized scene understanding \cite{Shi2022MTR}. The subsequent Motion Decoder uses its key components to generate predictions. Static intention queries ($Q_I$) provide stable, mode-specific anchors based on data-driven intention points. Dynamic searching queries ($Q_S^j$) then perform precise, context-aware refinement of these intentions. This refinement is guided by prior predictions and a dynamic map collection strategy ($\alpha(M)$) \cite{Shi2022MTR}. The stacked decoder layers iteratively improve the trajectories, and a final prediction head produces a probabilistic set of future paths using a Gaussian Mixture Model (GMM) \cite{Bishop1994MDN}.
-
-Model variants show the architecture's flexibility. MTR-e2e adapts the model for end-to-end prediction with a fixed number of outputs, while the MTR++ extension enables efficient and interactive multi-agent prediction \cite{Shi2023MTRplusplus}. These architectural choices allow MTR to generate accurate, diverse, and scene-compliant trajectory forecasts. The principles of query-based prediction, iterative refinement, and adaptive context utilization are valuable paradigms for future work in autonomous navigation.
+\subsubsubsection{Cons}
+\begin{itemize}[leftmargin=*, label=\redominus]
+  \item Computational cost scales with the number of queries and decoder layers.
+  \item NMS post-processing is required to select diverse, high-quality predictions for benchmarks with limited output slots.
+  \item Static intention queries rely on clustering endpoints, which may not capture rare or atypical maneuvers.
+  \item No explicit modeling of physical feasibility constraints or agent kinematics.
+\end{itemize}

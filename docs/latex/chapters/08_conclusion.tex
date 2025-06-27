@@ -1,6 +1,6 @@
 % 8. Conclusion and Discussion
 \section{Conclusion and Discussion}
-\label{ch:conclusion_future}
+\label{sec:conclusion}
 % - The research's most significant outcomes were summarized.
 % - The project was impacted by a scope reduction, such as focusing on "Very-Smol-Single-Agent-Motion-Forecasting".
 % - Data deficiencies, like the absence of BBOX from AV2 and restriction to vehicle-only agent types, had consequences.
@@ -40,3 +40,27 @@ The most interesting concepts "touched"% TODO: bad wording
 
 
 Although the minimal implementation remained beyond reach, the seminar work succeeded in building conceptual foundations and critical perspective on current research directions. The experience highlighted the importance of clear abstractions and robust data handling while exposing the challenges inherent in adapting complex frameworks for educational purposes.
+
+
+% % 8. Conclusion and Discussion
+% \section{Conclusion and Discussion}
+% \label{sec:conclusion}
+% % - The research's most significant outcomes were summarized.
+% % - The project was impacted by a scope reduction, such as focusing on "Very-Smol-Single-Agent-Motion-Forecasting".
+% % - Data deficiencies, like the absence of BBOX from AV2 and restriction to vehicle-only agent types, had consequences.
+% % - An assessment of the UniTraj Framework covered reported issues in coding standards, documentation, and framework (PyTorch Lightning, WandB) utilization.
+% % - Challenges with the UniTraj Framework related to data integrity (original splits), file management, logging practices, and software design patterns were discussed.
+% % - An overview of applied refactoring efforts and mitigation strategies for the UniTraj Framework was provided.
+% % - The fulfillment of initial objectives was addressed.
+% This research successfully demonstrated the viability of the query-centric paradigm for trajectory prediction in autonomous driving, achieving competitive performance metrics with our Smol-LMFormer implementation. The most significant outcomes include the successful integration of the UniTraj framework~\cite{unitrajFeng2024} with modern deep learning infrastructure, achieving a brier-minFDE of 1.98 compared to the MTR benchmark of 2.08, and establishing a robust experimental pipeline using PyTorch Lightning~\cite{falcon2019pytorch} and Weights \& Biases for comprehensive experiment tracking. However, the project scope was significantly reduced from the initial multi-agent joint prediction objectives to focus on "Very-Smol-Single-Agent-Motion-Forecasting" due to computational constraints and framework limitations. Data deficiencies substantially impacted model development, particularly the absence of bounding box information from Argoverse2~\cite{av2Wilson2023} and the restriction to vehicle-only agent types, limiting our ability to evaluate pedestrian and cyclist prediction capabilities that are crucial for comprehensive autonomous driving systems. Our assessment of the UniTraj framework revealed critical issues in coding standards, inadequate documentation, and suboptimal utilization of modern ML frameworks like PyTorch Lightning and WandB, aligning with known software quality challenges in autonomous driving research~\cite{metadriveLi2022}. Additional challenges included data integrity issues with original dataset splits, poor file management practices, insufficient logging mechanisms, and violation of established software design patterns, necessitating extensive refactoring efforts that consumed significant development time. Despite these challenges, our mitigation strategies successfully established a reproducible training pipeline and demonstrated the effectiveness of query-centric representations~\cite{qcnetZhou2023} for single-agent trajectory forecasting, laying the foundation for future multi-agent extensions.
+
+% \subsection{Reflection on Initial Objectives}
+% \label{sec:conclusion_objectives}
+
+% The initial aim of this seminar work was to implement a minimal, simplified model for trajectory prediction in autonomous driving. However, the complexity of existing algorithms made this goal impractical. As detailed in Chapter~\ref{ch:model_architecture}, the intricate data pipelines, geometric invariance requirements, and interdependent components of frameworks like UniTraj prevented meaningful simplification without losing essential functionality.
+
+% This complexity necessitated the extended analysis presented throughout this report, particularly the comparative study in Chapter~\ref{sec:background}examining agent-centric versus query-centric paradigms. While the original implementation goal proved unattainable, the work achieved a thorough understanding of these fundamental approaches. The investigation clarified how query-centric methods enable permutation and $\mathrm{SE}(2)$-equivariance while supporting streaming inference and joint prediction, contrasting with the limitations of agent-centric frameworks bound to privileged reference frames.
+
+% Engaging with state-of-the-art transformer architectures deepened our understanding of attention mechanisms for encoding spatial and temporal relationships in trajectory forecasting. The experimental work described in Chapter~\ref{ch:experimental_design_and_results} demonstrated practical application of these concepts, despite scope limitations to single-agent prediction.
+
+% Although the minimal implementation remained beyond reach, the seminar work succeeded in building conceptual foundations and critical perspective on current research directions. The experience highlighted the importance of clear abstractions and robust data handling while exposing the challenges inherent in adapting complex frameworks for educational purposes.
