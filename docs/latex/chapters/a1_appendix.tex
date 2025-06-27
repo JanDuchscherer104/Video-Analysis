@@ -408,7 +408,27 @@ The final processing phase assembles all processed components into final \texttt
 \end{algorithm}
 
 The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training and evaluation. They include all agent tensors, map tensors, ground truth labels, and validity masks as \texttt{numpy} arrays in various formats for easy handling at different training, evaluation or visualization stages.
+The \texttt{DatasetItem} class serves as the primary data container for processed trajectory scenarios. Figure~\ref{fig:datasetitem_class} shows the complete structure of this class, including all tensor attributes, metadata fields, and utility methods used throughout the training and evaluation pipeline.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/classes_DataSetItem.png}
+\caption{Class diagram of the \texttt{DatasetItem} structure showing all tensor attributes, metadata fields, and utility methods. This class encapsulates the processed scenario data as described in \autoref{app:framework}.}
+\label{fig:datasetitem_class}
+\end{figure}
+
+The \texttt{DatasetItem} contains the standardized tensor representations described in \autoref{tab:data_tensors}, including agent trajectories (\texttt{obj\_trajs}), map polylines (\texttt{map\_polylines}), ground truth targets (\texttt{center\_gt\_trajs}), and their corresponding validity masks. The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training and evaluation. They include all agent tensors, map tensors, ground truth labels, and validity masks as \texttt{numpy} arrays in various formats for easy handling at different training, evaluation or visualization stages.
+
+Figure~\ref{fig:litdatamodule_class} illustrates the PyTorch Lightning data module architecture used for batch processing and data loading. The \texttt{LitDatamodule} and its configuration class manage the entire data pipeline from raw scenarios to training-ready batches.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/classes_LitDatmodule.png}
+\caption{Class diagram of the data processing components showing the \texttt{LitDatamodule} and \texttt{LitDatamoduleConfig} classes. These components orchestrate the data loading pipeline described in \autoref{app:framework}.}
+\label{fig:litdatamodule_class}
+\end{figure}
+
+The \texttt{LitDatamodule} implements the PyTorch Lightning data module interface, providing standardized train, validation, and test data loaders with configurable batch sizes, worker processes, and memory pinning options as specified in the \texttt{LitDatamoduleConfig}.
 
 % \subsection{UniTraj Metadata}
 % \input{chapters/sample_metadata.tex}
@@ -502,6 +522,7 @@ The resulting \texttt{DatasetItem}'s are subsequently saved to disk for training
 .3 \texttt{plot\_scenario ()} ― scenario visualization function.
 .3 \texttt{render\_predictions ()} ― prediction rendering function.
 }
+
 
 % \begin{forest}
 %   for tree={%
