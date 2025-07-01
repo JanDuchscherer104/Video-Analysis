@@ -132,9 +132,8 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \column{0.35\textwidth}
 \begin{block}{Advantages}
 \begin{itemize}
-    \item Mature CNN architectures
-    \item Scalable runtime
-    \item Good spatial locality
+    \item Mature CNN paradigms
+    \item Runtime independent of number of agents
 \end{itemize}
 \end{block}
 
@@ -142,8 +141,9 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \begin{itemize}
     \item Limited geometric fidelity
     \item Redundant pixel information
-    \item Agent identity issues
+    \item Doesn't respect identities
     \item Shared coordinate system only
+    \item Invariance only for center agent
 \end{itemize}
 \end{alertblock}
 \end{columns}
@@ -193,12 +193,13 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \begin{itemize}
     \item Single global frame centered on ego vehicle
     \item Roto-translation invariance only for center agent
-    \item Computationally infeasible for factorized attention
+    \item Computationally infeasible for attention-based models
     \item Must re-encode entire scene at each timestep
 \end{itemize}
 
 \textbf{Factorized Attention Complexity~\cite{qcnetZhou2023}:}
-% TODO: make table: labels as is 1st col agent-ventric, 2nd col qc
+Factorized attention simplifies full attention by computing interactions along only one dimension at a time (e.g., temporal or spatial), while keeping other dimensions fixed.
+
 \begin{align}
 \text{Temporal:} &\quad \mathcal{O}(N_{\max}T^{2}) \\
 \text{Agent}\leftrightarrow\text{Map Fusion:} &\quad \mathcal{O}(N_{\max}T K) \\
@@ -605,7 +606,7 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
         \end{column}
         \begin{column}{0.5\textwidth}
             \begin{figure}
-                \includegraphics[width=\textwidth]{docs/figures/lmformer_arch_encorder.png}
+                \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{docs/figures/lmformer_arch_encorder.png}
                 \caption{Detailed view of the LMFormer encoder modules~\cite{lmformerYadav2025}.}
             \end{figure}
         \end{column}
@@ -653,27 +654,38 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
 \begin{frame}{LMFormer: Decoder Architecture}
     \begin{figure}
         \centering
-        \includegraphics[width=0.7\textwidth]{docs/figures/lmformer_arch_decoder.png}
+        \includegraphics[width=0.6\textwidth, height=0.7\textheight, keepaspectratio]{docs/figures/lmformer_arch_decoder.png}
         \caption{LMFormer decoder: recurrent mode-query cross-attention modules that iteratively generate future motion vectors~\cite{lmformerYadav2025}.}
     \end{figure}
 \end{frame}
 
 \begin{frame}[fragile]{Decoder: Recurrent Cross-Attention}
     \frametitle{Decoder: Recurrent Cross-Attention Algorithm}
+    \begin{algorithm}[H]
+    \caption{LMFormer Recurrent Cross-Attention Decoder}
+    \label{alg:lmformer_decoder}
     \begin{algorithmic}[1]
     \scriptsize
-    \Require Agent encodings \(\mathbf{E}_d\), Lane encodings \(\mathbf{E}_s\), Mode anchors \(\mathbf{A}\)
+    \Require Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N \times T_{p} \times D}\), Lane encodings \(\mathbf{E}_s \in \mathbb{R}^{N_L \times D}\), Learned Mode anchors \(\mathbf{A} \in \mathbb{R}^{M \times D}\)
     \Ensure Trajectory sets \(\{\mathcal{T}_{out}^{(i)}\}_{i=1}^{N_{\text{dec}}}\)
-    \State \(\mathbf{q} \leftarrow \text{repeat}(\mathbf{A}, N)\) \(\triangleright\) Initialize mode queries
+    \State \(\mathbf{q} \leftarrow \text{repeat}(\mathbf{A}, N)\) \(\triangleright\) Initialize mode queries \((M, N, D)\)
     \For{\(i = 1\) \textbf{to} \(N_{\text{dec}}\)}
+        \State \(\mathbf{Q}_{\text{seq}}^{(i)} \leftarrow \text{zeros}(M, N, T_f, D)\)
         \For{\(t = 1\) \textbf{to} \(T_f\)}
-            \State \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_d[\dots])\) \quad (\textit{Mode2Temporal})
-            \State \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_d[\dots])\) \quad (\textit{Mode2Agent})
-            \State \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_s)\) \quad (\textit{Mode2Lane})
+            \State \(\triangleright\) \textbf{Mode2Temporal}
+            \State \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_d[\text{same } n, \tau=1\dots T_p, :])\)
+            \State \(\triangleright\) \textbf{Mode2Agent}
+            \State \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_d[\tilde{n}=1\dots N, \text{same }\tau, :])\)
+            \State \(\triangleright\) \textbf{Mode2Lane}
+            \State \(\mathbf{q}\leftarrow \text{CrossAttn}(\mathbf{q}, K=V=\mathbf{E}_s)\)
+            \State \(\mathbf{Q}_{\text{seq}}^{(i)}[:,:,t,:] \leftarrow \mathbf{q}\)
         \EndFor
-        \State \(\mathcal{T}_{out}^{(i)} \leftarrow \text{MLP}(\text{updated queries})\)
+        \State \(\mathcal{T}_{out}^{(i)} \leftarrow \text{MLP}(\mathbf{Q}_{\text{seq}}^{(i)})\) \(\triangleright\) \((M, N, T_f, 4)\)
     \EndFor
     \end{algorithmic}
+    \end{algorithm}
+
+
 \end{frame}
 
 \begin{frame}{Decoder: Output and Loss}
