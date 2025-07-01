@@ -6,6 +6,12 @@
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{footline}[frame number]
 
+% Increase title slide font sizes
+\setbeamerfont{title}{size=\Huge,series=\bfseries}
+\setbeamerfont{author}{size=\Large}
+\setbeamerfont{institute}{size=\large}
+\setbeamerfont{date}{size=\large}
+
 % Packages
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -32,21 +38,31 @@
 
 % Title information
 \title{Scene Representation Paradigms for \\ Multimodal Trajectory Prediction}
-\author{Your Name}
-\institute{Computer Science Department}
+\author{Lukas Röß \and Jan Duscherer}
+\institute{%
+  Seminar: \textbf{Video Analysis and Object Tracking}\\[0.5ex]
+  Department of Computer Science and Mathematics\\[1ex]
+  Lecturer: Prof.\ Dr.\ Claudius Schnörr
+}
 \date{\today}
+\titlegraphic{%
+  \vspace{1em}%
+  \hfill\includegraphics[height=1.5cm]{docs/latex/figures/hm-logo.pdf}%
+}
 
 \begin{document}
 
 % Title slide
-\frame{\titlepage}
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
 
 % Outline slide
 \begin{frame}{Outline}
 \tableofcontents
 \end{frame}
 
-\section{Introduction to Scene Representations}
+\section{Scene Representation Paradigms}
 
 \begin{frame}{Why Scene Representations Matter}
 \begin{block}{Core Challenge}
@@ -73,26 +89,25 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \end{columns}
 \end{frame}
 
-\section{Scene Representation Paradigms}
-
 \begin{frame}{Two Main Paradigms}
 \begin{figure}[H]
 \centering
-\begin{subfigure}[t]{0.35\textwidth}
+\begin{subfigure}[t]{0.45\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{docs/latex/figures/caspnet-bev-repr.png}
-    \caption{Rasterized BEV encoding}
+    \includegraphics[width=0.6\columnwidth,height=0.5\textheight,keepaspectratio]{docs/latex/figures/caspnet-bev-repr.png}
+    \caption{Rasterized BEV encoding~\cite{caspnetSchäfer2022}}
     \label{fig:rasterized}
 \end{subfigure}
 \hfill
-\begin{subfigure}[t]{0.37\textwidth}
+\begin{subfigure}[t]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{docs/latex/figures/vectornet-2020-vector-repr.pdf}
-    \caption{Vectorized polyline preservation}
+    \includegraphics[width=0.6\columnwidth,height=0.5\textheight,keepaspectratio]{docs/latex/figures/vectornet-2020-vector-repr.pdf}
+    \caption{Vectorized polyline preservation~\cite{gao2020vectornet}}
     \label{fig:vectorized}
 \end{subfigure}
 \end{figure}
 
+\vspace{0.5em}
 \begin{itemize}
     \item \textbf{Rasterized}: Stack trajectories and HD maps into BEV images
     \item \textbf{Vectorized}: Preserve geometric polylines and relationships
@@ -110,9 +125,9 @@ The choice of scene representation fundamentally affects the predictor's capacit
     \item Static HD-map raster: $\mathbf{I}_s \in \mathbb{R}^{H \times W \times F_s}$
     \item Leverage convolutional backbones
     \item Runtime independent of number of agents
-\end{itemize}
+\end{itemize}\cite{caspnetppSchäfer2023}
 
-\textbf{Examples:} CASPNet family, MultiPath, TNT
+\textbf{Examples:} CASPNet~\cite{caspnetSchäfer2022}, CASPFormer~\cite{caspformerYadav2024},MultiPath~\cite{Chai2019MultiPath}
 
 \column{0.35\textwidth}
 \begin{block}{Advantages}
@@ -123,7 +138,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \end{itemize}
 \end{block}
 
-\begin{alertblock}{Limitations}
+\begin{alertblock}{Limitations~\cite{gao2020vectornet,qcnetZhou2023}}
 \begin{itemize}
     \item Limited geometric fidelity
     \item Redundant pixel information
@@ -145,21 +160,21 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \column{0.48\textwidth}
 \textbf{Lane Representations:}
 \begin{itemize}
-    \item \textbf{Point-based}: $L_p^i = [P_1^i, P_2^i, \ldots, P_K^i]$
-    \item \textbf{Segment-based}: $L_v^i = [V_1^i, V_2^i, \ldots, V_{K-1}^i]$ where $V_{k}^i = [P_k^i, P_{k+1}^i]$
+    \item \textbf{Point-based}: $L_p^i = [P_1^i, P_2^i, \ldots, P_K^i]$~\cite{VectorNet2020, zhou2022hivt}
+    \item \textbf{Segment-based}: $L_v^i = [V_1^i, V_2^i, \ldots, V_{K-1}^i]$ where $V_{k}^i = [P_k^i, P_{k+1}^i]$~\cite{liang2020learning,zhou2022hivt}
 \end{itemize}
 
 \column{0.48\textwidth}
 \textbf{Agent Trajectories:}
 \begin{itemize}
     \item \textbf{Trajectory points}: $\mathcal{T}_{in}^a = [P_1^a, P_2^a, \ldots, P_T^a]$
-    \item \textbf{Motion vectors}: $M_t^a = [P_{2}^a - P_{1}^a, \ldots, P_{T}^a - P_{T-1}^a]$
+    \item \textbf{Motion vectors}: $M_t^a = [P_{2}^a - P_{1}^a, \ldots, P_{T}^a - P_{T-1}^a]$~\cite{lmformerYadav2025}
 \end{itemize}
 \end{columns}
 
 \vspace{0.3cm}
 
-\begin{block}{Key Benefits}
+\begin{block}{Key Benefits~\cite{VectorNet2020, lmformerYadav2025}}
 \begin{itemize}
     \item Higher geometric fidelity
     \item Explicit modeling of spatio-temporal relationships
@@ -174,7 +189,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \begin{frame}{Limitations of Agent-Centric Approaches}
 \begin{columns}[T]
 \column{0.65\textwidth}
-\textbf{Agent-Centric Issues:}
+\textbf{Agent-Centric Issues~\cite{qcnetZhou2023}:}
 \begin{itemize}
     \item Single global frame centered on ego vehicle
     \item Roto-translation invariance only for center agent
@@ -182,7 +197,8 @@ The choice of scene representation fundamentally affects the predictor's capacit
     \item Must re-encode entire scene at each timestep
 \end{itemize}
 
-\textbf{Factorized Attention Complexity:}
+\textbf{Factorized Attention Complexity~\cite{qcnetZhou2023}:}
+% TODO: make table: labels as is 1st col agent-ventric, 2nd col qc
 \begin{align}
 \text{Temporal:} &\quad \mathcal{O}(N_{\max}T^{2}) \\
 \text{Agent}\leftrightarrow\text{Map Fusion:} &\quad \mathcal{O}(N_{\max}T K) \\
@@ -200,12 +216,12 @@ Cubic complexity in dense traffic scenarios leads to significant computational o
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.6\textwidth]{docs/latex/figures/qc_reference_frame.png}
-\caption{Each scene entity lives in its own local coordinate system}
+\caption{Each scene entity lives in its own local coordinate system~\cite{qcnetZhou2023}}
 \end{figure}
 
-\textbf{Key Insight:} Establish a \emph{local coordinate system} (fiber) for each scene element
+\textbf{Key Insight:} Establish a \emph{local coordinate system} (fiber) for each scene element~\cite{qcnetZhou2023}
 
-\begin{block}{Computational Benefits}
+\begin{block}{Computational Benefits~\cite{qcnetZhou2023}}
 \begin{center}
 \scriptsize
 $\underbrace{\mathcal{O}(N_{\max}T^2)+\mathcal{O}(N_{\max}TL)+\mathcal{O}(N_{\max}^2T)}_{\text{agent-centric factorized attention}}
@@ -233,7 +249,7 @@ $\underbrace{\mathcal{O}(N_{\max}T^2)+\mathcal{O}(N_{\max}TL)+\mathcal{O}(N_{\ma
 
 \textbf{Map Elements:} Each segment's start vertex acts as origin, first segment direction defines $x$-axis
 
-\begin{block}{Result}
+\begin{block}{Result~\cite{qcnetZhou2023}}
 $N_{\max} \times T$ distinct fibers over observation window, each with standardized local representation
 \end{block}
 \end{frame}
@@ -341,14 +357,14 @@ $N_{\max} \times T$ distinct fibers over observation window, each with standardi
   \draw[brown,dashed,->,thick]  (e3) -- (e1)
     node[midway,left=3pt] {\scriptsize$\mathbf{r}_{1\to 3}$};
 \end{tikzpicture}
-\caption{Query-centric representation as fiber bundle with local coordinates and relative descriptors}
+\caption{Query-centric representation as fiber bundle with local coordinates and relative descriptors~\cite{qcnetZhou2023}}
 \end{figure}
 \end{frame}
 
 \subsection{Relative Descriptors}
 
 \begin{frame}{Relative Descriptors and Embeddings}
-For any pair of scene elements with tuples $(\mathbf{p}_i^t, \theta_i^t, t)$ and $(\mathbf{p}_j^s, \theta_j^s, s)$:
+For any pair of scene elements with tuples $(\mathbf{p}_i^t, \theta_i^t, t)$ and $(\mathbf{p}_j^s, \theta_j^s, s)$~\cite{qcnetZhou2023}:
 
 \begin{equation}
 \mathbf{r}_{j\to i}^{s\to t} = \left[
@@ -368,7 +384,7 @@ For any pair of scene elements with tuples $(\mathbf{p}_i^t, \theta_i^t, t)$ and
     \item \textbf{Time:} $s-t$ - temporal offset
 \end{enumerate}
 
-\begin{block}{Key Property}
+\begin{block}{Key Property~\cite{qcnetZhou2023}}
 Invariant under global $SE(2)$ transformations, lifted to high-frequency representation via Fourier features
 \end{block}
 \end{frame}
@@ -376,7 +392,7 @@ Invariant under global $SE(2)$ transformations, lifted to high-frequency represe
 \subsection{Geometric Perspective}
 
 \begin{frame}{Fundamental Symmetries}
-Query-centric paradigm exploits three key symmetries:
+Query-centric paradigm exploits three key symmetries~\cite{qcnetZhou2023}:
 
 \vspace{0.3cm}
 
@@ -394,7 +410,7 @@ f_{\boldsymbol{\Psi}}(g \cdot S) = f_{\boldsymbol{\Psi}}(S) \quad \forall g \in 
 Sliding time windows: $f(S(t+\tau)) = f(S(t))$ for any $\tau \in \mathbb{R}$
 \end{description}
 
-\begin{block}{Geometric Insight}
+\begin{block}{Geometric Insight~\cite{qcnetZhou2023}}
     % Geometric Insight: Breaks intractable global manifold into small, repeatable sub-manifolds
 Global scene manifold factorizes into isomorphic fibers—each representing standardized spatial/kinematic variables connected by simple relations
 \end{block}
@@ -403,7 +419,7 @@ Global scene manifold factorizes into isomorphic fibers—each representing stan
 \begin{frame}{Fiber Bundle Decomposition}
 \begin{columns}[T]
 \column{0.6\textwidth}
-\textbf{Key Hypothesis:}
+\textbf{Key Hypothesis~\cite{qcnetZhou2023}:}
 \begin{itemize}
     \item Model splits capacity between learning:
     \begin{enumerate}
@@ -414,7 +430,7 @@ Global scene manifold factorizes into isomorphic fibers—each representing stan
     \item Pairwise encodings inhabit simpler manifold
 \end{itemize}
 
-\textbf{Inductive Bias:}
+\textbf{Inductive Bias~\cite{qcnetZhou2023}:}
 \begin{itemize}
     \item Respects symmetries
     \item Breaks intractable global manifold into small, repeatable sub-manifolds
@@ -442,7 +458,7 @@ Query-centric models trade \textbf{compute} for \textbf{memory}
 \begin{frame}{Memory Considerations}
 \begin{columns}[T]
 \column{0.6\textwidth}
-\textbf{Query-Centric Memory Cost:}
+\textbf{Query-Centric Memory Cost~\cite{qcnetZhou2023}:}
 \begin{itemize}
     \item Every agent state and map segment owns persistent token for each timestep
     \item All pairwise keys/values cached for streaming
@@ -450,7 +466,7 @@ Query-centric models trade \textbf{compute} for \textbf{memory}
     \item Can reach hundreds of MB per batch
 \end{itemize}
 
-\textbf{QCNet Example:}
+\textbf{QCNet Example~\cite{qcnetZhou2023}:}
 \begin{itemize}
     \item Single model training: $\sim 160$ GB GPU VRAM
     \item Typically requires 8x RTX 3090 (24GB)
@@ -467,7 +483,7 @@ Query-centric models trade \textbf{compute} for \textbf{memory}
 \end{itemize}
 \end{block}
 
-\begin{alertblock}{Conclusion}
+\begin{alertblock}{Conclusion~\cite{qcnetZhou2023}}
 High memory cost stems from architecture complexity and caching, not the paradigm itself
 \end{alertblock}
 \end{columns}
@@ -553,19 +569,47 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
 \subsection{LMFormer: A Query-Centric Approach}
 
 \begin{frame}{LMFormer: A Query-Centric Approach}
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.9\textwidth]{docs/figures/lmformer_arch.png}
-        \caption{LMFormer architecture: transformer encoders for static and dynamic contexts \& recurrent cross-attention decoder with coarse-to-fine refinement~\cite{lmformerYadav2025}.}
-    \end{figure}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Key Features:}
+            \begin{itemize}
+                \item Fully query-centric, preserving \(\mathrm{SE}(2) \times \mathbb{R}\) invariance.
+                \item Factorized attention to model relationships between all scene elements.
+                \item Two-level decoder: iterative coarse-to-fine refinement.
+                \item Recurrent cross-attention decoder generates future motion vectors autoregressively.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \includegraphics[width=\textwidth]{docs/figures/lmformer_arch.png}
+                \caption{LMFormer architecture overview~\cite{lmformerYadav2025}.}
+            \end{figure}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}{LMFormer: Encoder Architecture}
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.7\textwidth]{docs/figures/lmformer_arch_encorder.png}
-        \caption{LMFormer encoder: learnable Fourier embeddings, lane self-attention, agent temporal and cross-attentions~\cite{lmformerYadav2025}.}
-    \end{figure}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Encoder Modules:}
+            \begin{itemize}
+                \item \textbf{Learnable Fourier Embeddings}: Lifts all scalar inputs (geometry, kinematics) to a high-frequency space.
+                \item \textbf{Lane Encoder}: Captures static map topology with self-attention over lane segments.
+                \item \textbf{Agent Encoder}: Models dynamic context via three stacked attention layers:
+                    \begin{itemize}
+                        \item Temporal Self-Attention
+                        \item Agent-Agent Cross-Attention
+                        \item Agent-Lane Cross-Attention
+                    \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \includegraphics[width=\textwidth]{docs/figures/lmformer_arch_encorder.png}
+                \caption{Detailed view of the LMFormer encoder modules~\cite{lmformerYadav2025}.}
+            \end{figure}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}{Encoder: Learnable Fourier Embeddings}
@@ -581,10 +625,11 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
     \begin{itemize}
         \item[\(\mathbf{W}_f\)] learns which harmonic frequencies to emphasize.
         \item[\(\mathbf{W}_A\)] learns the amplitude of each frequency.
-        \item[\(\mathbf{B}_\varphi, \mathbf{B}_\psi\)] are learnable phase shifts and biases.
+        \item[\(\mathbf{B}_\varphi\)] are learnable phase shifts.
+        \item[\(\mathbf{B}_\psi\)] are learnable biases.
     \end{itemize}
     \vspace{1em}
-    \small{Unlike fixed sinusoidal embeddings, this adapts during training to capture the most informative scales for trajectory prediction.}
+    \small{The learnable basis adapts to capture the most informative spatio-temporal frequencies for the prediction task.}
 \end{frame}
 
 \begin{frame}{Encoder: Attention Mechanisms}
@@ -593,7 +638,7 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
         \item<1-> \textbf{Map (Lane) Encoder:}
               \begin{itemize}
                 \item Applies self-attention over lane-segment tokens to capture topology and geometry.
-                \item Result: Static scene encodings \(\mathbf{E}_s\).
+                \item Result: Static scene encodings \(\mathbf{E}_s \in \mathbb{R}^{N_{\text{map}} \times D}\).
               \end{itemize}
         \item<2-> \textbf{Agent Encoder:} Stacks three attention modules:
               \begin{enumerate}
@@ -601,7 +646,7 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
                 \item Agent-agent cross-attention (social interactions).
                 \item Agent-lane cross-attention (grounding in map).
               \end{enumerate}
-              Result: Agent encodings \(\mathbf{E}_d\).
+              Result: Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N_{\text{agents}} \times T_{\text{past}} \times D}\).
     \end{itemize}
 \end{frame}
 
@@ -703,10 +748,10 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
 \end{itemize}
 \end{frame}
 
-\end{document}
-
 \begin{frame}[allowframebreaks]
   \frametitle{References}
   \bibliographystyle{ieeetr}
   \bibliography{docs/latex/references}
 \end{frame}
+
+\end{document}
