@@ -373,7 +373,7 @@ Invariant under global $SE(2)$ transformations, lifted to high-frequency represe
 \end{block}
 \end{frame}
 
-\section{Geometric Perspective}
+\subsection{Geometric Perspective}
 
 \begin{frame}{Fundamental Symmetries}
 Query-centric paradigm exploits three key symmetries:
@@ -395,6 +395,7 @@ Sliding time windows: $f(S(t+\tau)) = f(S(t))$ for any $\tau \in \mathbb{R}$
 \end{description}
 
 \begin{block}{Geometric Insight}
+    % Geometric Insight: Breaks intractable global manifold into small, repeatable sub-manifolds
 Global scene manifold factorizes into isomorphic fibers—each representing standardized spatial/kinematic variables connected by simple relations
 \end{block}
 \end{frame}
@@ -436,7 +437,7 @@ Query-centric models trade \textbf{compute} for \textbf{memory}
 \end{columns}
 \end{frame}
 
-\section{Comparison and Conclusions}
+\subsection{Comparison and Conclusions}
 
 \begin{frame}{Memory Considerations}
 \begin{columns}[T]
@@ -452,7 +453,7 @@ Query-centric models trade \textbf{compute} for \textbf{memory}
 \textbf{QCNet Example:}
 \begin{itemize}
     \item Single model training: $\sim 160$ GB GPU VRAM
-    \item Typically requires 8× RTX 3090 (24GB)
+    \item Typically requires 8x RTX 3090 (24GB)
     \item 10s sliding window with 128 agents: >10 GB
 \end{itemize}
 
@@ -542,6 +543,7 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
 %==============================================================================
 % LMFormer Section
 %==============================================================================
+\section{Review of Selected Architectures}
 
 \subsection{LMFormer: A Query-Centric Approach}
 
@@ -685,6 +687,20 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
   \frametitle{References}
   \bibliographystyle{ieeetr}
   \bibliography{docs/latex/references}
+\end{frame}
+
+\section{Conclusion}
+
+\subsection{A Qualitative Comparison of the Selected Architectures}
+
+\begin{frame}{Conclusion}
+\begin{itemize}
+    % TODO: codex bullshit
+    \item Scene representation paradigms are crucial for effective trajectory prediction.
+    \item Query-centric approaches offer significant advantages in terms of geometric fidelity and computational efficiency.
+    \item Future work should focus on optimizing memory usage and exploring hybrid models.
+    \item The field is rapidly evolving, with new architectures pushing the boundaries of what is possible in trajectory prediction.
+\end{itemize}
 \end{frame}
 
 \end{document}
