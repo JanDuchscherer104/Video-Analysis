@@ -127,7 +127,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
     \item Runtime independent of number of agents
 \end{itemize}
 
-\textbf{Examples:} CASPNet~\cite{caspnetSchäfer2022}, CASPFormer~\cite{caspformerYadav2024}, MultiPath~\cite{Chai2019MultiPath}
+\textbf{Examples:} CASPNet~\cite{caspnetSchäfer2022}, CASPFormer~\cite{caspformerYadav2024}, MultiPath~\cite{chai2019multipath}
 
 \column{0.35\textwidth}
 \begin{block}{Advantages}
@@ -806,7 +806,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
                 \item Agent-agent cross-attention (social interactions).
                 \item Agent-lane cross-attention (grounding in map).
               \end{enumerate}
-              Result: Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N_{\text{agents}} \times T_{\text{past}} \times D}\).
+              Result: Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N_{A} \times T_{p} \times D}\).
     \end{itemize}
 \end{frame}
 
