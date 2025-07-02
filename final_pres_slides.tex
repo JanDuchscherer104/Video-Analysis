@@ -574,7 +574,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 % MTR Section
 %==============================================================================
 
-\subsection{Motion TRansformer (MTR)}
+\section{Motion TRansformer (MTR)}
 
 \begin{frame}{Motion TRansformer (MTR): Overview}
     \begin{block}{Core Principle}
@@ -731,25 +731,25 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \begin{frame}{MTR: Use Case - Vehicle at Crosswalk}
     Consider a vehicle (1) turning right while a pedestrian (2) is on a crosswalk.
     \begin{columns}[T]
-        \begin{column}{0.4\textwidth}
+        \begin{column}{0.5\textwidth}
             \begin{figure}
                 \centering
-                \includegraphics[width=0.95\textwidth]{docs/latex/figures/input_output_viz_crosswalk_detail.png}
-                \caption{MTR's prediction for a vehicle (1) turning right. The model correctly identifies yielding to the pedestrian (2) as the most likely outcome.}
+                \includegraphics[width=\textwidth]{docs/latex/figures/input_output_viz_crosswalk_detail.png}
+                \caption{MTR's prediction for a vehicle(1) turning right. The model correctly identifies yielding to the pedestrian(2)\cite{Shi2022MTR}.}
             \end{figure}
         \end{column}
-        \begin{column}{0.6\textwidth}
+        \begin{column}{0.5\textwidth}
             \textbf{Input Relations:}
             \begin{itemize}
-                \item The model encodes the history of the turning vehicle (1, green) and the pedestrian (2, blue).
+                \item The model encodes the histories of the turning vehicle(1) and the pedestrian(2).
                 \item Map polylines for the crosswalk and lane boundaries are also encoded.
-                \item The encoder's attention mechanism fuses these inputs, capturing the critical vehicle-pedestrian interaction.
+                \item Encoder's attention mechanism fuses these inputs, capturing the vehicle-pedestrian interaction.
             \end{itemize}
             \textbf{Output Relations:}
             \begin{itemize}
                 \item The model generates multiple future trajectories (orange/yellow).
-                \item The most probable mode shows the vehicle waiting for the pedestrian to pass before completing the turn.
-                \item The high confidence in this yielding maneuver shows the model's ability to produce socially compliant predictions.
+                \item The most probable mode correctly shows the vehicle yielding to the pedestrian.
+                \item High confidence in this maneuver demonstrates socially compliant prediction.
             \end{itemize}
         \end{column}
     \end{columns}
@@ -760,7 +760,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 %==============================================================================
 % LMFormer Section
 %==============================================================================
-\subsection{LMFormer: A Query-Centric Approach}
+\section{LMFormer: A Query-Centric Approach}
 
 \begin{frame}{LMFormer: A Query-Centric Approach}
     \begin{columns}[T]
@@ -1001,7 +1001,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 %==============================================================================
 % Comparative Analysis
 %==============================================================================
-\subsection{Comparative Analysis}
+\section{Comparative Analysis}
 
 \begin{frame}{Comparative Analysis of Architectures}
     \begin{table}
@@ -1067,7 +1067,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 %==============================================================================
 % Conclusion
 %==============================================================================
-\section{Project Conclusion}
+\section{Conclusion}
 
 \begin{frame}{Summary of Achievements}
     \begin{columns}[T]
@@ -1123,7 +1123,15 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \end{alertblock}
 \end{frame}
 
+\begin{frame}{Discussion}
+    \frametitle{Discussion}
+    \begin{center}
+        {\LARGE\bfseries Discussion}
+    \end{center}
+\end{frame}
+
 \begin{frame}[allowframebreaks]{References}
+  \frametitle{References}
   \bibliographystyle{ieeetr}
   \bibliography{docs/latex/references}
 \end{frame}
