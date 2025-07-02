@@ -840,11 +840,11 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
   \begin{columns}[T]
     \column{0.6\textwidth}
       \begin{itemize}
-        \item<1-> \textbf{Map (Lane) Encoder:}\\
+        \item \textbf{Map (Lane) Encoder:}\\
           Applies self-attention over lane-segment tokens to capture topology and geometry.\\
           Result: Static scene encodings \(\mathbf{E}_s \in \mathbb{R}^{N_{\text{map}} \times D}\).
-        \item<2-> \textbf{Agent Encoder:} Stacks three attention modules:
-          \begin{enumerate}[<+->]
+        \item \textbf{Agent Encoder:} Stacks three attention modules:
+          \begin{enumerate}
             \item Temporal self-attention (agent's own past).
             \item Agent-agent cross-attention (social interactions).
             \item Agent-lane cross-attention (grounding in map).
@@ -853,13 +853,10 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
       \end{itemize}
 
     \column{0.35\textwidth}
-      % Lane self-attention (always visible)
-      \only<1->{%
-        \centering
-        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/a-sa-l2l.png}
-      }
+    \centering
+    \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/a-sa-l2l.png}
+
   \end{columns}
-    \only<2->{%
         \centering
         \begin{figure}
         \centering
@@ -870,7 +867,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
         \end{tabular}
         \caption{Attention mechanisms in the agent encoder: Temporal, Agent, and Lane cross-attention~\cite{lmformerYadav2025}.}
         \end{figure}
-      }
 \end{frame}
 
 \begin{frame}{LMFormer: Decoder Architecture}
@@ -948,60 +944,62 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \end{equation}
 \end{frame}
 
-\begin{frame}{LMFormer: Qualitative Comparison}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \textbf{Pros} \greenoplus
-            \begin{itemize}
-                \item Fully query-centric (\(\mathrm{SE}(2)\) invariant).
-                \item Joint multi-agent decoding.
-                \item Temporally coherent refinement.
-                \item Reduced VRAM vs. QCNet.
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \textbf{Cons} \redominus
-            \begin{itemize}
-                \item High VRAM vs. CASPFormer.
-                \item Lane-only static context.
-                \item Uniform loss weighting.
-                \item Generalization challenges.
-            \end{itemize}
-        \end{column}
-    \end{columns}
-\end{frame}
 
-\section{Conclusion}
+% \section{Conclusion}
 
-\begin{frame}[plain]
-  \begin{center}
-    \vfill
-    {\Huge \textbf{Conclusion}}
-    \vfill
-    {\Large Synthesis and Reflection}
-    \vfill
-  \end{center}
-\end{frame}
+% \begin{frame}[plain]
+%   \begin{center}
+%     \vfill
+%     {\Huge \textbf{Conclusion}}
+%     \vfill
+%     {\Large Synthesis and Reflection}
+%     \vfill
+%   \end{center}
+% \end{frame}
 
-\subsection{A Qualitative Comparison of the Selected Architectures}
+% \subsection{A Qualitative Comparison of the Selected Architectures}
 
-\begin{frame}{Relation to CASPNet \& CASPFormer}
-    \begin{itemize}
-        \item \textbf{CASPNet}: Operates on raster grids, predicts per-pixel occupancies.
-        \item \textbf{CASPFormer}: Adds deformable attention and vector outputs but remains \emph{agent-centric}.
-        \item \textbf{LMFormer}: Discards the raster backbone entirely for a \emph{query-centric} paradigm.
-    \end{itemize}
-    \vfill
-    \begin{alertblock}{Key Trade-off}
-    Gains strict symmetry compliance and parallel multi-agent decoding at the cost of a larger key-value cache and higher VRAM demand (\(\approx\)2x CASPFormer).
-    \end{alertblock}
-\end{frame}
+% \begin{frame}{Relation to CASPNet \& CASPFormer}
+%     \begin{itemize}
+%         \item \textbf{CASPNet}: Operates on raster grids, predicts per-pixel occupancies.
+%         \item \textbf{CASPFormer}: Adds deformable attention and vector outputs but remains \emph{agent-centric}.
+%         \item \textbf{LMFormer}: Discards the raster backbone entirely for a \emph{query-centric} paradigm.
+%     \end{itemize}
+%     \vfill
+%     \begin{alertblock}{Key Trade-off}
+%     Gains strict symmetry compliance and parallel multi-agent decoding at the cost of a larger key-value cache and higher VRAM demand (\(\approx\)2x CASPFormer).
+%     \end{alertblock}
+% \end{frame}
 
 
 %==============================================================================
 % Comparative Analysis
 %==============================================================================
 \section{Comparative Analysis}
+% <TODO: Include missing information from this in the subsequent comparative analysis slide>
+% \begin{frame}{LMFormer: Qualitative Comparison}
+%     \begin{columns}[T]
+%         \begin{column}{0.5\textwidth}
+%             \textbf{Pros} \greenoplus
+%             \begin{itemize}
+%                 \item Fully query-centric (\(\mathrm{SE}(2)\) invariant).
+%                 \item Joint multi-agent decoding.
+%                 \item Temporally coherent refinement.
+%                 \item Reduced VRAM vs. QCNet.
+%             \end{itemize}
+%         \end{column}
+%         \begin{column}{0.5\textwidth}
+%             \textbf{Cons} \redominus
+%             \begin{itemize}
+%                 \item High VRAM vs. CASPFormer.
+%                 \item Lane-only static context.
+%                 \item Uniform loss weighting.
+%                 \item Generalization challenges.
+%             \end{itemize}
+%         \end{column}
+%     \end{columns}
+% \end{frame}
+% </TODO: Include missing information from this in the subsequent comparative analysis slide>
 
 \begin{frame}{Comparative Analysis of Architectures}
     \begin{table}
