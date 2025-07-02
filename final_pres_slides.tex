@@ -217,6 +217,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \begin{itemize}
     \item Single global frame centered on ego vehicle
     \item Roto-translation invariance only for center agent
+    \item No permutation invariance (center agent privileged)
     \item Computationally infeasible for attention-based models
     \item Must re-encode entire scene at each timestep
 \end{itemize}
@@ -442,7 +443,7 @@ Sliding time windows: $f(\mathcal{S}(t+\tau)) = f(\mathcal{S}(t))$ for any $\tau
 \end{description}
 
 \begin{block}{Geometric Insight}
-Global scene manifold factorizes into small, redundant sub-manifolds (fibers)—each representing standardized spatial/kinematic variables connected by simple relations.
+Global scene manifold factorizes into small, redundant sub-manifolds (fibers)—each representing standardized spatial/kinematic variables connected by simple relations. $ f_{\boldsymbol{\Psi}}$ can learn these simpler representations instead of the complex global manifold.
 \end{block}
 \end{frame}
 
@@ -498,19 +499,17 @@ Query-centric models trade \textbf{compute} for \textbf{memory} - QCNet requires
 \hline
 \textbf{Geometric Fidelity} & Limited by discretization & Higher, vector-based & Highest, preserves relationships \\
 \hline
-\textbf{Computational Complexity} & $\mathcal{O}(H \times W)$ & $\mathcal{O}(N_{\max}T^2)$ & $\mathcal{O}(N_{\max}^2)$ streaming \\
+\textbf{Computational Complexity} & $\mathcal{O}(H \times W)$ & $\mathcal{O}(N^2T)$ & $\mathcal{O}(N^2)$ streaming \\
 \hline
 \textbf{Memory Usage} & Moderate & Moderate & High (caching) \\
 \hline
-\textbf{Invariances} & Partial SE(2) & Only for ego agent & Full SE(2) $\rtimes \mathbb{R}$ \\
+\textbf{Invariances} & Partial SE(2) & Only for ego agent & Full SE(2) $\rtimes \mathbb{R} \times S_n$ \\
 \hline
 \textbf{Multi-agent} & Challenging & Limited symmetry & Natural, symmetric \\
 \hline
 \textbf{Streaming} & Re-encode scene & Must re-encode & Efficient caching \\
 \hline
-\textbf{Architecture} & CNN-based & Vector + Transformer & Transformer/Graph \\
-\hline
-\textbf{Factorized Attention} & Not applicable & $\mathcal{O}(N_{\max}T^2)$ & $\mathcal{O}(N_{\max}T)$ \\
+\textbf{Architecture} & CNN enc. & Transformer/Graph & Transformer/Graph \\
 \hline
 \end{tabular}
 \end{table}
@@ -569,6 +568,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \vfill
   \end{center}
 \end{frame}
+
 
 %==============================================================================
 % MTR Section
@@ -767,10 +767,9 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
         \begin{column}{0.5\textwidth}
             \textbf{Key Features:}
             \begin{itemize}
-                \item Fully query-centric, preserving \(\mathrm{SE}(2) \times \mathbb{R}\) invariance.
+                \item Fully query-centric: end-to-end \(\mathrm{SE}(2) \rtimes \mathbb{R} \times S_n\) invariance.
                 \item Factorized attention to model relationships between all scene elements.
-                \item Two-level decoder: iterative coarse-to-fine refinement.
-                \item Recurrent cross-attention decoder generates future motion vectors autoregressively.
+                \item Two-level recurrent decoder for iterative, coarse-to-fine refinement of autoregressively generated motion vectors.
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -882,13 +881,13 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
                 \item \textbf{Iterative Refinement}: Inspired by DAB-DETR~\cite{liu2022dabdetr}, coarse-to-fine trajectory generation across \(N_{\text{dec}}\) layers.
                 \item \textbf{Three Cross-Attention Types}:
                     \begin{itemize}
-                        \item Mode2Temporal (temporal dependencies)
-                        \item Mode2Agent (social interactions)
+                        \item Mode2Temporal (temporal dependencies-per agent)
+                        \item Mode2Agent (social interactions-between agents)
                         \item Mode2Lane (map grounding)
                     \end{itemize}
-                \item \textbf{Autoregressive Generation}: Future motion vectors generated sequentially over \(T_f\) timesteps.
-                \item \textbf{Bottleneck Design}: Only final timestep passed to next layer, forcing temporal compression.
-                \item \textbf{MLP Output}: Motion vectors with uncertainty from refined queries.
+                \item \textbf{Autoregressive Generation}: Future motion vectors generated sequentially over \(T_f\) timesteps (independently in each layer).
+                \item \textbf{Bottleneck Design}: Only final timestep passed to next layer to create a bottleneck.
+                \item \textbf{MLP Output}: Motion vectors with uncertainty from refined queries as \emph{Laplacian Mixture Models}.
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -930,16 +929,23 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
         \item Every mode query predicts a \textbf{motion-vector chain}:
     \end{itemize}
     \begin{equation}
-    \mathcal{T}_{out}^{a,m} = \bigl[(V_1^{a,m},S_1^{a,m}),\dots,(V_{T_f}^{a,m},S_{T_f}^{a,m})\bigr],
+    \mathcal{T}_{out}^{a,m} = \bigl[(V_1^{a,m},S_1^{a,m}),\dots,(V_{T_f}^{a,m},S_{T_f}^{a,m})\bigr], \quad V_\bullet^{a,m}, S_\bullet^{a,m} \in \mathbb{R}^2
     \end{equation}
     where \(V_t\) is a displacement vector and \(S_t\) its uncertainty, parameterizing a Laplacian mixture.
 
     \vspace{1em}
     \textbf{Loss Formulation}
     \begin{itemize}
-        \item Combines winner-takes-all regression loss and classification loss.
-        \item Supervises every refinement layer to encourage coarse-to-fine refinement.
+        \item Combines winner-takes-all regression loss and classification loss-same as MTR but with LMM instead of GMM.
+        \item Supervises all but the first refinement layer to encourage coarse-to-fine refinement.
     \end{itemize}
+
+    \begin{equation}
+    \mathcal{L}
+    = \lambda\,\mathcal{L}_{cls}
+        + \sum_{n=2}^{N_{\text{dec}}}\mathcal{L}_{reg}^{(n)},
+    \label{eq:lm_loss}
+    \end{equation}
 \end{frame}
 
 \begin{frame}{LMFormer: Qualitative Comparison}
