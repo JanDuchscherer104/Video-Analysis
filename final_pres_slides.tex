@@ -591,6 +591,33 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \end{figure}
 \end{frame}
 
+\begin{frame}{MTR: Input-Output Formulation}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Input Domain}
+            \begin{itemize}
+                \item \textbf{Agent of Interest:} Historical trajectory (position, velocity, heading).
+                \item \textbf{Context Agents:} Histories of surrounding agents.
+                \item \textbf{Map Features:} Vectorized polylines for lanes, crosswalks, etc.
+                \item All inputs are transformed into the agent-of-interest's local coordinate system.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \textbf{Output Domain}
+            \begin{itemize}
+                \item A set of $K$ probable future trajectories (e.g., $K=64$).
+                \item Each trajectory is a sequence of waypoints over a future time horizon (e.g., 8s).
+                \item Each trajectory is assigned a confidence score $p_k$.
+                \item This forms a Gaussian Mixture Model (GMM) representing the prediction distribution.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \vfill
+    \begin{block}{Key Transformation}
+        MTR transforms historical, agent-centric scene vectors into a ranked, multimodal distribution of future paths.
+    \end{block}
+\end{frame}
+
 \begin{frame}{MTR: Input Encoding}
     MTR uses vectorized polylines for all scene elements, avoiding rasterization artifacts.
     \begin{columns}[T]
@@ -661,31 +688,21 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \end{figure}
 \end{frame}
 
-\begin{frame}{MTR: Input-Output Formulation}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \textbf{Input Domain}
-            \begin{itemize}
-                \item \textbf{Agent of Interest:} Historical trajectory (position, velocity, heading).
-                \item \textbf{Context Agents:} Histories of surrounding agents.
-                \item \textbf{Map Features:} Vectorized polylines for lanes, crosswalks, etc.
-                \item All inputs are transformed into the agent-of-interest's local coordinate system.
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \textbf{Output Domain}
-            \begin{itemize}
-                \item A set of $K$ probable future trajectories (e.g., $K=64$).
-                \item Each trajectory is a sequence of waypoints over a future time horizon (e.g., 8s).
-                \item Each trajectory is assigned a confidence score $p_k$.
-                \item This forms a Gaussian Mixture Model (GMM) representing the prediction distribution.
-            \end{itemize}
-        \end{column}
-    \end{columns}
-    \vfill
-    \begin{block}{Key Transformation}
-        MTR transforms historical, agent-centric scene vectors into a ranked, multimodal distribution of future paths.
+\begin{frame}{MTR: Dense Future Prediction}
+    \begin{block}{Problem: Interactions are Typically Modeled on Past Data}
+        Most models reason about agent interactions based only on their historical trajectories. This ignores crucial information about how agents are likely to interact in the immediate future.
     \end{block}
+    
+    \textbf{MTR's Solution: An Auxiliary Prediction Task}
+    \begin{enumerate}
+        \item After the scene encoder creates context-aware features for all agents ($\mathbf{A}_{\text{past}}$), a simple MLP head predicts a single, plausible future trajectory for \emph{every} agent in the scene.
+        \item These predicted future paths are encoded into feature vectors ($\mathbf{A}_{\text{future}}$).
+        \item The final agent context is an enriched representation combining past and predicted future information: $\mathbf{A}_{\text{enhanced}} = \text{MLP}([\mathbf{A}_{\text{past}}, \mathbf{A}_{\text{future}}])$.
+    \end{enumerate}
+
+    \begin{alertblock}{Key Insight}
+        By conditioning the main decoder on \textbf{anticipated future interactions}, the model can produce more socially-aware and scene-compliant multimodal predictions for the agent of interest.
+    \end{alertblock}
 \end{frame}
 
 \begin{frame}{MTR: Training and Loss Function}
