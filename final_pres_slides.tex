@@ -125,9 +125,9 @@ The choice of scene representation fundamentally affects the predictor's capacit
     \item Static HD-map raster: $\mathbf{I}_s \in \mathbb{R}^{H \times W \times F_s}$
     \item Leverage convolutional backbones
     \item Runtime independent of number of agents
-\end{itemize}\cite{caspnetppSchäfer2023}
+\end{itemize}
 
-\textbf{Examples:} CASPNet~\cite{caspnetSchäfer2022}, CASPFormer~\cite{caspformerYadav2024},MultiPath~\cite{Chai2019MultiPath}
+\textbf{Examples:} CASPNet~\cite{caspnetSchäfer2022}, CASPFormer~\cite{caspformerYadav2024}, MultiPath~\cite{Chai2019MultiPath}
 
 \column{0.35\textwidth}
 \begin{block}{Advantages}
@@ -402,7 +402,7 @@ Query-centric paradigm exploits three key symmetries~\cite{qcnetZhou2023}:
 Agents form unordered sets—no element privileged. For permutation $\sigma$: $f(\sigma \cdot S) = \rho(\sigma) f(S)$
 
 \item[\textbf{SE(2) Invariance}]
-Rigid transformations leave encoding unchanged:
+Rigid transformations leave model output unchanged:
 \begin{equation}
 f_{\boldsymbol{\Psi}}(g \cdot S) = f_{\boldsymbol{\Psi}}(S) \quad \forall g \in SE(2)
 \end{equation}
@@ -412,8 +412,7 @@ Sliding time windows: $f(S(t+\tau)) = f(S(t))$ for any $\tau \in \mathbb{R}$
 \end{description}
 
 \begin{block}{Geometric Insight~\cite{qcnetZhou2023}}
-    % Geometric Insight: Breaks intractable global manifold into small, repeatable sub-manifolds
-Global scene manifold factorizes into isomorphic fibers—each representing standardized spatial/kinematic variables connected by simple relations
+Global scene manifold factorizes into small, redundant sub-manifolds (fibers)—each representing standardized spatial/kinematic variables connected by simple relations.
 \end{block}
 \end{frame}
 
@@ -449,70 +448,39 @@ Global scene manifold factorizes into isomorphic fibers—each representing stan
 \end{block}
 
 \begin{alertblock}{Trade-off}
-Query-centric models trade \textbf{compute} for \textbf{memory}
+Query-centric models trade \textbf{compute} for \textbf{memory} - QCNet requires $\sim 160$ GB VRAM for training~\cite{qcnetZhou2023}
 \end{alertblock}
 \end{columns}
 \end{frame}
 
 \subsection{Comparison and Conclusions}
 
-\begin{frame}{Memory Considerations}
-\begin{columns}[T]
-\column{0.6\textwidth}
-\textbf{Query-Centric Memory Cost~\cite{qcnetZhou2023}:}
-\begin{itemize}
-    \item Every agent state and map segment owns persistent token for each timestep
-    \item All pairwise keys/values cached for streaming
-    \item Scene tensor grows linearly with $N_{\max}T$
-    \item Can reach hundreds of MB per batch
-\end{itemize}
-
-\textbf{QCNet Example~\cite{qcnetZhou2023}:}
-\begin{itemize}
-    \item Single model training: $\sim 160$ GB GPU VRAM
-    \item Typically requires 8x RTX 3090 (24GB)
-    \item 10s sliding window with 128 agents: >10 GB
-\end{itemize}
-
-\column{0.35\textwidth}
-\begin{block}{Mitigation Strategies}
-\begin{itemize}
-    \item Cache raw descriptors, not embeddings
-    \item Compute embeddings on-the-fly
-    \item Sparse attention mechanisms
-    \item Deformable attention
-\end{itemize}
-\end{block}
-
-\begin{alertblock}{Conclusion~\cite{qcnetZhou2023}}
-High memory cost stems from architecture complexity and caching, not the paradigm itself
-\end{alertblock}
-\end{columns}
-\end{frame}
 
 \begin{frame}{Paradigm Comparison}
 \begin{table}[ht]
 \centering
 \footnotesize
-\begin{tabular}{|p{2.5cm}|p{4cm}|p{4cm}|}
+\begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|p{2.5cm}|}
 \hline
-\textbf{Aspect} & \textbf{Rasterized} & \textbf{Query-Centric} \\
+\textbf{Aspect} & \textbf{Rasterized} & \textbf{Agent-Centric} & \textbf{Query-Centric} \\
 \hline
-\textbf{Representation} & BEV image grids & Local coordinate frames \\
+\textbf{Representation} & BEV image grids & Global ego frame & Local coordinate frames \\
 \hline
-\textbf{Geometric Fidelity} & Limited by discretization & High, preserves relationships \\
+\textbf{Geometric Fidelity} & Limited by discretization & Higher, vector-based & Highest, preserves relationships \\
 \hline
-\textbf{Computational Complexity} & $\mathcal{O}(H \times W)$ & $\mathcal{O}(N_{\max}^2)$ streaming \\
+\textbf{Computational Complexity} & $\mathcal{O}(H \times W)$ & $\mathcal{O}(N_{\max}T^2)$ & $\mathcal{O}(N_{\max}^2)$ streaming \\
 \hline
-\textbf{Memory Usage} & Moderate & High (caching) \\
+\textbf{Memory Usage} & Moderate & Moderate & High (caching) \\
 \hline
-\textbf{Invariances} & Partial & Full SE(2) × $\mathbb{R}$ invariance \\
+\textbf{Invariances} & Partial SE(2) & Only for ego agent & Full SE(2) $\rtimes \mathbb{R}$ \\
 \hline
-\textbf{Multi-agent} & Challenging & Natural \\
+\textbf{Multi-agent} & Challenging & Limited symmetry & Natural, symmetric \\
 \hline
-\textbf{Streaming} & Re-encode entire scene & Efficient caching \\
+\textbf{Streaming} & Re-encode scene & Must re-encode & Efficient caching \\
 \hline
-\textbf{Architecture} & CNN-based & Transformer/Graph-based \\
+\textbf{Architecture} & CNN-based & Vector + Transformer & Transformer/Graph \\
+\hline
+\textbf{Factorized Attention} & Not applicable & $\mathcal{O}(N_{\max}T^2)$ & $\mathcal{O}(N_{\max}T)$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -520,40 +488,6 @@ High memory cost stems from architecture complexity and caching, not the paradig
 \begin{block}{Key Takeaway}
 Query-centric paradigm offers superior theoretical properties and streaming efficiency at the cost of increased memory requirements
 \end{block}
-\end{frame}
-
-\begin{frame}{Summary}
-\begin{columns}[T]
-\column{0.5\textwidth}
-\textbf{Key Contributions:}
-\begin{itemize}
-    \item Fundamental symmetries in trajectory prediction
-    \item Fiber bundle geometric perspective
-    \item Computational efficiency through streaming
-    \item Natural multi-agent capabilities
-\end{itemize}
-
-\textbf{Applications:}
-\begin{itemize}
-    \item QCNet, QCNeXt
-    \item LMFormer
-    \item Modern trajectory prediction models
-\end{itemize}
-
-\column{0.45\textwidth}
-\begin{block}{Future Directions}
-\begin{itemize}
-    \item Memory optimization techniques
-    \item Sparse attention mechanisms
-    \item Hybrid approaches
-    \item Real-time deployment
-\end{itemize}
-\end{block}
-
-\begin{alertblock}{Impact}
-Query-centric paradigm represents a fundamental shift towards more principled, efficient, and scalable trajectory prediction
-\end{alertblock}
-\end{columns}
 \end{frame}
 
 
@@ -652,11 +586,29 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
 \end{frame}
 
 \begin{frame}{LMFormer: Decoder Architecture}
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.6\textwidth, height=0.7\textheight, keepaspectratio]{docs/figures/lmformer_arch_decoder.png}
-        \caption{LMFormer decoder: recurrent mode-query cross-attention modules that iteratively generate future motion vectors~\cite{lmformerYadav2025}.}
-    \end{figure}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Decoder Features:}
+            \begin{itemize}
+                \item \textbf{Iterative Refinement}: Inspired by DAB-DETR~\cite{liu2022dabdetr}, coarse-to-fine trajectory generation across \(N_{\text{dec}}\) layers.
+                \item \textbf{Three Cross-Attention Types}:
+                    \begin{itemize}
+                        \item Mode2Temporal (temporal dependencies)
+                        \item Mode2Agent (social interactions)
+                        \item Mode2Lane (map grounding)
+                    \end{itemize}
+                \item \textbf{Autoregressive Generation}: Future motion vectors generated sequentially over \(T_f\) timesteps.
+                \item \textbf{Bottleneck Design}: Only final timestep passed to next layer, forcing temporal compression.
+                \item \textbf{MLP Output}: Motion vectors with uncertainty from refined queries.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{docs/figures/lmformer_arch_decoder.png}
+                \caption{LMFormer decoder with recurrent cross-attention modules~\cite{lmformerYadav2025}.}
+            \end{figure}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 \begin{frame}[fragile]{Decoder: Recurrent Cross-Attention}
@@ -755,8 +707,6 @@ Query-centric paradigm represents a fundamental shift towards more principled, e
     % TODO: codex bullshit
     \item Scene representation paradigms are crucial for effective trajectory prediction.
     \item Query-centric approaches offer significant advantages in terms of geometric fidelity and computational efficiency.
-    \item Future work should focus on optimizing memory usage and exploring hybrid models.
-    \item The field is rapidly evolving, with new architectures pushing the boundaries of what is possible in trajectory prediction.
 \end{itemize}
 \end{frame}
 
