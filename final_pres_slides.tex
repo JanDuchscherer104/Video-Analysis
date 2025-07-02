@@ -490,17 +490,242 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{block}
 \end{frame}
 
+% \begin{frame}{Summary}
+% \begin{columns}[T]
+% \column{0.5\textwidth}
+% \textbf{Key Contributions:}
+% \begin{itemize}
+%     \item Fundamental symmetries in trajectory prediction
+%     \item Fiber bundle geometric perspective
+%     \item Computational efficiency through streaming
+%     \item Natural multi-agent capabilities
+% \end{itemize}
+
+% \textbf{Applications:}
+% \begin{itemize}
+%     \item QCNet, QCNeXt
+%     \item LMFormer
+%     \item Modern trajectory prediction models
+% \end{itemize}
+
+% \column{0.45\textwidth}
+% \begin{block}{Future Directions}
+% \begin{itemize}
+%     \item Memory optimization techniques
+%     \item Sparse attention mechanisms
+%     \item Hybrid approaches
+%     \item Real-time deployment
+% \end{itemize}
+% \end{block}
+
+% \begin{alertblock}{Impact}
+% Query-centric paradigm represents a fundamental shift towards more principled, efficient, and scalable trajectory prediction
+% \end{alertblock}
+% \end{columns}
+% \end{frame}
+% conclusion: MTR effectively disentangles multimodality by using static queries for high-level intentions and dynamic queries for detailed path refinement.
+
+
+\section{Review of Selected Architectures}
+
+%==============================================================================
+% MTR Section
+%==============================================================================
+
+\subsection{Motion TRansformer (MTR)}
+
+\begin{frame}{Motion TRansformer (MTR): Overview}
+    \frametitle{Motion TRansformer (MTR): Overview}
+    \begin{block}{Core Principle}
+        MTR models motion prediction as a two-stage process:
+        \begin{enumerate}
+            \item \textbf{Global Intention Localization:} Propose a diverse set of high-level goals.
+            \item \textbf{Local Movement Refinement:} Generate precise paths to achieve these goals.
+        \end{enumerate}
+    \end{block}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.85\textwidth]{docs/latex/figures/mtr_overall_architecture_detail.png}
+        \caption{MTR architecture: A scene encoder builds context, and a motion decoder uses query pairs to generate multimodal trajectories~\cite{Shi2022MTR}.}
+        \label{fig:mtr_architecture_pres}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{MTR: Input Encoding}
+    \frametitle{MTR: Input Encoding}
+    MTR uses vectorized polylines for all scene elements, avoiding rasterization artifacts.
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Map Elements}
+            \begin{itemize}
+                \item Lanes, boundaries, and crosswalks are represented as polylines.
+                \item A PointNet-style MLP processes each polyline's points into a fixed-size feature vector.
+                \item Max-pooling aggregates point features into a single polyline token.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \textbf{Agent Histories}
+            \begin{itemize}
+                \item Past motion (position, heading, velocity) is also a polyline.
+                \item Includes one-hot encodings for agent type (vehicle, pedestrian) and timestep.
+                \item A similar MLP and pooling process creates an agent history token.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \vfill
+    \begin{block}{Scene Context Encoder}
+        A Transformer encoder with \textbf{local self-attention} processes all map and agent tokens. Each element attends only to its $k$ nearest neighbors, efficiently building context-aware representations.
+    \end{block}
+\end{frame}
+
+\begin{frame}{MTR Decoder: Motion Query Pairs}
+    \frametitle{MTR Decoder: Motion Query Pairs}
+    The decoder uses $K$ query pairs to generate $K$ trajectory modes. Each pair has a distinct role.
+    \begin{columns}[T]
+        \begin{column}{0.6\textwidth}
+            \begin{itemize}
+                \item\textbf{Static Intention Queries ($Q_I$):}
+                \begin{itemize}
+                    \item Act as stable anchors for different motion intentions (e.g., turn left, go straight).
+                    \item Derived from clustering ground-truth trajectory endpoints.
+                    \item Each query specializes in one high-level behavior, promoting prediction diversity.
+                \end{itemize}
+                \item\textbf{Dynamic Searching Queries ($Q_S$):}
+                \begin{itemize}
+                    \item Perform fine-grained path refinement.
+                    \item At each decoder layer, the query is updated based on the previously predicted trajectory.
+                    \item Probes the local scene context to make precise adjustments.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.9\textwidth]{docs/latex/figures/decoder_layer_detail.png}
+                \caption{A single MTR decoder layer. The static query sets the goal, while the dynamic query refines the path iteratively~\cite{Shi2022MTR}}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{MTR Decoder: Dynamic Map Collection}
+    \frametitle{MTR Decoder: Dynamic Map Collection}
+    To ensure refinement is context-aware, the decoder focuses only on relevant map information.
+    \begin{itemize}
+        \item At each refinement step, the model identifies the $L$ map polylines closest to the current trajectory hypothesis.
+        \item The dynamic query performs cross-attention only with these selected map features.
+        \item This allows the model to ground its predictions in the immediate local geometry, such as staying within lane boundaries.
+    \end{itemize}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{docs/latex/figures/dynamic_map.png}
+        \caption{As the trajectory is refined (dashed line), the decoder dynamically selects the closest map polylines (highlighted) to inform the next step~\cite{Shi2022MTR}.}
+        \label{fig:dynamic_map_pres}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{MTR: Input-Output Formulation}
+    \frametitle{MTR: Input-Output Formulation}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Input Domain}
+            \begin{itemize}
+                \item \textbf{Agent of Interest:} Historical trajectory (position, velocity, heading).
+                \item \textbf{Context Agents:} Histories of surrounding agents.
+                \item \textbf{Map Features:} Vectorized polylines for lanes, crosswalks, etc.
+                \item All inputs are transformed into the agent-of-interest's local coordinate system.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \textbf{Output Domain}
+            \begin{itemize}
+                \item A set of $K$ probable future trajectories (e.g., $K=64$).
+                \item Each trajectory is a sequence of waypoints over a future time horizon (e.g., 8s).
+                \item Each trajectory is assigned a confidence score $p_k$.
+                \item This forms a Gaussian Mixture Model (GMM) representing the prediction distribution.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \vfill
+    \begin{block}{Key Transformation}
+        MTR transforms historical, agent-centric scene vectors into a ranked, multimodal distribution of future paths.
+    \end{block}
+\end{frame}
+
+\begin{frame}{MTR: Training and Loss Function}
+    \frametitle{MTR: Training and Loss Function}
+    The model is trained using a "winner-takes-all" strategy that combines classification and regression losses.
+    \begin{itemize}
+        \item \textbf{1. Find the Best Match:} For each training example, the model finds the predicted trajectory $\mathcal{T}_k$ that is closest to the ground-truth trajectory $\mathcal{T}_{gt}$. This is the "winning" prediction.
+        \item \textbf{2. Classification Loss:} A classification loss (e.g., cross-entropy) encourages the model to assign a high probability $p_k$ to this winning mode.
+        \item \textbf{3. Regression Loss:} A regression loss (e.g., L1 or L2 distance) penalizes the waypoint differences between the winning trajectory $\mathcal{T}_k$ and the ground truth $\mathcal{T}_{gt}$.
+    \end{itemize}
+    \begin{equation}
+        \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{cls}}(p_k, \text{winner}) + \alpha \cdot \mathcal{L}_{\text{reg}}(\mathcal{T}_k, \mathcal{T}_{gt})
+    \end{equation}
+    \begin{alertblock}{Supervision Strategy}
+        This loss is applied at every layer of the decoder, encouraging iterative refinement from a coarse guess to a fine-grained path.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{MTR: Quantitative Results}
+    \frametitle{MTR: Quantitative Results}
+    \begin{block}{Performance on Agrovere 2 Dataset}
+        Our trained MTR model was evaluated against the official paper results on the validation set.
+    \end{block}
+    \begin{table}
+        \centering
+        \renewcommand{\arraystretch}{1.3}
+        \begin{tabular}{|l|c|c|c|}
+            \hline
+            \textbf{Metric} & \textbf{Our Model} & \textbf{Paper Results} & \textbf{Improvement} \\
+            \hline
+            brier-minFDE ($\uparrow$) & \textbf{1.98} & 2.08 & \textcolor{mygreen}{-4.8\%} \\
+            minFDE@1 ($\uparrow$) & \textbf{1.67} & 1.68 & \textcolor{mygreen}{-0.6\%} \\
+            minADE@1 ($\downarrow$) & 0.86 & \textbf{0.85} & \textcolor{myred}{+1.2\%} \\
+            Miss Rate@1 ($\downarrow$) & 0.3014\% & \textbf{0.3\%} & \textcolor{myred}{+0.5\%} \\
+            \hline
+        \end{tabular}
+        \caption{Comparison of key performance metrics.}
+    \end{table}
+    \begin{alertblock}{Key Takeaway}
+        The model significantly improves the brier-minFDE score, indicating better-calibrated uncertainty estimates alongside competitive trajectory accuracy.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{MTR: Use Case - Vehicle at Crosswalk}
+    \frametitle{MTR: Use Case - Vehicle at Crosswalk}
+    Consider a vehicle (1) turning right while a pedestrian (2) is on a crosswalk.
+    \begin{columns}[T]
+        \begin{column}{0.4\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.95\textwidth]{docs/latex/figures/input_output_viz_crosswalk_detail.png}
+                \caption{MTR's prediction for a vehicle (1) turning right. The model correctly identifies yielding to the pedestrian (2) as the most likely outcome.}
+            \end{figure}
+        \end{column}
+        \begin{column}{0.6\textwidth}
+            \textbf{Input Relations:}
+            \begin{itemize}
+                \item The model encodes the history of the turning vehicle (1, green) and the pedestrian (2, blue).
+                \item Map polylines for the crosswalk and lane boundaries are also encoded.
+                \item The encoder's attention mechanism fuses these inputs, capturing the critical vehicle-pedestrian interaction.
+            \end{itemize}
+            \textbf{Output Relations:}
+            \begin{itemize}
+                \item The model generates multiple future trajectories (orange/yellow).
+                \item The most probable mode shows the vehicle waiting for the pedestrian to pass before completing the turn.
+                \item The high confidence in this yielding maneuver shows the model's ability to produce socially compliant predictions.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+% conclusion: MTR effectively disentangles multimodality by using static queries for high-level intentions and dynamic queries for detailed path refinement.
+
 
 %==============================================================================
 % LMFormer Section
 %==============================================================================
-\section{Review of Selected Architectures}
-
-\subsection{MTR: Motion Transformer}
-\begin{frame}{MTR: Motion Transformer}
-    Lipsum
-\end{frame}
-
 \subsection{LMFormer: A Query-Centric Approach}
 
 \begin{frame}{LMFormer: A Query-Centric Approach}
@@ -659,7 +884,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \end{itemize}
 \end{frame}
 
-
 \begin{frame}{LMFormer: Qualitative Comparison}
     \frametitle{LMFormer: Qualitative Comparison}
     \begin{columns}[T]
@@ -702,12 +926,133 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 
-\begin{frame}{Conclusion}
-\begin{itemize}
-    % TODO: codex bullshit
-    \item Scene representation paradigms are crucial for effective trajectory prediction.
-    \item Query-centric approaches offer significant advantages in terms of geometric fidelity and computational efficiency.
-\end{itemize}
+%==============================================================================
+% Comparative Analysis
+%==============================================================================
+\subsection{Comparative Analysis}
+
+\begin{frame}{Comparative Analysis of Architectures}
+    \frametitle{Comparative Analysis of Architectures}
+    \begin{table}
+    \centering
+    \tiny
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{1.9cm}|p{3.9cm}|p{3.9cm}|p{3.9cm}|}
+        \hline
+        \textbf{Aspect} & \textbf{CASPFormer (Raster-Centric)} & \textbf{MTR (Hybrid)} & \textbf{LMFormer (Query-Centric)} \\
+        \hline
+        \textbf{Scene Representation} & Rasterized BEV grids. & Vectorized polylines. & Vectorized polylines. \\
+        \hline
+        \textbf{Coordinate System} & Agent-centric (ego frame). & Agent-centric (target frame). & Query-centric (local frames). \\
+        \hline
+        \textbf{Symmetry} & No inherent symmetries for context agents. & Invariant for target agent only. & Full SE(2) \(\times\) \(\mathbb{R}\) invariance. \\
+        \hline
+        \textbf{Encoder} & CNN backbone with FPN. & PointNet-style MLP + Transformer with local attention. & Transformer with learnable Fourier features. \\
+        \hline
+        \textbf{Decoder} & Deformable cross-attention on multi-scale feature maps. & Motion query pairs (static intention + dynamic search). & Recurrent cross-attention on mode queries. \\
+        \hline
+        \textbf{Pros} \greenoplus &
+        \begin{itemize}
+            \item Efficient Transformer decoding.
+            \item Direct vectorized output.
+            \item Explicit uncertainty estimates.
+        \end{itemize} &
+        \begin{itemize}
+            \item High geometric precision.
+            \item Interpretable query-based modes.
+            \item Dynamic map attention.
+        \end{itemize} &
+        \begin{itemize}
+            \item Fully SE(2) invariant.
+            \item Joint multi-agent decoding.
+            \item Temporally coherent refinement.
+        \end{itemize} \\
+        \hline
+        \textbf{Cons} \redominus &
+        \begin{itemize}
+            \item Inherits raster artifacts.
+            \item Limited to ego-centric view.
+            \item Quadratic scaling in encoder.
+        \end{itemize} &
+        \begin{itemize}
+            \item Requires NMS post-processing.
+            \item Intention queries may miss rare maneuvers.
+            \item Lacks explicit physical constraints.
+        \end{itemize} &
+        \begin{itemize}
+            \item High VRAM demand.
+            \item Lane-only static context.
+            \item Generalization challenges.
+        \end{itemize} \\
+        \hline
+    \end{tabular}
+    \end{table}
+    \begin{alertblock}{Architectural Trade-off}
+        The field is moving from raster-based, agent-centric models (CASPFormer) towards fully vectorized, query-centric paradigms (LMFormer). This shift trades CNN simplicity for the geometric precision and symmetry of Transformers, at the cost of higher memory. MTR represents a hybrid approach, combining a vectorized but agent-centric encoder with a query-based decoder.
+    \end{alertblock}
+\end{frame}
+
+
+%==============================================================================
+% Conclusion
+%==============================================================================
+\section{Project Conclusion}
+
+\begin{frame}{Summary of Achievements}
+    \frametitle{Summary of Achievements}
+    \begin{columns}[T]
+        \begin{column}{0.6\textwidth}
+            \textbf{Theoretical Contributions}
+            \begin{itemize}
+                \item Conducted a deep comparative analysis of trajectory prediction architectures, from raster-based (CASPNet) to modern query-centric Transformers (MTR, LMFormer).
+                \item Deconstructed the agent-centric vs. query-centric paradigms, highlighting the role of symmetry and invariance ($\mathrm{SE}(2)$) in building robust models.
+                \item Analyzed key architectural features for multimodality, including motion query pairs and recurrent refinement.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \textbf{Practical Contributions}
+            \begin{itemize}
+                \item Refactored and modernized the UniTraj framework for robust experimentation.
+                \item Established a reproducible training pipeline using PyTorch Lightning.
+            \end{itemize}
+            \begin{alertblock}{Key Result}
+                Our trained MTR model achieved a brier-minFDE of \textbf{1.98}, outperforming the official paper of 2.08.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% \begin{frame}{Conclusion}
+% \begin{itemize}
+%     % TODO: codex bullshit
+%     \item Scene representation paradigms are crucial for effective trajectory prediction.
+%     \item Query-centric approaches offer significant advantages in terms of geometric fidelity and computational efficiency.
+%     \item Future work should focus on optimizing memory usage and exploring hybrid models.
+%     \item The field is rapidly evolving, with new architectures pushing the boundaries of what is possible in trajectory prediction.
+% \end{itemize}
+
+\begin{frame}{Conceptual Takeaways}
+    \frametitle{Conceptual Takeaways}
+    This project provided deep insights into several advanced machine learning concepts.
+    \begin{itemize}
+        \item \textbf{Transformer Architectures:} Gained a practical understanding of how self- and cross-attention mechanisms encode complex spatio-temporal relationships and fuse multimodal data streams.
+        \item \textbf{Geometric Deep Learning:} Applied a geometric lens to analyze the query-centric paradigm, understanding its operations through concepts like symmetries, invariance, and fiber bundles.
+        \item \textbf{Multimodality:} Explored explicit architectural patterns (e.g., mode queries, winner-takes-all loss) designed to capture the inherently uncertain and multimodal nature of future motion.
+    \end{itemize}
+    \begin{block}{Broader Impact}
+        The design principles studied, such as handling symmetries and managing multimodal distributions, are not confined to motion forecasting but are applicable across many domains in visual computing and robotics.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Project Reflection}
+    \frametitle{Project Reflection}
+    \begin{block}{Initial Goal vs. Final Outcome}
+        The initial objective was to implement a novel, minimal model for joint multi-agent prediction. The inherent complexity of the task and the existing research frameworks necessitated a scope adjustment towards a deep comparative analysis of state-of-the-art architectures.
+    \end{block}
+
+    \begin{alertblock}{Key Lesson Learned}
+        While the original implementation goal was not met, the pivot to a theoretical investigation yielded a more comprehensive understanding of the field's core challenges. This experience served as a formative lesson in realistic project scoping, risk assessment, and the importance of adapting goals in response to research complexity.
+    \end{alertblock}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
