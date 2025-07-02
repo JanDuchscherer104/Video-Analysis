@@ -692,7 +692,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \begin{block}{Problem: Interactions are Typically Modeled on Past Data}
         Most models reason about agent interactions based only on their historical trajectories. This ignores crucial information about how agents are likely to interact in the immediate future.
     \end{block}
-    
+
     \textbf{MTR's Solution: An Auxiliary Prediction Task}
     \begin{enumerate}
         \item After the scene encoder creates context-aware features for all agents ($\mathbf{A}_{\text{past}}$), a simple MLP head predicts a single, plausible future trajectory for \emph{every} agent in the scene.
@@ -899,7 +899,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
                     \end{itemize}
                 \item \textbf{Autoregressive Generation}: Future motion vectors generated sequentially over \(T_f\) timesteps (independently in each layer).
                 \item \textbf{Bottleneck Design}: Only final timestep passed to next layer to create a bottleneck.
-                \item \textbf{MLP Output}: Motion vectors with uncertainty from refined queries as \emph{Laplacian Mixture Models}.
+                \item \textbf{MLP Output}: Motion vectors with uncertainty from refined queries as \emph{LMM}.
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -976,9 +976,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \hline
     \textbf{Aspect} & \textbf{CASPFormer (Raster-Centric)} & \textbf{MTR (Hybrid)} & \textbf{LMFormer (Query-Centric)} \\
     \hline
-    \textbf{Scene Representation} & Rasterized BEV grids. & Vectorized polylines. & Vectorized polylines. \\
-    \hline
-    \textbf{Coordinate System} & Agent-centric. & Agent-centric. & Query-centric. \\
+    \textbf{Scene Representation} & Rasterized BEV grids. & Vectorized agent-centric. & Vectorized query-centric. \\
     \hline
     \textbf{Symmetry} & Translation invariance for target agent. & \(SE(2) \rtimes \mathbb{R} \) for target agent. & Full \(SE(2) \rtimes \mathbb{R} \times S_n\). \\
     \hline
@@ -986,7 +984,9 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \hline
     \textbf{Decoder} & Deformable cross-attention on multi-scale feature maps. & Motion query pairs (static intention + dynamic search). & Recurrent cross-attention on mode queries. \\
     \hline
-    \textbf{Output Distribution} & LMM. & GMM. & LMM. \\
+    \textbf{Output Distribution} & LMM. & GMM . & LMM. \\
+    \hline
+    \textbf{Approx. VRAM} & 20 GB. & 24 GB. & 40 GB. \\
     \hline
     \textbf{Pros} &
     \begin{itemize}
@@ -1014,7 +1014,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \begin{itemize}
         \item[\redominus] Requires NMS post-processing.
         \item[\redominus] Intention queries may miss rare maneuvers.
-        \item[\redominus] Lacks explicit physical constraints.
+        \item[\redominus] Prone to mode collapse.
     \end{itemize} &
     \begin{itemize}
         \item[\redominus] High VRAM demand.
@@ -1023,38 +1023,9 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \hline
 \end{tabular}
 \end{table}
-\end{frame}
-
-\begin{frame}{Evolution of Trajectory Prediction Paradigms}
-    \begin{block}{Paradigm Shift}
-        The field has evolved from raster-based, agent-centric models towards fully vectorized, query-centric architectures—trading CNN simplicity for geometric precision and symmetry compliance at the cost of increased memory requirements.
-    \end{block}
-
-    \begin{columns}[T]
-        \begin{column}{0.48\textwidth}
-            \textbf{Resource Requirements}
-            \begin{itemize}
-                \item \textbf{VRAM Usage:}
-                \begin{itemize}
-                    \item CASPFormer: $\sim$20 GB
-                    \item MTR: $\sim$24 GB
-                    \item LMFormer: $\sim$40 GB
-                \end{itemize}
-                \item \textbf{Prediction Scope:}
-                \begin{itemize}
-                    \item MTR: Single-agent prediction
-                    \item CASPFormer/LMFormer: Joint multi-agent prediction
-                \end{itemize}
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.48\textwidth}
-            \textbf{Commonalities}
-            \begin{itemize}
-                \item \textbf{Loss Function:} All models employ winner-takes-all loss (classification + regression)
-                \item \textbf{Core Challenge:} Balancing geometric fidelity with computational efficiency
-            \end{itemize}
-        \end{column}
-    \end{columns}
+\begin{block}{Paradigm Shift}
+    The field has evolved from raster-based, agent-centric models towards fully vectorized, query-centric architectures—trading CNN simplicity for geometric precision and symmetry compliance at the cost of increased memory requirements.
+\end{block}
 \end{frame}
 
 %==============================================================================
@@ -1067,27 +1038,26 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
         \begin{column}{0.55\textwidth}
             \textbf{Core Findings}
             \begin{itemize}
-                \item Analyzed the evolution from raster-based (CASPNet) to query-centric (LMFormer) trajectory prediction architectures
-                \item Identified the critical role of geometric isomorphism ($SE(2) \rtimes \mathbb{R} \times S_n$) in robust motion forecasting
-                \item Demonstrated architectural patterns for handling multimodal uncertainty through query-based decoding
+                \item Analyzed the evolution from raster-based (CASPNet) to query-centric (LMFormer) trajectory prediction architectures.
+                \item Identified the critical role of geometric isomorphism ($SE(2) \rtimes \mathbb{R} \times S_n$) in robust motion forecasting.
+                \item Identified various limitations and potential improvements for existing architectures.
             \end{itemize}
 
             \textbf{Technical Achievements}
             \begin{itemize}
-                \item Modernized UniTraj framework with PyTorch Lightning
-                \item Achieved superior MTR performance: brier-minFDE of \textbf{1.98} vs. 2.08 (paper baseline)
+                \item Modernized UniTraj framework in accordance with modern ML practices.
+                \item Achieved superior MTR performance: brier-minFDE of \textbf{1.98} vs. 2.08 (paper baseline).
             \end{itemize}
         \end{column}
         \begin{column}{0.42\textwidth}
-            \textbf{Conceptual Impact}
             \begin{itemize}
-                \item \textbf{Transformers:} Obtained solid conceptual \& theoretical understanding of attention mechanisms for multimodal data fusion.
-                \item \textbf{Geometric Learning:} Applied fiber bundle theory to understand query-centric representations.
-                \item \textbf{Uncertainty Modeling:} Explored architectural solutions for inherently multimodal predictions.
+                \item \textbf{Attention:} Obtained solid understanding of attention mechanisms for multi-modal fusion.
+                \item \textbf{Architectures:} Gained insights into various DL modules (LFF, Gabor-CNN, Deformable Attention, DAB-DETR, Dilated Conv.).
+                \item \textbf{Geometric DL:} Provided a solid geom DL perspective on scene representations and the QC paradigm.
             \end{itemize}
 
             \begin{alertblock}{Broader Relevance}
-                Design principles extend beyond trajectory prediction to general problems in visual computing and robotics.
+                Obtained insights generalize to many other areas of deep learning.
             \end{alertblock}
         \end{column}
     \end{columns}
