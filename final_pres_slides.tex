@@ -27,14 +27,13 @@
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
-% \usepackage{enumitem}  % Conflicts with beamer
 \usepackage{mathtools}
 \usepackage{bm}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{myred}{rgb}{0.8,0,0}
-\newcommand{\greenoplus}{\textcolor{mygreen}{\ding{51}}}
-\newcommand{\redominus}{\textcolor{myred}{\ding{55}}}
+\newcommand{\greenoplus}{\textcolor{mygreen}{\( \oplus \)}}
+\newcommand{\redominus}{\textcolor{myred}{\( \ominus \)}}
 
 % Custom commands
 \newcommand{\R}{\mathbb{R}}
@@ -842,7 +841,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
       \begin{itemize}
         \item \textbf{Map (Lane) Encoder:}\\
           Applies self-attention over lane-segment tokens to capture topology and geometry.\\
-          Result: Static scene encodings \(\mathbf{E}_s \in \mathbb{R}^{N_{\text{map}} \times D}\).
+          Result: Static scene encodings \(\mathbf{E}_s \in \mathbb{R}^{N_{M} \times D}\).
         \item \textbf{Agent Encoder:} Stacks three attention modules:
           \begin{enumerate}
             \item Temporal self-attention (agent's own past).
@@ -945,179 +944,146 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 
-% \section{Conclusion}
-
-% \begin{frame}[plain]
-%   \begin{center}
-%     \vfill
-%     {\Huge \textbf{Conclusion}}
-%     \vfill
-%     {\Large Synthesis and Reflection}
-%     \vfill
-%   \end{center}
-% \end{frame}
-
-% \subsection{A Qualitative Comparison of the Selected Architectures}
-
-% \begin{frame}{Relation to CASPNet \& CASPFormer}
-%     \begin{itemize}
-%         \item \textbf{CASPNet}: Operates on raster grids, predicts per-pixel occupancies.
-%         \item \textbf{CASPFormer}: Adds deformable attention and vector outputs but remains \emph{agent-centric}.
-%         \item \textbf{LMFormer}: Discards the raster backbone entirely for a \emph{query-centric} paradigm.
-%     \end{itemize}
-%     \vfill
-%     \begin{alertblock}{Key Trade-off}
-%     Gains strict symmetry compliance and parallel multi-agent decoding at the cost of a larger key-value cache and higher VRAM demand (\(\approx\)2x CASPFormer).
-%     \end{alertblock}
-% \end{frame}
-
 
 %==============================================================================
 % Comparative Analysis
 %==============================================================================
 \section{Comparative Analysis}
-% <TODO: Include missing information from this in the subsequent comparative analysis slide>
-% \begin{frame}{LMFormer: Qualitative Comparison}
-%     \begin{columns}[T]
-%         \begin{column}{0.5\textwidth}
-%             \textbf{Pros} \greenoplus
-%             \begin{itemize}
-%                 \item Fully query-centric (\(\mathrm{SE}(2)\) invariant).
-%                 \item Joint multi-agent decoding.
-%                 \item Temporally coherent refinement.
-%                 \item Reduced VRAM vs. QCNet.
-%             \end{itemize}
-%         \end{column}
-%         \begin{column}{0.5\textwidth}
-%             \textbf{Cons} \redominus
-%             \begin{itemize}
-%                 \item High VRAM vs. CASPFormer.
-%                 \item Lane-only static context.
-%                 \item Uniform loss weighting.
-%                 \item Generalization challenges.
-%             \end{itemize}
-%         \end{column}
-%     \end{columns}
-% \end{frame}
-% </TODO: Include missing information from this in the subsequent comparative analysis slide>
 
 \begin{frame}{Comparative Analysis of Architectures}
-    \begin{table}
-    \centering
-    \tiny
-    \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{|p{1.9cm}|p{3.9cm}|p{3.9cm}|p{3.9cm}|}
-        \hline
-        \textbf{Aspect} & \textbf{CASPFormer (Raster-Centric)} & \textbf{MTR (Hybrid)} & \textbf{LMFormer (Query-Centric)} \\
-        \hline
-        \textbf{Scene Representation} & Rasterized BEV grids. & Vectorized polylines. & Vectorized polylines. \\
-        \hline
-        \textbf{Coordinate System} & Agent-centric (ego frame). & Agent-centric (target frame). & Query-centric (local frames). \\
-        \hline
-        \textbf{Symmetry} & No inherent symmetries for context agents. & Invariant for target agent only. & Full SE(2) \(\times\) \(\mathbb{R}\) invariance. \\
-        \hline
-        \textbf{Encoder} & CNN backbone with FPN. & PointNet-style MLP + Transformer with local attention. & Transformer with learnable Fourier features. \\
-        \hline
-        \textbf{Decoder} & Deformable cross-attention on multi-scale feature maps. & Motion query pairs (static intention + dynamic search). & Recurrent cross-attention on mode queries. \\
-        \hline
-        \textbf{Pros} \greenoplus &
-        \begin{itemize}
-            \item Efficient Transformer decoding.
-            \item Direct vectorized output.
-            \item Explicit uncertainty estimates.
-        \end{itemize} &
-        \begin{itemize}
-            \item High geometric precision.
-            \item Interpretable query-based modes.
-            \item Dynamic map attention.
-        \end{itemize} &
-        \begin{itemize}
-            \item Fully SE(2) invariant.
-            \item Joint multi-agent decoding.
-            \item Temporally coherent refinement.
-        \end{itemize} \\
-        \hline
-        \textbf{Cons} \redominus &
-        \begin{itemize}
-            \item Inherits raster artifacts.
-            \item Limited to ego-centric view.
-            \item Quadratic scaling in encoder.
-        \end{itemize} &
-        \begin{itemize}
-            \item Requires NMS post-processing.
-            \item Intention queries may miss rare maneuvers.
-            \item Lacks explicit physical constraints.
-        \end{itemize} &
-        \begin{itemize}
-            \item High VRAM demand.
-            \item Lane-only static context.
-            \item Generalization challenges.
-        \end{itemize} \\
-        \hline
-    \end{tabular}
-    \end{table}
-    \begin{alertblock}{Architectural Trade-off}
-        The field is moving from raster-based, agent-centric models (CASPFormer) towards fully vectorized, query-centric paradigms (LMFormer). This shift trades CNN simplicity for the geometric precision and symmetry of Transformers, at the cost of higher memory. MTR represents a hybrid approach, combining a vectorized but agent-centric encoder with a query-based decoder.
-    \end{alertblock}
+\begin{table}[ht]
+\centering
+\tiny
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|p{1.9cm}|p{3.9cm}|p{3.9cm}|p{3.9cm}|}
+    \hline
+    \textbf{Aspect} & \textbf{CASPFormer (Raster-Centric)} & \textbf{MTR (Hybrid)} & \textbf{LMFormer (Query-Centric)} \\
+    \hline
+    \textbf{Scene Representation} & Rasterized BEV grids. & Vectorized polylines. & Vectorized polylines. \\
+    \hline
+    \textbf{Coordinate System} & Agent-centric. & Agent-centric. & Query-centric. \\
+    \hline
+    \textbf{Symmetry} & Translation invariance for target agent. & \(SE(2) \rtimes \mathbb{R} \) for target agent. & Full \(SE(2) \rtimes \mathbb{R} \times S_n\). \\
+    \hline
+    \textbf{Encoder} & CNN backbone with FPN.  & PointNet-style MLP + Transformer with local attention. & Transformer with learnable Fourier features. \\
+    \hline
+    \textbf{Decoder} & Deformable cross-attention on multi-scale feature maps. & Motion query pairs (static intention + dynamic search). & Recurrent cross-attention on mode queries. \\
+    \hline
+    \textbf{Output Distribution} & LMM. & GMM. & LMM. \\
+    \hline
+    \textbf{Pros} &
+    \begin{itemize}
+        \item[\greenoplus] Efficient Transformer decoding.
+        \item[\greenoplus] Direct vectorized output.
+        \item[\greenoplus] Explicit uncertainty estimates.
+    \end{itemize} &
+    \begin{itemize}
+        \item[\greenoplus] High geometric precision.
+        \item[\greenoplus] Interpretable query-based modes.
+        \item[\greenoplus] Dynamic map attention.
+    \end{itemize} &
+    \begin{itemize}
+        \item[\greenoplus] Full \( SE(2) \rtimes \mathbb{R} \times S_n\) invariance.
+        \item[\greenoplus] Joint multi-agent decoding.
+        \item[\greenoplus] Factorized reasoning over all dimensions.
+    \end{itemize} \\
+    \hline
+    \textbf{Cons} &
+    \begin{itemize}
+        \item[\redominus] Inherits raster artifacts.
+        \item[\redominus] Limited to ego-centric view.
+        \item[\redominus] \( \mathcal{O}(H^2 W^2) \) in encoder.
+    \end{itemize} &
+    \begin{itemize}
+        \item[\redominus] Requires NMS post-processing.
+        \item[\redominus] Intention queries may miss rare maneuvers.
+        \item[\redominus] Lacks explicit physical constraints.
+    \end{itemize} &
+    \begin{itemize}
+        \item[\redominus] High VRAM demand.
+        \item[\redominus] Lane-only static context.
+    \end{itemize} \\
+    \hline
+\end{tabular}
+\end{table}
 \end{frame}
 
+\begin{frame}{Evolution of Trajectory Prediction Paradigms}
+    \begin{block}{Paradigm Shift}
+        The field has evolved from raster-based, agent-centric models towards fully vectorized, query-centric architectures—trading CNN simplicity for geometric precision and symmetry compliance at the cost of increased memory requirements.
+    \end{block}
+
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Resource Requirements}
+            \begin{itemize}
+                \item \textbf{VRAM Usage:}
+                \begin{itemize}
+                    \item CASPFormer: $\sim$20 GB
+                    \item MTR: $\sim$24 GB
+                    \item LMFormer: $\sim$40 GB
+                \end{itemize}
+                \item \textbf{Prediction Scope:}
+                \begin{itemize}
+                    \item MTR: Single-agent prediction
+                    \item CASPFormer/LMFormer: Joint multi-agent prediction
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{Commonalities}
+            \begin{itemize}
+                \item \textbf{Loss Function:} All models employ winner-takes-all loss (classification + regression)
+                \item \textbf{Core Challenge:} Balancing geometric fidelity with computational efficiency
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
 
 %==============================================================================
 % Conclusion
 %==============================================================================
 \section{Conclusion}
 
-\begin{frame}{Summary of Achievements}
+\begin{frame}{Project Summary and Key Insights}
     \begin{columns}[T]
-        \begin{column}{0.6\textwidth}
-            \textbf{Theoretical Contributions}
+        \begin{column}{0.55\textwidth}
+            \textbf{Core Findings}
             \begin{itemize}
-                \item Conducted a deep comparative analysis of trajectory prediction architectures, from raster-based (CASPNet) to modern query-centric Transformers (MTR, LMFormer).
-                \item Deconstructed the agent-centric vs. query-centric paradigms, highlighting the role of symmetry and invariance ($\mathrm{SE}(2)$) in building robust models.
-                \item Analyzed key architectural features for multimodality, including motion query pairs and recurrent refinement.
+                \item Analyzed the evolution from raster-based (CASPNet) to query-centric (LMFormer) trajectory prediction architectures
+                \item Identified the critical role of geometric isomorphism ($SE(2) \rtimes \mathbb{R} \times S_n$) in robust motion forecasting
+                \item Demonstrated architectural patterns for handling multimodal uncertainty through query-based decoding
+            \end{itemize}
+
+            \textbf{Technical Achievements}
+            \begin{itemize}
+                \item Modernized UniTraj framework with PyTorch Lightning
+                \item Achieved superior MTR performance: brier-minFDE of \textbf{1.98} vs. 2.08 (paper baseline)
             \end{itemize}
         \end{column}
-        \begin{column}{0.4\textwidth}
-            \textbf{Practical Contributions}
+        \begin{column}{0.42\textwidth}
+            \textbf{Conceptual Impact}
             \begin{itemize}
-                \item Refactored and modernized the UniTraj framework for robust experimentation.
-                \item Established a reproducible training pipeline using PyTorch Lightning.
+                \item \textbf{Transformers:} Obtained solid conceptual \& theoretical understanding of attention mechanisms for multimodal data fusion.
+                \item \textbf{Geometric Learning:} Applied fiber bundle theory to understand query-centric representations.
+                \item \textbf{Uncertainty Modeling:} Explored architectural solutions for inherently multimodal predictions.
             \end{itemize}
-            \begin{alertblock}{Key Result}
-                Our trained MTR model achieved a brier-minFDE of \textbf{1.98}, outperforming the official paper of 2.08.
+
+            \begin{alertblock}{Broader Relevance}
+                Design principles extend beyond trajectory prediction to general problems in visual computing and robotics.
             \end{alertblock}
         \end{column}
     \end{columns}
 \end{frame}
 
-% \begin{frame}{Conclusion}
-% \begin{itemize}
-%     % TODO: codex bullshit
-%     \item Scene representation paradigms are crucial for effective trajectory prediction.
-%     \item Query-centric approaches offer significant advantages in terms of geometric fidelity and computational efficiency.
-%     \item Future work should focus on optimizing memory usage and exploring hybrid models.
-%     \item The field is rapidly evolving, with new architectures pushing the boundaries of what is possible in trajectory prediction.
-% \end{itemize}
-
-\begin{frame}{Conceptual Takeaways}
-    This project provided deep insights into several advanced machine learning concepts.
-    \begin{itemize}
-        \item \textbf{Transformer Architectures:} Gained a practical understanding of how self- and cross-attention mechanisms encode complex spatio-temporal relationships and fuse multimodal data streams.
-        \item \textbf{Geometric Deep Learning:} Applied a geometric lens to analyze the query-centric paradigm, understanding its operations through concepts like symmetries, invariance, and fiber bundles.
-        \item \textbf{Multimodality:} Explored explicit architectural patterns (e.g., mode queries, winner-takes-all loss) designed to capture the inherently uncertain and multimodal nature of future motion.
-    \end{itemize}
-    \begin{block}{Broader Impact}
-        The design principles studied, such as handling symmetries and managing multimodal distributions, are not confined to motion forecasting but are applicable across many domains in visual computing and robotics.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Project Reflection}
-    \begin{block}{Initial Goal vs. Final Outcome}
-        The initial objective was to implement a novel, minimal model for joint multi-agent prediction. The inherent complexity of the task and the existing research frameworks necessitated a scope adjustment towards a deep comparative analysis of state-of-the-art architectures.
+\begin{frame}{Project Reflection and Lessons Learned}
+    \begin{block}{Adaptive Research Strategy}
+        Initial goal: Implement a novel, minimal multi-agent prediction model. \\
+        Realized outcome: Deep comparative analysis of state-of-the-art architectures due to inherent problem complexity and existing framework constraints.
     \end{block}
 
-    \begin{alertblock}{Key Lesson Learned}
-        While the original implementation goal was not met, the pivot to a theoretical investigation yielded a more comprehensive understanding of the field's core challenges. This experience served as a formative lesson in realistic project scoping, risk assessment, and the importance of adapting goals in response to research complexity.
+    \begin{alertblock}{Key Takeaway}
+        The pivot from implementation to theoretical investigation provided more comprehensive understanding of the field's fundamental challenges. This experience emphasized the importance of realistic project scoping, risk assessment, and adaptive goal setting in research contexts.
     \end{alertblock}
 \end{frame}
 
