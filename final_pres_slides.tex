@@ -1,5 +1,9 @@
 \documentclass[10pt,aspectratio=169]{beamer}
 
+% Font encoding and font packages
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
 % Theme and styling
 \usetheme{Madrid}
 \usecolortheme{default}
@@ -90,7 +94,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \end{frame}
 
 \begin{frame}{Two Main Paradigms}
-\begin{figure}[H]
+\begin{figure}
 \centering
 \begin{subfigure}[t]{0.45\textwidth}
     \centering
@@ -216,7 +220,7 @@ Cubic complexity in dense traffic scenarios leads to significant computational o
 \begin{frame}{Query-Centric Solution}
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.6\textwidth]{docs/latex/figures/qc_reference_frame.png}
+\includegraphics[width=0.6\textwidth, height=0.7\textheight, keepaspectratio]{docs/latex/figures/qc_reference_frame.png}
 \caption{Each scene entity lives in its own local coordinate system~\cite{qcnetZhou2023}}
 \end{figure}
 
@@ -224,7 +228,7 @@ Cubic complexity in dense traffic scenarios leads to significant computational o
 
 \begin{block}{Computational Benefits~\cite{qcnetZhou2023}}
 \begin{center}
-\scriptsize
+\footnotesize
 $\underbrace{\mathcal{O}(N_{\max}T^2)+\mathcal{O}(N_{\max}TL)+\mathcal{O}(N_{\max}^2T)}_{\text{agent-centric factorized attention}}
 \longrightarrow
 \underbrace{\mathcal{O}(N_{\max}T)+\mathcal{O}(N_{\max}L)+\mathcal{O}(N_{\max}^2)}_{\text{query-centric streaming}}$
@@ -352,11 +356,11 @@ $N_{\max} \times T$ distinct fibers over observation window, each with standardi
 
   % Relative descriptors
   \draw[purple,dashed,->,very thick] (e1) -- (e2)
-    node[midway,above=8pt,align=center] {\scriptsize$\mathbf{r}_{2\to 1}$};
+    node[midway,above=8pt,align=center] {\footnotesize$\mathbf{r}_{2\to 1}$};
   \draw[orange,dashed,->,thick] (e2) -- (e3)
-    node[midway,right=3pt] {\scriptsize$\mathbf{r}_{3\to 2}$};
+    node[midway,right=3pt] {\footnotesize$\mathbf{r}_{3\to 2}$};
   \draw[brown,dashed,->,thick]  (e3) -- (e1)
-    node[midway,left=3pt] {\scriptsize$\mathbf{r}_{1\to 3}$};
+    node[midway,left=3pt] {\footnotesize$\mathbf{r}_{1\to 3}$};
 \end{tikzpicture}
 \caption{Query-centric representation as fiber bundle with local coordinates and relative descriptors~\cite{qcnetZhou2023}}
 \end{figure}
@@ -399,16 +403,16 @@ Query-centric paradigm exploits three key symmetries~\cite{qcnetZhou2023}:
 
 \begin{description}
 \item[\textbf{Permutation Invariance}]
-Agents form unordered sets—no element privileged. For permutation $\sigma$: $f(\sigma \cdot S) = \rho(\sigma) f(S)$
+Agents form unordered sets—no element privileged. For permutation $\sigma$: $f_{\boldsymbol{\Psi}}(\sigma \cdot \mathcal{S}) = \rho(\sigma) f_{\boldsymbol{\Psi}}(\mathcal{S})$
 
 \item[\textbf{SE(2) Invariance}]
 Rigid transformations leave model output unchanged:
 \begin{equation}
-f_{\boldsymbol{\Psi}}(g \cdot S) = f_{\boldsymbol{\Psi}}(S) \quad \forall g \in SE(2)
+f_{\boldsymbol{\Psi}}(g \cdot S) = f_{\boldsymbol{\Psi}}(\mathcal{S}) \quad \forall g \in SE(2)
 \end{equation}
 
 \item[\textbf{Temporal Translation Invariance}]
-Sliding time windows: $f(S(t+\tau)) = f(S(t))$ for any $\tau \in \mathbb{R}$
+Sliding time windows: $f(\mathcal{S}(t+\tau)) = f(\mathcal{S}(t))$ for any $\tau \in \mathbb{R}$
 \end{description}
 
 \begin{block}{Geometric Insight~\cite{qcnetZhou2023}}
@@ -535,7 +539,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \subsection{Motion TRansformer (MTR)}
 
 \begin{frame}{Motion TRansformer (MTR): Overview}
-    \frametitle{Motion TRansformer (MTR): Overview}
     \begin{block}{Core Principle}
         MTR models motion prediction as a two-stage process:
         \begin{enumerate}
@@ -552,7 +555,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR: Input Encoding}
-    \frametitle{MTR: Input Encoding}
     MTR uses vectorized polylines for all scene elements, avoiding rasterization artifacts.
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
@@ -579,7 +581,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR Decoder: Motion Query Pairs}
-    \frametitle{MTR Decoder: Motion Query Pairs}
     The decoder uses $K$ query pairs to generate $K$ trajectory modes. Each pair has a distinct role.
     \begin{columns}[T]
         \begin{column}{0.6\textwidth}
@@ -609,7 +610,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR Decoder: Dynamic Map Collection}
-    \frametitle{MTR Decoder: Dynamic Map Collection}
     To ensure refinement is context-aware, the decoder focuses only on relevant map information.
     \begin{itemize}
         \item At each refinement step, the model identifies the $L$ map polylines closest to the current trajectory hypothesis.
@@ -625,7 +625,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR: Input-Output Formulation}
-    \frametitle{MTR: Input-Output Formulation}
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
             \textbf{Input Domain}
@@ -653,7 +652,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR: Training and Loss Function}
-    \frametitle{MTR: Training and Loss Function}
     The model is trained using a "winner-takes-all" strategy that combines classification and regression losses.
     \begin{itemize}
         \item \textbf{1. Find the Best Match:} For each training example, the model finds the predicted trajectory $\mathcal{T}_k$ that is closest to the ground-truth trajectory $\mathcal{T}_{gt}$. This is the "winning" prediction.
@@ -669,7 +667,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR: Quantitative Results}
-    \frametitle{MTR: Quantitative Results}
     \begin{block}{Performance on Agrovere 2 Dataset}
         Our trained MTR model was evaluated against the official paper results on the validation set.
     \end{block}
@@ -694,7 +691,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{MTR: Use Case - Vehicle at Crosswalk}
-    \frametitle{MTR: Use Case - Vehicle at Crosswalk}
     Consider a vehicle (1) turning right while a pedestrian (2) is on a crosswalk.
     \begin{columns}[T]
         \begin{column}{0.4\textwidth}
@@ -773,27 +769,36 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{Encoder: Learnable Fourier Embeddings}
-    \frametitle{Encoder: Learnable Fourier Embeddings}
-    \begin{itemize}
+  \begin{columns}[T]
+    \column{0.6\textwidth}
+      \begin{itemize}
         \item All scalar inputs (lane geometry, motion history) are lifted with \textbf{learnable Fourier features}.
         \item This allows the model to learn spatio-temporal patterns at various, task-adaptive frequencies.
-    \end{itemize}
-    \begin{equation}
-      \label{eq:pres_learnable_fourier_embedding}
-    \mathbf{x} \mapsto \text{GeLU}\left(\mathbf{W}_A \begin{bmatrix} \sin(2\pi \mathbf{x} \mathbf{W}_f^T) \oplus \cos(2\pi \mathbf{x} \mathbf{W}_f^T) \end{bmatrix} + \mathbf{B}_\varphi\right) + \mathbf{B}_\psi
-    \end{equation}
-    \begin{itemize}
+      \end{itemize}
+      \begin{equation}
+        \label{eq:pres_learnable_fourier_embedding}
+        \mathbf{x} \mapsto \text{GeLU}\!\bigl(\mathbf{W}_A [\sin(2\pi \mathbf{x}\mathbf{W}_f^T)\oplus\cos(2\pi \mathbf{x}\mathbf{W}_f^T)] + \mathbf{B}_\varphi\bigr) + \mathbf{B}_\psi
+      \end{equation}
+      \begin{itemize}
         \item[\(\mathbf{W}_f\)] learns which harmonic frequencies to emphasize.
         \item[\(\mathbf{W}_A\)] learns the amplitude of each frequency.
         \item[\(\mathbf{B}_\varphi\)] are learnable phase shifts.
         \item[\(\mathbf{B}_\psi\)] are learnable biases.
-    \end{itemize}
-    \vspace{1em}
-    \small{The learnable basis adapts to capture the most informative spatio-temporal frequencies for the prediction task.}
+      \end{itemize}
+      \vspace{1em}
+      \small{The learnable basis adapts to capture the most informative spatio-temporal frequencies for the prediction task.}
+
+    \column{0.38\textwidth}
+      \begin{figure}
+        \centering
+        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_high_freq.png}\\[0.5em]
+        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_low_freq_ball.png}\\[0.5em]
+        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_low_freq_diag.png}
+      \end{figure}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Encoder: Attention Mechanisms}
-    \frametitle{Encoder: Attention Mechanisms}
     \begin{itemize}
         \item<1-> \textbf{Map (Lane) Encoder:}
               \begin{itemize}
@@ -837,12 +842,9 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}[fragile]{Decoder: Recurrent Cross-Attention}
-    \frametitle{Decoder: Recurrent Cross-Attention Algorithm}
-    \begin{algorithm}[H]
-    \caption{LMFormer Recurrent Cross-Attention Decoder}
-    \label{alg:lmformer_decoder}
+    \begin{block}{LMFormer Recurrent Cross-Attention Decoder}
     \begin{algorithmic}[1]
-    \scriptsize
+    \footnotesize
     \Require Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N \times T_{p} \times D}\), Lane encodings \(\mathbf{E}_s \in \mathbb{R}^{N_L \times D}\), Learned Mode anchors \(\mathbf{A} \in \mathbb{R}^{M \times D}\)
     \Ensure Trajectory sets \(\{\mathcal{T}_{out}^{(i)}\}_{i=1}^{N_{\text{dec}}}\)
     \State \(\mathbf{q} \leftarrow \text{repeat}(\mathbf{A}, N)\) \(\triangleright\) Initialize mode queries \((M, N, D)\)
@@ -860,13 +862,10 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
         \State \(\mathcal{T}_{out}^{(i)} \leftarrow \text{MLP}(\mathbf{Q}_{\text{seq}}^{(i)})\) \(\triangleright\) \((M, N, T_f, 4)\)
     \EndFor
     \end{algorithmic}
-    \end{algorithm}
-
-
+    \end{block}
 \end{frame}
 
 \begin{frame}{Decoder: Output and Loss}
-    \frametitle{Decoder: Output and Loss}
     \textbf{Output Formulation}
     \begin{itemize}
         \item Every mode query predicts a \textbf{motion-vector chain}:
@@ -885,7 +884,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{LMFormer: Qualitative Comparison}
-    \frametitle{LMFormer: Qualitative Comparison}
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
             \textbf{Pros} \greenoplus
@@ -913,7 +911,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \subsection{A Qualitative Comparison of the Selected Architectures}
 
 \begin{frame}{Relation to CASPNet \& CASPFormer}
-    \frametitle{Relation to CASPNet \& CASPFormer}
     \begin{itemize}
         \item \textbf{CASPNet}: Operates on raster grids, predicts per-pixel occupancies.
         \item \textbf{CASPFormer}: Adds deformable attention and vector outputs but remains \emph{agent-centric}.
@@ -932,7 +929,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \subsection{Comparative Analysis}
 
 \begin{frame}{Comparative Analysis of Architectures}
-    \frametitle{Comparative Analysis of Architectures}
     \begin{table}
     \centering
     \tiny
@@ -999,7 +995,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \section{Project Conclusion}
 
 \begin{frame}{Summary of Achievements}
-    \frametitle{Summary of Achievements}
     \begin{columns}[T]
         \begin{column}{0.6\textwidth}
             \textbf{Theoretical Contributions}
@@ -1032,7 +1027,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 % \end{itemize}
 
 \begin{frame}{Conceptual Takeaways}
-    \frametitle{Conceptual Takeaways}
     This project provided deep insights into several advanced machine learning concepts.
     \begin{itemize}
         \item \textbf{Transformer Architectures:} Gained a practical understanding of how self- and cross-attention mechanisms encode complex spatio-temporal relationships and fuse multimodal data streams.
@@ -1045,7 +1039,6 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
 \end{frame}
 
 \begin{frame}{Project Reflection}
-    \frametitle{Project Reflection}
     \begin{block}{Initial Goal vs. Final Outcome}
         The initial objective was to implement a novel, minimal model for joint multi-agent prediction. The inherent complexity of the task and the existing research frameworks necessitated a scope adjustment towards a deep comparative analysis of state-of-the-art architectures.
     \end{block}
@@ -1055,8 +1048,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \end{alertblock}
 \end{frame}
 
-\begin{frame}[allowframebreaks]
-  \frametitle{References}
+\begin{frame}[allowframebreaks]{References}
   \bibliographystyle{ieeetr}
   \bibliography{docs/latex/references}
 \end{frame}
