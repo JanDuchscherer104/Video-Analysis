@@ -90,7 +90,7 @@ How do we translate perception outputs into tensors that neural modules can effe
 \textbf{Desirable Properties:}
 \begin{enumerate}
     \item High geometric fidelity
-    \item Invariance to global transformations $SE(2) \rtimes \mathbb{R}$
+    \item Invariance to global transformations $SE(2) \rtimes \mathbb{R} \times S_n$\footnote{Roto-translation + time translation + permutation}
     \item Information density
     \item Efficient spatio-temporal modeling
     \item Computational re-use across frames
@@ -151,7 +151,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \end{itemize}
 \end{block}
 
-\begin{alertblock}{Limitations~\cite{gao2020vectornet,qcnetZhou2023}}
+\begin{alertblock}{Limitations~\cite{gao2020vectornet}}
 \begin{itemize}
     \item Limited geometric fidelity
     \item Redundant pixel information
@@ -166,7 +166,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
 \subsection{Vectorized Approaches}
 
 \begin{frame}{Vector Representations}
-\textbf{Core Principle:} Encode agents and lanes as vectorized geometric primitives
+\textbf{Core Principle:} Encode agents and lanes as vectorized geometric primitives (Cartesian or polar coordinates)
 
 \vspace{0.3cm}
 
@@ -205,7 +205,7 @@ The choice of scene representation fundamentally affects the predictor's capacit
     \vfill
     {\Huge \textbf{Query-Centric Paradigm}}
     \vfill
-    {\Large Breaking Free from Agent-Centric Limitations}
+    {\Large Breaking Free from Agent-Centric Limitations\\\vspace{0.5em}\emph{Local Space-Time Manifolds} for Symmetry and Efficiency}
     \vfill
   \end{center}
 \end{frame}
@@ -221,13 +221,13 @@ The choice of scene representation fundamentally affects the predictor's capacit
     \item Must re-encode entire scene at each timestep
 \end{itemize}
 
-\textbf{Factorized Attention Complexity~\cite{qcnetZhou2023}:}
+\textbf{Factorized Attention Complexity:}
 Factorized attention simplifies full attention by computing interactions along only one dimension at a time (e.g., temporal or spatial), while keeping other dimensions fixed.
 
 \begin{align}
-\text{Temporal:} &\quad \mathcal{O}(N_{\max}T^{2}) \\
-\text{Agent}\leftrightarrow\text{Map Fusion:} &\quad \mathcal{O}(N_{\max}T K) \\
-\text{Agent}\leftrightarrow\text{Agent Fusion:} &\quad \mathcal{O}(N_{\max}^{2}T)
+\text{Temporal:} &\quad \mathcal{O}(N_{A}T^{2}) \\
+\text{Agent}\leftrightarrow\text{Map Fusion:} &\quad \mathcal{O}(N_{A}T N_{M}) \\
+\text{Agent}\leftrightarrow\text{Agent Fusion:} &\quad \mathcal{O}(N_{A}^{2}T)
 \end{align}
 
 \column{0.3\textwidth}
@@ -240,20 +240,23 @@ Cubic complexity in dense traffic scenarios leads to significant computational o
 \begin{frame}{Query-Centric Solution}
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.6\textwidth, height=0.7\textheight, keepaspectratio]{docs/latex/figures/qc_reference_frame.png}
+\includegraphics[width=0.6\textwidth, height=0.4\textheight, keepaspectratio]{docs/latex/figures/qc_reference_frame.png}
 \caption{Each scene entity lives in its own local coordinate system~\cite{qcnetZhou2023}}
 \end{figure}
 
-\textbf{Key Insight:} Establish a \emph{local coordinate system} (fiber) for each scene element~\cite{qcnetZhou2023}
+\textbf{Key Insight:} Establish a \emph{fiber} (local space-time coordinate system) for each scene element~\cite{qcnetZhou2023}
 
 \begin{block}{Computational Benefits~\cite{qcnetZhou2023}}
 \begin{center}
 \footnotesize
-$\underbrace{\mathcal{O}(N_{\max}T^2)+\mathcal{O}(N_{\max}TL)+\mathcal{O}(N_{\max}^2T)}_{\text{agent-centric factorized attention}}
+$\underbrace{\mathcal{O}(N_{A}T^2)+\mathcal{O}(N_{A}TN_M)+\mathcal{O}(N_{A}^2T)}_{\text{agent-centric (A2T, A2M, A2A)}}
 \longrightarrow
-\underbrace{\mathcal{O}(N_{\max}T)+\mathcal{O}(N_{\max}L)+\mathcal{O}(N_{\max}^2)}_{\text{query-centric streaming}}$
+\underbrace{\mathcal{O}(N_{A}T)+\mathcal{O}(N_{A}N_M)+\mathcal{O}(N_{A}^2)}_{\text{query-centric (A2T, A2M, A2A)}}$
 \end{center}
 \end{block}
+\begin{center}
+Cubic \( \rightarrow \) quadratic complexity for attention operations
+\end{center}
 \end{frame}
 
 \subsection{Local Frame Construction}
@@ -275,11 +278,14 @@ $\underbrace{\mathcal{O}(N_{\max}T^2)+\mathcal{O}(N_{\max}TL)+\mathcal{O}(N_{\ma
 \textbf{Map Elements:} Each segment's start vertex acts as origin, first segment direction defines $x$-axis
 
 \begin{block}{Result~\cite{qcnetZhou2023}}
-$N_{\max} \times T$ distinct fibers over observation window, each with standardized local representation
+$N_{A} \times T + N_M$ distinct fibers over observation window, each with standardized local representation
 \end{block}
 \end{frame}
 
 \begin{frame}{Fiber Bundle Visualization}
+\begin{block}{Visualizing the Decomposition}
+The global scene (manifold $\mathcal{M}$) is decomposed into a \emph{fiber-bundle}, each with it's own local coordinate system ($f_1, f_2, \ldots, f_{N_AT+N_M})$. Spatial and kinematic features are represented locally as vectors $(r, \theta)$, and \emph{connections} between fibers are captured by \emph{relative descriptors} ($\mathbf{r}_{j\to i}$).
+\end{block}
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[scale=0.8]
@@ -410,7 +416,7 @@ For any pair of scene elements with tuples $(\mathbf{p}_i^t, \theta_i^t, t)$ and
 \end{enumerate}
 
 \begin{block}{Key Property~\cite{qcnetZhou2023}}
-Invariant under global $SE(2)$ transformations, lifted to high-frequency representation via Fourier features
+Invariant under global $SE(2)$ transformations, lifted to high-frequency representation via \emph{Fourier features}
 \end{block}
 \end{frame}
 
@@ -423,19 +429,19 @@ Query-centric paradigm exploits three key symmetries~\cite{qcnetZhou2023}:
 
 \begin{description}
 \item[\textbf{Permutation Invariance}]
-Agents form unordered sets—no element privileged. For permutation $\sigma$: $f_{\boldsymbol{\Psi}}(\sigma \cdot \mathcal{S}) = \rho(\sigma) f_{\boldsymbol{\Psi}}(\mathcal{S})$
+Agents form unordered sets—no element privileged.\\ For permutation $\sigma \in S_n$: $f_{\boldsymbol{\Psi}}(\sigma \cdot \mathcal{S}) = \rho(\sigma) f_{\boldsymbol{\Psi}}(\mathcal{S})$
 
 \item[\textbf{SE(2) Invariance}]
 Rigid transformations leave model output unchanged:
 \begin{equation}
-f_{\boldsymbol{\Psi}}(g \cdot S) = f_{\boldsymbol{\Psi}}(\mathcal{S}) \quad \forall g \in SE(2)
+f_{\boldsymbol{\Psi}}(g \cdot S) = f_{\boldsymbol{\Psi}}(\mathcal{S}) \quad \forall\; g \in SE(2)
 \end{equation}
 
 \item[\textbf{Temporal Translation Invariance}]
 Sliding time windows: $f(\mathcal{S}(t+\tau)) = f(\mathcal{S}(t))$ for any $\tau \in \mathbb{R}$
 \end{description}
 
-\begin{block}{Geometric Insight~\cite{qcnetZhou2023}}
+\begin{block}{Geometric Insight}
 Global scene manifold factorizes into small, redundant sub-manifolds (fibers)—each representing standardized spatial/kinematic variables connected by simple relations.
 \end{block}
 \end{frame}
@@ -694,7 +700,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
         \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{cls}}(p_k, \text{winner}) + \alpha \cdot \mathcal{L}_{\text{reg}}(\mathcal{T}_k, \mathcal{T}_{gt})
     \end{equation}
     \begin{alertblock}{Supervision Strategy}
-        This loss is applied at every layer of the decoder, encouraging iterative refinement from a coarse guess to a fine-grained path.
+        This loss is applied at \emph{every} layer of the decoder, encouraging iterative refinement from a coarse guess to a fine-grained path.
     \end{alertblock}
 \end{frame}
 
@@ -932,7 +938,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \textbf{Loss Formulation}
     \begin{itemize}
         \item Combines winner-takes-all regression loss and classification loss.
-        \item Supervises \emph{every} refinement layer to encourage coarse-to-fine refinement.
+        \item Supervises every refinement layer to encourage coarse-to-fine refinement.
     \end{itemize}
 \end{frame}
 
