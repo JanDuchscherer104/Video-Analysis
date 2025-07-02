@@ -559,7 +559,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \vfill
     {\Huge \textbf{Architectures}}
     \vfill
-    {\Large MTR, LMFormer, and CASPFormer}
+    {\Large MTR \& LMFormer}
     \vfill
   \end{center}
 \end{frame}
@@ -804,7 +804,7 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
   \begin{columns}[T]
     \column{0.6\textwidth}
       \begin{itemize}
-        \item All scalar inputs (lane geometry, motion history) are lifted with \textbf{learnable Fourier features}.
+        \item All scalar inputs (lane geometry, motion history) are lifted with \textbf{learnable Fourier features}~\cite{li2021llearnableFourier}.
         \item This allows the model to learn spatio-temporal patterns at various, task-adaptive frequencies.
       \end{itemize}
       \begin{equation}
@@ -823,28 +823,49 @@ Query-centric paradigm offers superior theoretical properties and streaming effi
     \column{0.38\textwidth}
       \begin{figure}
         \centering
-        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_high_freq.png}\\[0.5em]
-        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_low_freq_ball.png}\\[0.5em]
+        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_high_freq.png}
+        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_low_freq_ball.png}
         \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/lff_low_freq_diag.png}
+        \caption{LFF captures different harmonics~\cite{li2021llearnableFourier}.}
       \end{figure}
   \end{columns}
 \end{frame}
 
 \begin{frame}{Encoder: Attention Mechanisms}
-    \begin{itemize}
-        \item<1-> \textbf{Map (Lane) Encoder:}
-              \begin{itemize}
-                \item Applies self-attention over lane-segment tokens to capture topology and geometry.
-                \item Result: Static scene encodings \(\mathbf{E}_s \in \mathbb{R}^{N_{\text{map}} \times D}\).
-              \end{itemize}
+  \begin{columns}[T]
+    \column{0.6\textwidth}
+      \begin{itemize}
+        \item<1-> \textbf{Map (Lane) Encoder:}\\
+          Applies self-attention over lane-segment tokens to capture topology and geometry.\\
+          Result: Static scene encodings \(\mathbf{E}_s \in \mathbb{R}^{N_{\text{map}} \times D}\).
         \item<2-> \textbf{Agent Encoder:} Stacks three attention modules:
-              \begin{enumerate}
-                \item Temporal self-attention (agent's own past).
-                \item Agent-agent cross-attention (social interactions).
-                \item Agent-lane cross-attention (grounding in map).
-              \end{enumerate}
-              Result: Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N_{A} \times T_{p} \times D}\).
-    \end{itemize}
+          \begin{enumerate}[<+->]
+            \item Temporal self-attention (agent's own past).
+            \item Agent-agent cross-attention (social interactions).
+            \item Agent-lane cross-attention (grounding in map).
+          \end{enumerate}
+          Result: Agent encodings \(\mathbf{E}_d \in \mathbb{R}^{N_{A} \times T_{p} \times D}\).
+      \end{itemize}
+
+    \column{0.35\textwidth}
+      % Lane self-attention (always visible)
+      \only<1->{%
+        \centering
+        \includegraphics[width=\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/a-sa-l2l.png}
+      }
+  \end{columns}
+    \only<2->{%
+        \centering
+        \begin{figure}
+        \centering
+        \begin{tabular}{ccc}
+          \includegraphics[width=0.32\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/a-sa-a2t.png} &
+          \includegraphics[width=0.32\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/a-ca-a2a.png} &
+          \includegraphics[width=0.32\columnwidth,height=0.25\textheight,keepaspectratio]{docs/latex/figures/a-ca-a2l.png}
+        \end{tabular}
+        \caption{Attention mechanisms in the agent encoder: Temporal, Agent, and Lane cross-attention~\cite{lmformerYadav2025}.}
+        \end{figure}
+      }
 \end{frame}
 
 \begin{frame}{LMFormer: Decoder Architecture}
